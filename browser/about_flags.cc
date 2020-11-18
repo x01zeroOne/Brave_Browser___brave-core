@@ -43,6 +43,10 @@
 #include "brave/components/ipfs/features.h"
 #endif
 
+#if BUILDFLAG(ENABLE_PLAYLIST)
+#include "brave/components/playlist/features.h"
+#endif
+
 using brave_shields::features::kBraveAdblockCnameUncloaking;
 using brave_shields::features::kBraveAdblockCollapseBlockedElements;
 using brave_shields::features::kBraveAdblockCookieListDefault;
@@ -460,6 +464,17 @@ const flags_ui::FeatureEntry::Choice kBraveSkusEnvChoices[] = {
 #define BRAVE_SHIELDS_FEATURE_ENTRIES
 #endif
 
+#if BUILDFLAG(ENABLE_PLAYLIST)
+#define PLAYLIST_FEATURE_ENTRIES                                           \
+     {"playlist",                                                          \
+     flag_descriptions::kPlaylistName,                                     \
+     flag_descriptions::kPlaylistDescription,                              \
+     flags_ui::kOsMac | flags_ui::kOsWin | flags_ui::kOsLinux,             \
+     FEATURE_VALUE_TYPE(playlist::features::kPlaylist)},
+#else
+#define PLAYLIST_FEATURE_ENTRIES
+#endif
+
 #define BRAVE_ABOUT_FLAGS_FEATURE_ENTRIES                                   \
     {"use-dev-updater-url",                                                 \
      flag_descriptions::kUseDevUpdaterUrlName,                              \
@@ -583,5 +598,6 @@ const flags_ui::FeatureEntry::Choice kBraveSkusEnvChoices[] = {
     BRAVE_VPN_FEATURE_ENTRIES                                               \
     BRAVE_SKU_SDK_FEATURE_ENTRIES                                           \
     SPEEDREADER_FEATURE_ENTRIES                                             \
-    BRAVE_SHIELDS_FEATURE_ENTRIES                                        \
-    BRAVE_TRANSLATE_GO_FEATURE_ENTRIES
+    BRAVE_SHIELDS_FEATURE_ENTRIES                                           \
+    BRAVE_TRANSLATE_GO_FEATURE_ENTRIES                                      \
+    PLAYLIST_FEATURE_ENTRIES

@@ -41,6 +41,7 @@
 #include "brave/components/ipfs/buildflags/buildflags.h"
 #include "brave/components/ntp_background_images/buildflags/buildflags.h"
 #include "brave/components/omnibox/browser/brave_omnibox_prefs.h"
+#include "brave/components/playlist/buildflags/buildflags.h"
 #include "brave/components/search_engines/brave_prepopulated_engines.h"
 #include "brave/components/sidebar/buildflags/buildflags.h"
 #include "brave/components/speedreader/buildflags.h"
@@ -120,8 +121,11 @@
 #include "brave/components/tor/tor_profile_service.h"
 #endif
 
+#if BUILDFLAG(ENABLE_PLAYLIST)
+#include "brave/components/playlist/pref_names.h"
+#endif
+
 #if BUILDFLAG(IS_ANDROID)
-#include "components/feed/core/common/pref_names.h"
 #include "components/feed/core/shared_prefs/pref_names.h"
 #include "components/ntp_tiles/pref_names.h"
 #include "components/translate/core/browser/translate_pref_names.h"
@@ -457,6 +461,9 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
       base::Value(false));
 
   BraveFarblingService::RegisterProfilePrefs(registry);
+#if BUILDFLAG(ENABLE_PLAYLIST)
+  registry->RegisterDictionaryPref(playlist::kPlaylistItems);
+#endif
 
   RegisterProfilePrefsForMigration(registry);
 

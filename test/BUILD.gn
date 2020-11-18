@@ -830,6 +830,10 @@ if (!is_android) {
     if (use_aura) {
       deps += [ "//ui/aura:test_support" ]
     }
+    
+    if (enable_playlist) {
+      deps += [ "//brave/browser/playlist/test:browser_tests"]
+    }
 
     if (enable_brave_vpn) {
       deps += [ "//brave/components/brave_vpn" ]

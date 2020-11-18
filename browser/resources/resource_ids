@@ -1,0 +1,120 @@
+# Resource ids starting at 31000 are reserved for projects built on Chromium.
+{
+  "SRCDIR": "../../..",
+  "brave/common/extensions/api/brave_api_resources.grd": {
+    "includes": [32000],
+  },
+  "brave/components/resources/brave_components_resources.grd": {
+    "includes": [33000],
+  },
+  # This file is generated during the build.
+  "<(ROOT_GEN_DIR)/brave/web-ui-brave_adblock/brave_adblock.grd": {
+    "includes": [33070],
+  },
+  # This file is generated during the build.
+  "<(ROOT_GEN_DIR)/brave/web-ui-brave_new_tab/brave_new_tab.grd": {
+    "includes": [33140],
+  },
+  # This file is generated during the build.
+  "<(ROOT_GEN_DIR)/brave/web-ui-brave_welcome/brave_welcome.grd": {
+    "includes": [33240],
+  },
+  "<(SHARED_INTERMEDIATE_DIR)/brave/browser/resources/settings/brave_settings_resources.grd": {
+    "META": {"sizes": {"includes": [100],}},
+    "includes": [34500],
+  },
+  "brave/app/brave_generated_resources.grd": {
+    "includes": [35000],
+    "messages": [35500],
+  },
+  "brave/app/theme/brave_theme_resources.grd": {
+    "structures": [36000],
+  },
+  "brave/app/theme/brave_unscaled_resources.grd": {
+    "includes": [36500],
+  },
+  "brave/components/brave_sync/resources.grd": {
+    "includes": [37000]
+  },
+  # This file is generated during the build.
+  "<(ROOT_GEN_DIR)/brave/web-ui-brave_sync/brave_sync.grd": {
+    "includes": [37100],
+  },
+  # brave webtorrent 37500
+  # This file is generated during the build.
+  "<(ROOT_GEN_DIR)/brave/web-ui-brave_webtorrent/brave_webtorrent.grd": {
+    "includes": [37520],
+  },
+  "brave/components/brave_rewards/resources/extension/extension_static_resources.grd": {
+    "includes": [38000]
+  },
+  # This file is generated during the build.
+  "<(ROOT_GEN_DIR)/brave/web-ui-brave_rewards_panel/brave_rewards_panel.grd": {
+    "includes": [38160],
+  },
+  "brave/components/brave_rewards/resources/brave_rewards_static_resources.grd": {
+    "includes": [38320]
+  },
+  # This file is generated during the build.
+  "<(ROOT_GEN_DIR)/brave/web-ui-brave_rewards_page/brave_rewards_page.grd": {
+    "includes": [38480],
+  },
+  # This file is generated during the build.
+  "<(ROOT_GEN_DIR)/brave/web-ui-brave_rewards_internals/brave_rewards_internals.grd": {
+    "includes": [38640],
+  },
+  # This file is generated during the build.
+  "<(ROOT_GEN_DIR)/brave/web-ui-brave_rewards_tip/brave_rewards_tip.grd": {
+    "includes": [38800],
+  },
+  "brave/components/resources/brave_components_strings.grd": {
+    "messages": [39000]
+  },
+  "brave/vendor/bat-native-ads/data/resources/bat_ads_resources.grd": {
+    "includes": [40000]
+  },
+  "brave/ui/webui/resources/brave_webui_resources.grd": {
+    "includes": [41000],
+    "structures": [42000],
+  },
+  "<(SHARED_INTERMEDIATE_DIR)/brave/browser/resources/extensions/brave_extensions_resources.grd": {
+    "META": {"sizes": {"includes": [50],}},
+    "includes": [43000],
+  },
+  # This file is generated during the build.
+  "<(ROOT_GEN_DIR)/brave/web-ui-brave_wallet/brave_wallet.grd": {
+    "includes": [43600],
+  },
+  "brave/components/brave_extension/extension/resources.grd": {
+    "includes": [44000],
+  },
+  # This file is generated during the build.
+  "<(ROOT_GEN_DIR)/brave/web-ui-brave_extension/brave_extension.grd": {
+    "includes": [44500],
+  },
+  # This file is generated during the build.
+  "<(ROOT_GEN_DIR)/brave/web-ui-webcompat_reporter/webcompat_reporter.grd": {
+    "includes": [45000],
+  },
+  # This file is generated during the build.
+  "<(ROOT_GEN_DIR)/brave/web-ui-ipfs/ipfs.grd": {
+    "includes": [45500],
+  },
+  "<(ROOT_GEN_DIR)/brave/web-ui-cosmetic_filters/cosmetic_filters.grd": {
+    "includes": [46000]
+  },
+  "brave/components/tor/resources/tor_static_resources.grd": {
+    "includes": [46250]
+  },
+  # This file is generated during the build.
+  "<(ROOT_GEN_DIR)/brave/web-ui-tor_internals/tor_internals.grd": {
+    "includes": [46500],
+  },
+  "<(ROOT_GEN_DIR)/brave/web-ui-brave_wallet_script/brave_wallet_script.grd": {
+    "includes": [46750]
+  },
+  # This file is generated during the build.
+  "<(ROOT_GEN_DIR)/brave/web-ui-playlist/playlist.grd": {
+    "includes": [47000],
+  },
+}

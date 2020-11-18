@@ -25,6 +25,7 @@ declare global {
     cancelIdleCallback: ((handle: RequestIdleCallbackHandle) => void)
     alreadyInserted: boolean
     web3: any
+    youtubedown_urls: any
     content_cosmetic: {
       cosmeticStyleSheet: CSSStyleSheet
       allSelectorsToRules: Map<string, number>
