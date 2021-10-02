@@ -175,10 +175,12 @@ def execute(argv, env=os.environ): # pylint: disable=dangerous-default-value
         print(' '.join(argv))
     try:
         if sys.version_info.major == 2:
+            print('Running under python 2')
             process = subprocess.Popen(
                 argv, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                 universal_newlines=True)
         else:
+            print('Running under python 3')
             process = subprocess.Popen( # pylint: disable=unexpected-keyword-arg
                 argv, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                 encoding='utf-8', universal_newlines=True)
@@ -201,15 +203,15 @@ def execute(argv, env=os.environ): # pylint: disable=dangerous-default-value
 
 
 def execute_stdout(argv, env=os.environ): # pylint: disable=dangerous-default-value
-    if is_verbose_mode():
-        print(' '.join(argv))
-        try:
-            subprocess.check_call(argv, env=env)
-        except subprocess.CalledProcessError as e:
-            print(e.output)
-            raise e
-    else:
-        execute(argv, env)
+    # if is_verbose_mode():
+    print(' '.join(argv))
+    try:
+        subprocess.check_call(argv, env=env)
+    except subprocess.CalledProcessError as e:
+        print(e.output)
+        raise e
+    # else:
+    #    execute(argv, env)
 
 
 def parse_version(version):
