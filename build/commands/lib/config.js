@@ -339,6 +339,9 @@ Config.prototype.buildArgs = function () {
   if (process.platform === 'darwin') {
     args.allow_runtime_configurable_key_storage = true
     args.use_icf = false
+    if (this.targetOS !== 'ios') {
+      args.use_allocator = "none"
+    }
     if (this.use_goma && this.gomaServerHost) {
       args.use_system_xcode = false
     }
