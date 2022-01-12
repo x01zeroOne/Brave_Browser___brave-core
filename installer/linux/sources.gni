@@ -35,3 +35,7 @@ brave_installer_deps = [
 strip_chrome_binary_deps = [
   "//brave/build/linux:copy_exe",
 ]
+
+strip_chrome_sandbox_deps = [
+  "//brave/build/linux:copy_sandbox",
+]
