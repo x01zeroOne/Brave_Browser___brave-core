@@ -25,6 +25,8 @@ bool HandleNewTabURLReverseRewrite(GURL* url, content::BrowserContext* bc) {
 }
 }  // namespace search
 
+// Missing upstream for gfx::ImageSkia
+#include "ui/gfx/image/image_skia.h"
 #include "src/chrome/browser/chrome_content_browser_client.cc"
 
 #undef HandleNewTabURLRewrite

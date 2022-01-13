@@ -1,8 +1,18 @@
 diff --git a/chrome/browser/prefs/browser_prefs.cc b/chrome/browser/prefs/browser_prefs.cc
-index f2a12d0545a6d29e61111e98770f58d82dabcfbf..b12dbef9c86575c754f6f8dc8b8595fa125e9883 100644
+index f2a12d0545a6d29e61111e98770f58d82dabcfbf..8ffa75d0e80f6e8bc463bb9c4590fc07b42ef6d0 100644
 --- a/chrome/browser/prefs/browser_prefs.cc
 +++ b/chrome/browser/prefs/browser_prefs.cc
-@@ -1111,6 +1111,7 @@ void RegisterLocalState(PrefRegistrySimple* registry) {
+@@ -85,7 +85,9 @@
+ #include "chrome/browser/ui/webui/ntp/new_tab_ui.h"
+ #include "chrome/browser/ui/webui/print_preview/policy_settings.h"
+ #include "chrome/browser/updates/announcement_notification/announcement_notification_service.h"
++#if BUILDFLAG(ENABLE_EXTENSIONS)
+ #include "chrome/browser/web_applications/web_app_provider.h"
++#endif
+ #include "chrome/browser/webauthn/chrome_authenticator_request_delegate.h"
+ #include "chrome/common/buildflags.h"
+ #include "chrome/common/pref_names.h"
+@@ -1111,6 +1113,7 @@ void RegisterLocalState(PrefRegistrySimple* registry) {
    downgrade::RegisterPrefs(registry);
    DeviceOAuth2TokenStoreDesktop::RegisterPrefs(registry);
  #endif
@@ -10,7 +20,7 @@ index f2a12d0545a6d29e61111e98770f58d82dabcfbf..b12dbef9c86575c754f6f8dc8b8595fa
  
    // This is intentionally last.
    RegisterLocalStatePrefsForMigration(registry);
-@@ -1429,6 +1430,7 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry,
+@@ -1429,6 +1432,7 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry,
    registry->RegisterBooleanPref(prefs::kPrivacyGuideViewed, false);
  
    RegisterProfilePrefsForMigration(registry);

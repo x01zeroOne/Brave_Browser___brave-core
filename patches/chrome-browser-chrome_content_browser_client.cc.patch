@@ -1,0 +1,17 @@
+diff --git a/chrome/browser/chrome_content_browser_client.cc b/chrome/browser/chrome_content_browser_client.cc
+index dc13157123f9fbec13238eef614d8c41d050f58a..799115b49e25df0519d05f039c1bdc5c6af368a0 100644
+--- a/chrome/browser/chrome_content_browser_client.cc
++++ b/chrome/browser/chrome_content_browser_client.cc
+@@ -146,10 +146,12 @@
+ #include "chrome/browser/universal_web_contents_observers.h"
+ #include "chrome/browser/usb/frame_usb_services.h"
+ #include "chrome/browser/vr/vr_tab_helper.h"
++#if BUILDFLAG(ENABLE_EXTENSIONS)
+ #include "chrome/browser/web_applications/policy/web_app_policy_manager.h"
+ #include "chrome/browser/web_applications/system_web_apps/system_web_app_manager.h"
+ #include "chrome/browser/web_applications/web_app_provider.h"
+ #include "chrome/browser/web_applications/web_app_registrar.h"
++#endif
+ #include "chrome/common/buildflags.h"
+ #include "chrome/common/channel_info.h"
+ #include "chrome/common/chrome_constants.h"

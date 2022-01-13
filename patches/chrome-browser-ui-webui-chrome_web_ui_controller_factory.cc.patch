@@ -1,8 +1,19 @@
 diff --git a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc b/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
-index 7c861bba5c9d7720c21051b55293e20b892a057b..3996a72d7f50ff8ba8d89b242b92e59ed31ab454 100644
+index 7c861bba5c9d7720c21051b55293e20b892a057b..8ac24a6e85026adb78e56cc8c52c8cd8dfa2a7fe 100644
 --- a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
 +++ b/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
-@@ -1271,6 +1271,7 @@ void ChromeWebUIControllerFactory::GetFaviconForURL(
+@@ -63,8 +63,10 @@
+ #include "chrome/browser/ui/webui/usb_internals/usb_internals_ui.h"
+ #include "chrome/browser/ui/webui/user_actions/user_actions_ui.h"
+ #include "chrome/browser/ui/webui/version/version_ui.h"
++#if BUILDFLAG(IS_CHROMEOS_ASH)
+ #include "chrome/browser/web_applications/system_web_apps/system_web_app_manager.h"
+ #include "chrome/browser/web_applications/web_app_provider.h"
++#endif
+ #include "chrome/common/buildflags.h"
+ #include "chrome/common/chrome_features.h"
+ #include "chrome/common/pref_names.h"
+@@ -1271,6 +1273,7 @@ void ChromeWebUIControllerFactory::GetFaviconForURL(
  
  // static
  ChromeWebUIControllerFactory* ChromeWebUIControllerFactory::GetInstance() {
