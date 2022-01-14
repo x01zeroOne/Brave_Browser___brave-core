@@ -66,8 +66,10 @@ BraveVpnServiceFactory::~BraveVpnServiceFactory() = default;
 
 KeyedService* BraveVpnServiceFactory::BuildServiceInstanceFor(
     content::BrowserContext* context) const {
+#if defined(OS_WIN) || defined(OS_MAC)
   if (!brave_vpn::IsBraveVPNEnabled())
     return nullptr;
+#endif
 
   auto* default_storage_partition = context->GetDefaultStoragePartition();
   auto shared_url_loader_factory =
