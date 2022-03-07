@@ -11,11 +11,13 @@
 #include "components/privacy_sandbox/privacy_sandbox_prefs.h"
 
 BravePrivacySandboxSettings::BravePrivacySandboxSettings(
+    std::unique_ptr<Delegate> delegate,
     HostContentSettingsMap* host_content_settings_map,
     content_settings::CookieSettings* cookie_settings,
     PrefService* pref_service,
     bool incognito_profile)
-    : privacy_sandbox::PrivacySandboxSettings(host_content_settings_map,
+    : privacy_sandbox::PrivacySandboxSettings(std::move(delegate),
+                                              host_content_settings_map,
                                               cookie_settings,
                                               pref_service,
                                               incognito_profile),
