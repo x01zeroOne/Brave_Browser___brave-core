@@ -338,12 +338,14 @@ std::string eth_getFilterLogs(const std::string& filter_id) {
 
 std::string eth_getLogs(const std::string& from_block_quantity_tag,
                         const std::string& to_block_quantity_tag,
-                        const std::string& address,
+                        base::Value::List addresses,
                         base::Value::List topics,
                         const std::string& block_hash) {
   base::Value::List params;
   base::Value::Dict filter_options;
-  AddKeyIfNotEmpty(&filter_options, "address", address);
+  if (!addresses.empty()) {
+    filter_options.Set("address", std::move(addresses));
+  }
   AddKeyIfNotEmpty(&filter_options, "fromBlock", from_block_quantity_tag);
   AddKeyIfNotEmpty(&filter_options, "toBlock", to_block_quantity_tag);
   if (!topics.empty()) {
