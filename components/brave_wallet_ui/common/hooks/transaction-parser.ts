@@ -53,8 +53,8 @@ interface ParsedTransaction extends ParsedTransactionFees {
   valueExact: string
   symbol: string
   decimals: number
-  insufficientFundsForGasError: boolean
-  insufficientFundsError: boolean
+  insufficientFundsForGasError?: boolean
+  insufficientFundsError?: boolean
   contractAddressError?: string
   sameAddressError?: string
   erc721BlockchainToken?: BraveWallet.BlockchainToken
@@ -210,10 +210,12 @@ export function useTransactionParser (
         const totalAmountFiat = new Amount(gasFeeFiat)
           .plus(sendAmountFiat)
 
-        const insufficientNativeFunds = new Amount(gasFee)
-          .gt(accountNativeBalance)
-        const insufficientTokenFunds = new Amount(amount)
-          .gt(accountTokenBalance)
+        const insufficientNativeFunds = accountNativeBalance !== ''
+          ? new Amount(gasFee).gt(accountNativeBalance)
+          : undefined
+        const insufficientTokenFunds = accountTokenBalance !== ''
+          ? new Amount(amount).gt(accountTokenBalance)
+          : undefined
 
         return {
           hash: transactionInfo.txHash,
@@ -258,8 +260,9 @@ export function useTransactionParser (
         const { gasFeeFiat, gasFee } = feeDetails
         const totalAmountFiat = gasFeeFiat
 
-        const insufficientNativeFunds = new Amount(gasFee)
-          .gt(accountNativeBalance)
+        const insufficientNativeFunds = accountNativeBalance !== ''
+          ? new Amount(gasFee).gt(accountNativeBalance)
+          : undefined
 
         return {
           hash: transactionInfo.txHash,
@@ -295,8 +298,9 @@ export function useTransactionParser (
         const feeDetails = parseTransactionFees(transactionInfo)
         const { gasFeeFiat, gasFee } = feeDetails
         const totalAmountFiat = new Amount(gasFeeFiat)
-        const insufficientNativeFunds = new Amount(gasFee)
-          .gt(accountNativeBalance)
+        const insufficientNativeFunds = accountNativeBalance !== ''
+          ? new Amount(gasFee).gt(accountNativeBalance)
+          : undefined
 
         const amountWrapped = new Amount(amount)
 
@@ -365,15 +369,24 @@ export function useTransactionParser (
             .format(),
           symbol: selectedNetwork.symbol,
           decimals: selectedNetwork?.decimals ?? 18,
-          insufficientFundsError: new Amount(value)
-            .plus(gasFee)
-            .gt(accountNativeBalance),
-          insufficientFundsForGasError: new Amount(gasFee)
-            .gt(accountNativeBalance),
+          insufficientFundsError: accountNativeBalance !== ''
+            ? new Amount(value)
+              .plus(gasFee)
+              .gt(accountNativeBalance)
+            : undefined,
+          insufficientFundsForGasError: accountNativeBalance !== ''
+            ? new Amount(gasFee).gt(accountNativeBalance)
+            : undefined,
           isSwap: to.toLowerCase() === SwapExchangeProxy,
           ...feeDetails
         } as ParsedTransaction
       }
     }
-  }, [selectedNetwork, accounts, spotPrices, findToken])
+  }, [
+    selectedNetwork,
+    accounts,
+    spotPrices,
+    findToken,
+    getBalance
+  ])
 }

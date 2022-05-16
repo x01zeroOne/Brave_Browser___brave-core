@@ -255,10 +255,17 @@ function ConfirmTransactionPanel (props: Props) {
     , [transactionDetails])
 
   const isConfirmButtonDisabled = React.useMemo(() => {
+    if (!transactionDetails) {
+      return true
+    }
+
     return (
       !!transactionDetails.sameAddressError ||
       !!transactionDetails.contractAddressError ||
-      transactionDetails.insufficientFundsError ||
+      transactionDetails?.insufficientFundsForGasError === undefined ||
+      transactionDetails?.insufficientFundsError === undefined ||
+      transactionDetails?.insufficientFundsForGasError ||
+      transactionDetails?.insufficientFundsError ||
       !!transactionDetails.missingGasLimitError
     )
   }, [transactionDetails])
@@ -416,13 +423,23 @@ function ConfirmTransactionPanel (props: Props) {
                       }
                     </TransactionTypeText>
                   </SectionRow>
-                  <TransactionText
-                    hasError={transactionDetails.insufficientFundsError}
-                  >
-                    {transactionDetails.insufficientFundsError ? `${getLocale('braveWalletSwapInsufficientBalance')} ` : ''}
+                  <TransactionText hasError={false}>
                     {new Amount(transactionDetails.gasFeeFiat)
                       .formatAsFiat(defaultCurrencies.fiat)}
                   </TransactionText>
+
+                  {transactionDetails.insufficientFundsForGasError &&
+                    <TransactionText hasError={true}>
+                      {getLocale('braveWalletSwapInsufficientFundsForGas')}
+                    </TransactionText>
+                  }
+
+                  {transactionDetails.insufficientFundsForGasError === false &&
+                    transactionDetails.insufficientFundsError &&
+                      <TransactionText hasError={true}>
+                        {getLocale('braveWalletSwapInsufficientBalance')}
+                      </TransactionText>
+                  }
                 </TopColumn>
                 <Divider />
                 <SectionRow>
@@ -484,15 +501,23 @@ function ConfirmTransactionPanel (props: Props) {
                       } {transactionDetails.symbol} + {new Amount(transactionDetails.gasFee).divideByDecimals(transactionsNetwork.decimals).formatAsAsset(6, transactionsNetwork.symbol)}
                     </GrandTotalText>
                   </SingleRow>
-                  <TransactionText
-                    hasError={transactionDetails.insufficientFundsError}
-                  >
-                    {transactionDetails.insufficientFundsError
-                      ? `${getLocale('braveWalletSwapInsufficientBalance')} `
-                      : ''}
-                    {transactionDetails.fiatTotal
-                      .formatAsFiat(defaultCurrencies.fiat)}
+
+                  <TransactionText hasError={false}>
+                    {transactionDetails.fiatTotal.formatAsFiat(defaultCurrencies.fiat)}
                   </TransactionText>
+
+                  {transactionDetails.insufficientFundsForGasError &&
+                    <TransactionText hasError={true}>
+                      {getLocale('braveWalletSwapInsufficientFundsForGas')}
+                    </TransactionText>
+                  }
+
+                  {transactionDetails.insufficientFundsForGasError === false &&
+                    transactionDetails.insufficientFundsError &&
+                      <TransactionText hasError={true}>
+                        {getLocale('braveWalletSwapInsufficientBalance')}
+                      </TransactionText>
+                  }
 
                 </SectionColumn>
               </>
