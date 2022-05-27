@@ -297,6 +297,7 @@ class KeyringService : public KeyedService, public mojom::KeyringService {
   FRIEND_TEST_ALL_PREFIXES(KeyringServiceUnitTest, DefaultSolanaAccountCreated);
   FRIEND_TEST_ALL_PREFIXES(KeyringServiceUnitTest,
                            DefaultSolanaAccountRestored);
+  FRIEND_TEST_ALL_PREFIXES(KeyringServiceUnitTest, AccountsAdded);
 
   FRIEND_TEST_ALL_PREFIXES(KeyringServiceAccountDiscoveryUnitTest,
                            AccountDiscovery);
@@ -384,6 +385,9 @@ class KeyringService : public KeyedService, public mojom::KeyringService {
   void MaybeMigratePBKDF2Iterations(const std::string& password);
 
   void NotifyAccountsChanged();
+  void NotifyAccountsAdded(
+      const std::vector<mojom::AccountInfoPtr> account_infos);
+  // void NotifyAccountsRemoved();
   void StopAutoLockTimer();
   void ResetAutoLockTimer();
   void OnAutoLockPreferenceChanged();
