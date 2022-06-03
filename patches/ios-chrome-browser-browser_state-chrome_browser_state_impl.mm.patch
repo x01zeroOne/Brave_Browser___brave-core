@@ -1,0 +1,12 @@
+diff --git a/ios/chrome/browser/browser_state/chrome_browser_state_impl.mm b/ios/chrome/browser/browser_state/chrome_browser_state_impl.mm
+index b77fece88246241b988e43445d3a34c72c45a7b5..924d3028b84715f9efc26f0f8bab0f6b4d8d11d3 100644
+--- a/ios/chrome/browser/browser_state/chrome_browser_state_impl.mm
++++ b/ios/chrome/browser/browser_state/chrome_browser_state_impl.mm
+@@ -120,6 +120,7 @@ ChromeBrowserStateImpl::ChromeBrowserStateImpl(
+   policy_connector_ =
+       BuildBrowserStatePolicyConnector(policy_schema_registry_.get(), connector,
+                                        user_cloud_policy_manager_.get());
++  BRAVE_CHROME_BROWSER_STATE_IMPL_CHROME_BROWSER_STATE_IMPL_CLOSE_IF
+ 
+   RegisterBrowserStatePrefs(pref_registry_.get());
+   BrowserStateDependencyManager::GetInstance()
