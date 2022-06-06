@@ -82,7 +82,10 @@ static_library("brave_test_support_unit") {
 test("brave_unit_tests") {
   testonly = true
 
-  configs += [ "//chrome/test:disable_thinlto_cache_flags" ]
+  configs += [
+    "//chrome/test:disable_thinlto_cache_flags",
+    "//chrome/test:pdb_larger_than_4gb",
+  ]
 
   sources = [
     "//brave/browser/brave_ads/search_result_ad/search_result_ad_service_unittest.cc",
@@ -624,6 +627,7 @@ if (!is_android) {
       "//brave/vendor/bat-native-ledger:internal_config",
       "//build/config:precompiled_headers",
       "//chrome/test:disable_thinlto_cache_flags",
+      "//chrome/test:pdb_larger_than_4gb",
     ]
 
     sources = [
