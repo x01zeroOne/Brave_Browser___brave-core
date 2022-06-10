@@ -344,10 +344,6 @@ public class BraveNewTabPageLayout extends NewTabPageLayout implements Connectio
             }
     }
 
-    protected void updateTileGridPlaceholderVisibility() {
-        // This function is kept empty to avoid placeholder implementation
-    }
-
     private boolean shouldShowSuperReferral() {
         return mNTPBackgroundImagesBridge.isSuperReferral()
                 && NTPBackgroundImagesBridge.enableSponsoredImages()
