@@ -165,7 +165,7 @@ TEST_F(OmniboxPromotionTest, AutocompleteResultTest) {
   // reordered at second.
   matches[3].destination_url = GetPromoURL(input.text());
   SetConversionTypeToMatch(ConversionType::kButton, &matches[3]);
-  result.AppendMatches(input, matches);
+  result.AppendMatches(matches);
   SortBraveSearchPromotionMatch(&result);
   EXPECT_TRUE(IsBraveSearchPromotionMatch(*result.match_at(1)));
 
@@ -175,7 +175,7 @@ TEST_F(OmniboxPromotionTest, AutocompleteResultTest) {
   // reordered at last.
   matches[2].destination_url = GetPromoURL(input.text());
   SetConversionTypeToMatch(ConversionType::kBanner, &matches[2]);
-  result.AppendMatches(input, matches);
+  result.AppendMatches(matches);
   SortBraveSearchPromotionMatch(&result);
   EXPECT_TRUE(IsBraveSearchPromotionMatch(*result.match_at(3)));
 
@@ -183,7 +183,7 @@ TEST_F(OmniboxPromotionTest, AutocompleteResultTest) {
   matches = CreateTestMatches();
   matches[2].destination_url = GetPromoURL(input.text());
   SetConversionTypeToMatch(ConversionType::kBanner, &matches[2]);
-  result.AppendMatches(input, matches);
+  result.AppendMatches(matches);
   // Make first match is not search query with default provider.
   result.begin()->type = AutocompleteMatchType::NAVSUGGEST;
   // Check promotion match is deleted from |result| when
