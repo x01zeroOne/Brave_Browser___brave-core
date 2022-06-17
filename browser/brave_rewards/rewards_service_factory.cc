@@ -50,7 +50,7 @@ RewardsService* RewardsServiceFactory::GetForProfile(
     return testing_service_;
   }
 
-  if (!brave::IsRegularProfile(profile)) {
+  if (!brave::IsRegularProfile(profile) || profile->AsTestingProfile()) {
     return nullptr;
   }
 

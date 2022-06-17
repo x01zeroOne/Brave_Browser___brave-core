@@ -50,7 +50,7 @@ BraveAdaptiveCaptchaServiceFactory::GetInstance() {
 // static
 BraveAdaptiveCaptchaService* BraveAdaptiveCaptchaServiceFactory::GetForProfile(
     Profile* profile) {
-  if (!brave::IsRegularProfile(profile)) {
+  if (!brave::IsRegularProfile(profile) || profile->AsTestingProfile()) {
     return nullptr;
   }
 

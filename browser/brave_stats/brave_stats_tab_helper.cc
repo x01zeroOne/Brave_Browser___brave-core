@@ -7,6 +7,7 @@
 
 #include "brave/browser/brave_browser_process.h"
 #include "brave/browser/brave_stats/brave_stats_updater.h"
+#include "chrome/browser/profiles/profile.h"
 #include "content/public/browser/navigation_handle.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/browser/web_contents_user_data.h"
@@ -24,6 +25,10 @@ void BraveStatsTabHelper::DidStartNavigation(
         content::NavigationHandle* handle) {
   if (!handle || !handle->IsInMainFrame() || handle->IsDownload())
     return;
+  if (Profile::FromBrowserContext(handle->GetWebContents()->GetBrowserContext())
+          ->AsTestingProfile()) {
+    return;
+  }
 
   auto transition = handle->GetPageTransition();
 

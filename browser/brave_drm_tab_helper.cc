@@ -51,6 +51,9 @@ BraveDrmTabHelper::BraveDrmTabHelper(content::WebContents* contents)
       content::WebContentsUserData<BraveDrmTabHelper>(*contents),
       brave_drm_receivers_(contents, this) {
   auto* updater = g_browser_process->component_updater();
+  if (!updater && Profile::FromBrowserContext(contents->GetBrowserContext())
+                      ->AsTestingProfile())
+    return;
   // We don't need to observe if widevine is already registered.
   if (!IsAlreadyRegistered(updater))
     observer_.Observe(updater);

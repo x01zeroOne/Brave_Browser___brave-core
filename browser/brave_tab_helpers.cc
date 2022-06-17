@@ -22,6 +22,7 @@
 #include "brave/components/speedreader/buildflags.h"
 #include "brave/components/tor/buildflags/buildflags.h"
 #include "build/build_config.h"
+#include "chrome/browser/profiles/profile.h"
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/web_contents.h"
 #include "extensions/buildflags/buildflags.h"
@@ -71,7 +72,10 @@ namespace brave {
 
 void AttachTabHelpers(content::WebContents* web_contents) {
 #if BUILDFLAG(ENABLE_GREASELION)
-  greaselion::GreaselionTabHelper::CreateForWebContents(web_contents);
+  if (!Profile::FromBrowserContext(web_contents->GetBrowserContext())
+           ->AsTestingProfile()) {
+    greaselion::GreaselionTabHelper::CreateForWebContents(web_contents);
+  }
 #endif
   brave_shields::BraveShieldsWebContentsObserver::CreateForWebContents(
       web_contents);

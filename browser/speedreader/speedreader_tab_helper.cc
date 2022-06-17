@@ -55,7 +55,9 @@ SpeedreaderTabHelper::~SpeedreaderTabHelper() {
 // static
 void SpeedreaderTabHelper::MaybeCreateForWebContents(
     content::WebContents* contents) {
-  if (base::FeatureList::IsEnabled(speedreader::kSpeedreaderFeature)) {
+  if (base::FeatureList::IsEnabled(speedreader::kSpeedreaderFeature) &&
+      !Profile::FromBrowserContext(contents->GetBrowserContext())
+           ->AsTestingProfile()) {
     SpeedreaderTabHelper::CreateForWebContents(contents);
   }
 }
