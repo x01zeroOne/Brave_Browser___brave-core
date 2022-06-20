@@ -8,6 +8,7 @@
 #include "base/bind.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/time/time.h"
+#include "base/timer/timer.h"
 #include "content/public/browser/navigation_controller.h"
 #include "content/public/browser/navigation_handle.h"
 #include "content/public/browser/render_frame_host.h"
@@ -15,12 +16,13 @@
 #include "content/public/common/isolated_world_ids.h"
 #include "third_party/re2/src/re2/re2.h"
 
+#include "base/json/json_writer.h"
+
 namespace playlist {
 
 namespace {
 
-constexpr base::TimeDelta kWebContentDestroyDelay =
-    base::TimeDelta::FromMinutes(5);
+constexpr base::TimeDelta kWebContentDestroyDelay = base::Minutes(5);
 
 const int32_t invalid_world_id = -1;
 
@@ -55,7 +57,7 @@ PlaylistDownloadRequestManager::PlaylistDownloadRequestManager(
     : context_(context),
       delegate_(delegate),
       youtubedown_component_manager_(manager) {
-  observed_.Add(youtubedown_component_manager_);
+  observed_.Observe(youtubedown_component_manager_);
   youtubedown_script_ = youtubedown_component_manager_->youtubedown_script();
 }
 
@@ -116,6 +118,8 @@ void PlaylistDownloadRequestManager::FetchYoutubeDownData(
   DCHECK_GE(in_progress_youtube_urls_count_, 0);
   in_progress_youtube_urls_count_++;
 
+  LOG(ERROR) << __FUNCTION__ << " " << youtubedown_script_;
+
   webcontents_->GetMainFrame()->ExecuteJavaScriptInIsolatedWorld(
       base::UTF8ToUTF16(GetScript(youtubedown_script_, url)),
       base::BindOnce(&PlaylistDownloadRequestManager::OnGetYoutubeDownData,
@@ -151,39 +155,46 @@ void PlaylistDownloadRequestManager::OnGetYoutubeDownData(base::Value value) {
   if (in_progress_youtube_urls_count_ == 0)
     ScheduleWebContentsDestroying();
 
+  std::string json;
+  base::JSONWriter::Write(value, &json);
+  LOG(ERROR) << __FUNCTION__ << "  " << json;
+
   if (!value.is_list()) {
     LOG(ERROR) << __func__ << " Got invalid value after running youtubedown.js";
     return;
   }
 
-  CreatePlaylistParams p;
-  const bool has_audio = value.GetList().size() > 1;
-  const auto list = value.GetList();
-  p.playlist_name = *list[0].FindStringKey("file");
+  CreatePlaylistParams params;
+
+  const auto& list = value.GetList();
+  const bool has_audio = list.size() > 1;
+
   // Get clean playlist name.
-  RE2::Replace(&p.playlist_name, "\\s\\[.*$", "");
-  p.playlist_thumbnail_url = *list[0].FindStringKey("thumb");
-  if (std::string* url = list[0].FindStringKey("url")) {
-    p.video_media_files.emplace_back(*url, "");
+  params.playlist_name = *list[0].FindStringKey("file");
+  RE2::Replace(&params.playlist_name, "\\s\\[.*$", "");
+
+  params.playlist_thumbnail_url = *list[0].FindStringKey("thumb");
+  if (const std::string* url = list[0].FindStringKey("url")) {
+    params.video_media_files.emplace_back(*url, "");
   } else {
     DCHECK(list[0].FindListKey("url"));
     for (const auto& value : list[0].FindListKey("url")->GetList()) {
-      p.video_media_files.emplace_back(value.GetString(), "");
+      params.video_media_files.emplace_back(value.GetString(), "");
     }
   }
 
   if (has_audio) {
-    if (std::string* url = list[1].FindStringKey("url")) {
-      p.audio_media_files.emplace_back(*url, "");
+    if (const std::string* url = list[1].FindStringKey("url")) {
+      params.audio_media_files.emplace_back(*url, "");
     } else {
       DCHECK(list[0].FindListKey("url"));
       for (const auto& value : list[1].FindListKey("url")->GetList()) {
-        p.audio_media_files.emplace_back(value.GetString(), "");
+        params.audio_media_files.emplace_back(value.GetString(), "");
       }
     }
   }
 
-  delegate_->OnPlaylistCreationParamsReady(p);
+  delegate_->OnPlaylistCreationParamsReady(params);
 }
 
 void PlaylistDownloadRequestManager::ScheduleWebContentsDestroying() {

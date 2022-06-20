@@ -2,6 +2,7 @@ import("//brave/build/config.gni")
 import("//build/buildflag_header.gni")
 import("//build/config/features.gni")
 import("//chrome/common/features.gni")
+import("//brave/components/playlist/buildflags/buildflags.gni")
 
 buildflag_header("sparkle_buildflags") {
   header = "sparkle_buildflags.h"
@@ -47,7 +48,7 @@ group("browser") {
   }
 
   if (enable_playlist) {
-    deps += [ "//brave/components/playlist" ]
+    deps = [ "//brave/components/playlist" ]
   }
 
   # Group depending on upstream's counterpart to make it easier to manage

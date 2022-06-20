@@ -1,8 +1,8 @@
 diff --git a/extensions/browser/extension_event_histogram_value.h b/extensions/browser/extension_event_histogram_value.h
-index 7e2bc5aa5bd4b1b2438ec5ff13d787216b9de187..e33f638adf88edcc091b15d798afa05973484fe9 100644
+index 7e2bc5aa5bd4b1b2438ec5ff13d787216b9de187..4d2e3e4c9669c219f5007608812285e638bb4c83 100644
 --- a/extensions/browser/extension_event_histogram_value.h
 +++ b/extensions/browser/extension_event_histogram_value.h
-@@ -513,6 +513,20 @@ enum HistogramValue {
+@@ -513,6 +513,21 @@ enum HistogramValue {
    WEB_AUTHENTICATION_PROXY_ON_REMOTE_SESSION_STATE_CHANGE = 491,
    LOGIN_ON_REQUEST_EXTERNAL_LOGOUT = 492,
    LOGIN_ON_EXTERNAL_LOGOUT_DONE = 493,
@@ -20,6 +20,7 @@ index 7e2bc5aa5bd4b1b2438ec5ff13d787216b9de187..e33f638adf88edcc091b15d798afa059
 +  BRAVE_REWARDS_GET_NOTIFICATION,
 +  BRAVE_REWARDS_GET_ALL_NOTIFICATIONS,
 +  BRAVE_WALLET_FAILED,
++  BRAVE_PLAYLIST_ON_PLAYLIST_ITEM_STATUS_CHANGED,
    // Last entry: Add new entries above, then run:
    // tools/metrics/histograms/update_extension_histograms.py
    ENUM_BOUNDARY

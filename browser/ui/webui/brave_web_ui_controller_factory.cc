@@ -90,6 +90,7 @@ WebUIController* NewWebUI(WebUI* web_ui, const GURL& url) {
   } else if (host == kIPFSWebUIHost &&
              ipfs::IpfsServiceFactory::IsIpfsEnabled(profile)) {
     return new IPFSUI(web_ui, url.host());
+#endif
 #if !BUILDFLAG(IS_ANDROID)
   } else if (host == kWalletPageHost) {
     if (brave_wallet::IsNativeWalletEnabled()) {
@@ -108,7 +109,6 @@ WebUIController* NewWebUI(WebUI* web_ui, const GURL& url) {
   } else if (host == kPlaylistHost) {
     return new playlist::PlaylistUI(web_ui, url.host());
 #endif  // BUILDFLAG(PLAYLIST_ENABLED)
-#if BUILDFLAG(BRAVE_REWARDS_ENABLED)
   } else if (host == kRewardsPageHost) {
     return new BraveRewardsPageUI(web_ui, url.host());
   } else if (host == kRewardsInternalsHost) {

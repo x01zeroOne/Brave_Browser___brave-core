@@ -8,9 +8,8 @@
 
 #include <string>
 
-#include "base/macros.h"
 #include "base/memory/weak_ptr.h"
-#include "base/optional.h"
+#include "third_party/abseil-cpp/absl/types/optional.h"
 #include "content/public/browser/url_data_source.h"
 
 class GURL;
@@ -29,7 +28,8 @@ class PlaylistService;
 class PlaylistDataSource : public content::URLDataSource {
  public:
   explicit PlaylistDataSource(PlaylistService* service);
-
+  PlaylistDataSource(const PlaylistDataSource&) = delete;
+  PlaylistDataSource& operator=(const PlaylistDataSource&) = delete;
   ~PlaylistDataSource() override;
 
   // content::URLDataSource implementation.
@@ -46,11 +46,9 @@ class PlaylistDataSource : public content::URLDataSource {
   void GetThumbnailImageFile(const base::FilePath& image_file_path,
                              GotDataCallback got_data_callback);
   void OnGotThumbnailImageFile(GotDataCallback got_data_callback,
-                               base::Optional<std::string> input);
+                               absl::optional<std::string> input);
 
   base::WeakPtrFactory<PlaylistDataSource> weak_factory_{this};
-
-  DISALLOW_COPY_AND_ASSIGN(PlaylistDataSource);
 };
 
 }  // namespace playlist

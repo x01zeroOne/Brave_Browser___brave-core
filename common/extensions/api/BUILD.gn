@@ -4,12 +4,9 @@ import("//brave/components/crypto_dot_com/browser/buildflags/buildflags.gni")
 import("//brave/components/ftx/browser/buildflags/buildflags.gni")
 import("//brave/components/gemini/browser/buildflags/buildflags.gni")
 import("//brave/components/ipfs/buildflags/buildflags.gni")
-<<<<<<< HEAD
 import("//brave/resources/brave_grit.gni")
-=======
 import("//brave/components/playlist/buildflags/buildflags.gni")
 import("//tools/grit/grit_rule.gni")
->>>>>>> 5b6967339a (Initial Playlist implementation)
 import("//tools/json_schema_compiler/json_features.gni")
 import("//tools/json_schema_compiler/json_schema_api.gni")
 

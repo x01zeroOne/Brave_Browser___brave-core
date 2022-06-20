@@ -9,18 +9,19 @@
 #include <utility>
 
 #include "base/bind.h"
-#include "base/files/file.h"
 #include "base/files/file_util.h"
+#include "base/files/file.h"
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/utf_string_conversions.h"
-#include "base/task/post_task.h"
-#include "base/task_runner_util.h"
+#include "base/task/thread_pool.h"
+#include "base/task/task_runner_util.h"
 #include "brave/components/playlist/playlist_constants.h"
 #include "brave/components/playlist/playlist_types.h"
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/storage_partition.h"
+#include "services/network/public/cpp/resource_request.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 #include "services/network/public/cpp/simple_url_loader.h"
 #include "url/gurl.h"
@@ -49,7 +50,7 @@ net::NetworkTrafficAnnotationTag GetNetworkTrafficAnnotationTagForURLLoad() {
 
 base::FilePath::StringType GetFileNameStringFromIndex(int index) {
 #if defined(OS_WIN)
-  return base::NumberToString16(index);
+  return base::NumberToWString(index);
 #else
   return base::NumberToString(index);
 #endif
@@ -70,8 +71,8 @@ bool AppendToFileThenDeleteSource(const base::FilePath& source_path,
   bool got_error = false;
   while ((num_bytes_read =
               fread(read_buffer, 1, read_buffer_size, source_file.get())) > 0) {
-    if (!base::AppendToFile(destination_file_path, read_buffer,
-                            num_bytes_read)) {
+    if (!base::AppendToFile(destination_file_path, 
+                            std::string(read_buffer, num_bytes_read))) {
       VLOG(2) << __func__ << " failed to append: " << source_path;
       got_error = true;
       break;
@@ -149,7 +150,7 @@ PlaylistMediaFileDownloader::PlaylistMediaFileDownloader(
     std::string create_params_path_key)
     : delegate_(delegate),
       url_loader_factory_(
-          content::BrowserContext::GetDefaultStoragePartition(context)
+          context->content::BrowserContext::GetDefaultStoragePartition()
               ->GetURLLoaderFactoryForBrowserProcess()),
       source_media_files_dir_(source_media_files_dir),
       unified_media_file_name_(unified_media_file_name),
@@ -327,8 +328,8 @@ void PlaylistMediaFileDownloader::OnSingleMediaFileGenerated(
 
 base::SequencedTaskRunner* PlaylistMediaFileDownloader::task_runner() {
   if (!task_runner_) {
-    task_runner_ = base::CreateSequencedTaskRunner(
-        {base::ThreadPool(), base::MayBlock(), base::TaskPriority::BEST_EFFORT,
+    task_runner_ = base::ThreadPool::CreateSequencedTaskRunner(
+        {base::MayBlock(), base::TaskPriority::BEST_EFFORT,
          base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN});
   }
   return task_runner_.get();

@@ -22,6 +22,7 @@
 #include "brave/components/debounce/common/features.h"
 #include "brave/components/ipfs/buildflags/buildflags.h"
 #include "brave/components/ntp_background_images/browser/features.h"
+#include "brave/components/playlist/buildflags/buildflags.h"
 #include "brave/components/skus/browser/skus_utils.h"
 #include "brave/components/skus/browser/switches.h"
 #include "brave/components/skus/common/features.h"

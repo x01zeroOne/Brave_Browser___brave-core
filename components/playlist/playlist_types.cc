@@ -28,7 +28,7 @@ std::string PlaylistChangeParams::GetPlaylistChangeTypeAsString(
     case PlaylistChangeParams::ChangeType::kChangeTypePlayReady:
       return "play_ready";
     case PlaylistChangeParams::ChangeType::kChangeTypeNone:
-      FALLTHROUGH;
+      [[fallthrough]];
     default:
       NOTREACHED();
       return "unknown";

@@ -15,8 +15,7 @@
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
 #include "base/strings/utf_string_conversions.h"
-#include "base/task/post_task.h"
-#include "base/task_runner_util.h"
+#include "base/task/thread_pool.h"
 #include "base/token.h"
 #include "brave/components/playlist/playlist_constants.h"
 #include "brave/components/playlist/playlist_data_source.h"
@@ -152,7 +151,7 @@ void PlaylistService::UpdatePlaylistValue(const std::string& id,
 void PlaylistService::RemovePlaylist(const std::string& id) {
   prefs::ScopedDictionaryPrefUpdate update(prefs_, kPlaylistItems);
   auto playlist_items = update.Get();
-  playlist_items->Remove(id, nullptr);
+  playlist_items->Remove(id);
 }
 
 void PlaylistService::CreatePlaylistItem(const CreatePlaylistParams& params) {
@@ -163,8 +162,8 @@ void PlaylistService::CreatePlaylistItem(const CreatePlaylistParams& params) {
   NotifyPlaylistChanged(
       {PlaylistChangeParams::ChangeType::kChangeTypeAdded, info.id});
 
-  base::PostTaskAndReplyWithResult(
-      task_runner(), FROM_HERE,
+  task_runner()->PostTaskAndReplyWithResult(
+      FROM_HERE,
       base::BindOnce(&base::CreateDirectory, GetPlaylistItemDirPath(info.id)),
       base::BindOnce(&PlaylistService::OnPlaylistItemDirCreated,
                      weak_factory_.GetWeakPtr(), info.id));
@@ -225,7 +224,7 @@ void PlaylistService::OnThumbnailDownloaded(const std::string& id,
 
 base::Value PlaylistService::GetAllPlaylistItems() {
   base::Value playlist(base::Value::Type::LIST);
-  for (const auto& it : prefs_->Get(kPlaylistItems)->DictItems()) {
+  for (const auto it : prefs_->Get(kPlaylistItems)->GetDict()) {
     base::Value item = it.second.Clone();
     item.RemoveKey(kPlaylistCreateParamsKey);
     playlist.Append(std::move(item));
@@ -252,7 +251,7 @@ void PlaylistService::RecoverPlaylistItem(const std::string& id) {
     LOG(ERROR) << __func__ << ": Invalid playlist id for recover: " << id;
     return;
   }
-  base::Optional<bool> ready = playlist_info->FindBoolPath(kPlaylistReadyKey);
+  absl::optional<bool> ready = playlist_info->FindBoolPath(kPlaylistReadyKey);
   if (*ready) {
     VLOG(2) << __func__ << ": This is ready to play(" << id << ")";
     return;
@@ -387,8 +386,8 @@ void PlaylistService::CleanUp() {
       ids.insert(*id);
   }
 
-  base::PostTaskAndReplyWithResult(
-      task_runner(), FROM_HERE,
+  task_runner()->PostTaskAndReplyWithResult(
+      FROM_HERE,
       base::BindOnce(&GetOrphanedPaths, base_dir_, ids),
       base::BindOnce(&PlaylistService::OnGetOrphanedPaths,
                      weak_factory_.GetWeakPtr()));
@@ -407,8 +406,8 @@ bool PlaylistService::GetThumbnailPath(const std::string& id,
 void PlaylistService::GenerateIndexHTMLFile(
     const base::FilePath& playlist_path) {
   auto html_file_path = playlist_path.Append(FILE_PATH_LITERAL("index.html"));
-  base::PostTaskAndReplyWithResult(
-      task_runner(), FROM_HERE,
+  task_runner()->PostTaskAndReplyWithResult(
+      FROM_HERE,
       base::BindOnce(&DoGenerateHTMLFileOnTaskRunner, html_file_path),
       base::BindOnce(&PlaylistService::OnHTMLFileGenerated,
                      weak_factory_.GetWeakPtr()));
@@ -421,8 +420,8 @@ void PlaylistService::OnHTMLFileGenerated(bool generated) {
 
 base::SequencedTaskRunner* PlaylistService::task_runner() {
   if (!task_runner_) {
-    task_runner_ = base::CreateSequencedTaskRunner(
-        {base::ThreadPool(), base::MayBlock(), base::TaskPriority::BEST_EFFORT,
+    task_runner_ = base::ThreadPool::CreateSequencedTaskRunner(
+        {base::MayBlock(), base::TaskPriority::BEST_EFFORT,
          base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN});
   }
   return task_runner_.get();

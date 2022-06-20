@@ -62,7 +62,7 @@ ExtensionFunction::ResponseAction PlaylistGetPlaylistItemFunction::Run() {
   }
 
   std::unique_ptr<GetPlaylistItem::Params> params(
-      GetPlaylistItem::Params::Create(*args_));
+      GetPlaylistItem::Params::Create(args()));
   EXTENSION_FUNCTION_VALIDATE(params.get());
 
   base::Value playlist = service->GetPlaylistItem(params->id);
@@ -81,7 +81,7 @@ ExtensionFunction::ResponseAction PlaylistRecoverPlaylistItemFunction::Run() {
   }
 
   std::unique_ptr<RecoverPlaylistItem::Params> params(
-      RecoverPlaylistItem::Params::Create(*args_));
+      RecoverPlaylistItem::Params::Create(args()));
   EXTENSION_FUNCTION_VALIDATE(params.get());
 
   service->RecoverPlaylistItem(params->id);
@@ -95,7 +95,7 @@ ExtensionFunction::ResponseAction PlaylistDeletePlaylistItemFunction::Run() {
   }
 
   std::unique_ptr<DeletePlaylistItem::Params> params(
-      DeletePlaylistItem::Params::Create(*args_));
+      DeletePlaylistItem::Params::Create(args()));
   EXTENSION_FUNCTION_VALIDATE(params.get());
 
   service->DeletePlaylistItem(params->id);
@@ -120,7 +120,7 @@ ExtensionFunction::ResponseAction PlaylistRequestDownloadFunction::Run() {
   }
 
   std::unique_ptr<RequestDownload::Params> params(
-      RequestDownload::Params::Create(*args_));
+      RequestDownload::Params::Create(args()));
   EXTENSION_FUNCTION_VALIDATE(params.get());
 
   service->RequestDownload(params->url);
@@ -135,7 +135,7 @@ ExtensionFunction::ResponseAction PlaylistPlayItemFunction::Run() {
   }
 
 #if !defined(OS_ANDROID)
-  std::unique_ptr<PlayItem::Params> params(PlayItem::Params::Create(*args_));
+  std::unique_ptr<PlayItem::Params> params(PlayItem::Params::Create(args()));
   EXTENSION_FUNCTION_VALIDATE(params.get());
 
   ::playlist::DesktopPlaylistPlayer player(browser_context());

@@ -9,11 +9,11 @@
 #include <string>
 #include <utility>
 
-#include "base/scoped_observer.h"
+#include "base/scoped_observation.h"
 #include "brave/browser/playlist/playlist_service_factory.h"
 #include "brave/common/extensions/api/playlist.h"
-#include "brave/components/playlist/playlist_service.h"
 #include "brave/components/playlist/playlist_service_observer.h"
+#include "brave/components/playlist/playlist_service.h"
 #include "components/keyed_service/content/browser_context_dependency_manager.h"
 #include "components/keyed_service/core/keyed_service.h"
 #include "extensions/browser/event_router.h"
@@ -52,7 +52,7 @@ class PlaylistEventRouterFactory::PlaylistEventRouter
     DCHECK_EQ(details.event_name, OnPlaylistItemStatusChanged::kEventName);
     auto* service = GetPlaylistService(context_);
     DCHECK(service);
-    observed_.Add(service);
+    observed_.Observe(service);
     extensions::EventRouter::Get(context_)->UnregisterObserver(this);
   }
 
@@ -60,7 +60,7 @@ class PlaylistEventRouterFactory::PlaylistEventRouter
   void OnPlaylistItemStatusChanged(
       const PlaylistChangeParams& params) override {
     auto event = std::make_unique<extensions::Event>(
-        extensions::events::PLAYLIST_ON_PLAYLIST_ITEM_STATUS_CHANGED,
+        extensions::events::BRAVE_PLAYLIST_ON_PLAYLIST_ITEM_STATUS_CHANGED,
         OnPlaylistItemStatusChanged::kEventName,
         OnPlaylistItemStatusChanged::Create(
             PlaylistChangeParams::GetPlaylistChangeTypeAsString(
@@ -73,7 +73,7 @@ class PlaylistEventRouterFactory::PlaylistEventRouter
 
  private:
   content::BrowserContext* context_;
-  ScopedObserver<PlaylistService, PlaylistServiceObserver> observed_{this};
+  base::ScopedObservation<PlaylistService, PlaylistServiceObserver> observed_{this};
 };
 
 // static

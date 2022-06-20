@@ -13,36 +13,30 @@ import App from './components/app'
 import BraveCoreThemeProvider from '../../common/BraveCoreThemeProvider'
 import Theme from 'brave-ui/theme/brave-default'
 import DarkTheme from 'brave-ui/theme/brave-dark'
+// import { loadTimeData } from '../../../components/common/loadTimeData'
+
 // Utils
 import store from './store'
 
-window.cr.define('playlist', function () {
-  'use strict'
+function initialize () {
+  new Promise(resolve => chrome.braveTheme.getBraveThemeType(resolve))
+    .then((themeType: chrome.braveTheme.ThemeType) => {
+      render(
+        <Provider store={store}>
+          <BraveCoreThemeProvider
+            initialThemeType={themeType}
+            dark={DarkTheme}
+            light={Theme}
+          >
+            <App />
+          </BraveCoreThemeProvider>
+        </Provider>,
+        document.getElementById('root'))
+    })
+    .catch((error) => {
+      console.error('Problem mounting brave new tab', error)
+    })
+  // window.i18nTemplate.process(window.document, loadTimeData)
+}
 
-  function initialize () {
-    new Promise(resolve => chrome.braveTheme.getBraveThemeType(resolve))
-      .then((themeType: chrome.braveTheme.ThemeType) => {
-        render(
-          <Provider store={store}>
-            <BraveCoreThemeProvider
-              initialThemeType={themeType}
-              dark={DarkTheme}
-              light={Theme}
-            >
-              <App />
-            </BraveCoreThemeProvider>
-          </Provider>,
-          document.getElementById('root'))
-      })
-      .catch((error) => {
-        console.error('Problem mounting brave new tab', error)
-      })
-    window.i18nTemplate.process(window.document, window.loadTimeData)
-  }
-
-  return {
-    initialize
-  }
-})
-
-document.addEventListener('DOMContentLoaded', window.playlist.initialize)
+document.addEventListener('DOMContentLoaded', initialize)

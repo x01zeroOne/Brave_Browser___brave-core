@@ -11,7 +11,7 @@
 #include <string>
 
 #include "base/memory/weak_ptr.h"
-#include "base/scoped_observer.h"
+#include "base/scoped_observation.h"
 #include "brave/components/playlist/playlist_types.h"
 #include "brave/components/playlist/playlist_youtubedown_component_manager.h"
 #include "content/public/browser/web_contents.h"
@@ -95,8 +95,8 @@ class PlaylistDownloadRequestManager
   content::BrowserContext* context_;
   Delegate* delegate_;
   PlaylistYoutubeDownComponentManager* youtubedown_component_manager_;
-  ScopedObserver<PlaylistYoutubeDownComponentManager,
-                 PlaylistYoutubeDownComponentManager::Observer>
+  base::ScopedObservation<PlaylistYoutubeDownComponentManager,
+                          PlaylistYoutubeDownComponentManager::Observer>
       observed_{this};
   std::unique_ptr<base::OneShotTimer> webcontents_destroy_timer_;
 

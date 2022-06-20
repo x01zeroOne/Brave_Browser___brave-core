@@ -21,6 +21,7 @@ import("//chrome/common/features.gni")
 import("//components/gcm_driver/config.gni")
 import("//testing/test.gni")
 import("//tools/v8_context_snapshot/v8_context_snapshot.gni")
+import("//brave/components/playlist/buildflags/buildflags.gni")
 
 if (is_android) {
   import("//build/config/android/rules.gni")

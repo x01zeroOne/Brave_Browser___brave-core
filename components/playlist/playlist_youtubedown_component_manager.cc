@@ -8,7 +8,7 @@
 #include "base/bind.h"
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
-#include "base/task/post_task.h"
+#include "base/task/thread_pool.h"
 #include "brave/components/playlist/playlist_youtubedown_component_installer.h"
 
 namespace playlist {
@@ -55,8 +55,8 @@ void PlaylistYoutubeDownComponentManager::RegisterIfNeeded() {
 void PlaylistYoutubeDownComponentManager::OnComponentReady(
     const base::FilePath& install_path) {
   const auto youtubedown_path = install_path.AppendASCII(kYoutubeDownScript);
-  base::PostTaskAndReplyWithResult(
-      FROM_HERE, {base::ThreadPool(), base::MayBlock()},
+  base::ThreadPool::PostTaskAndReplyWithResult(
+      FROM_HERE, base::MayBlock(),
       base::BindOnce(&GetYoutubeDownScript, youtubedown_path),
       base::BindOnce(
           &PlaylistYoutubeDownComponentManager::OnGetYoutubeDownScript,

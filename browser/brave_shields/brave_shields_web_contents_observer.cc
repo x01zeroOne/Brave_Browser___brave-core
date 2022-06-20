@@ -198,7 +198,7 @@ void BraveShieldsWebContentsObserver::DispatchBlockedEventForWebContents(
     auto* shields_data_ctrlr =
         brave_shields::BraveShieldsDataController::FromWebContents(
             web_contents);
-    DCHECK(shields_data_ctrlr);
+    //DCHECK(shields_data_ctrlr);
     if (!shields_data_ctrlr)
       return;
     shields_data_ctrlr->HandleItemBlocked(block_type, subresource);

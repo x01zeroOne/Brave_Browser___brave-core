@@ -180,7 +180,7 @@ EngineFlags ShouldBlockRequestOnTaskRunner(
   if (!ctx->initiator_url.is_valid()) {
     return previous_result;
   }
-  const std::string source_host = ctx->initiator_url.host();
+  // const std::string source_host = ctx->initiator_url.host();
 
   GURL url_to_check;
   if (canonical_url.has_value()) {
@@ -189,6 +189,7 @@ EngineFlags ShouldBlockRequestOnTaskRunner(
     url_to_check = ctx->request_url;
   }
 
+#if 0
   bool force_aggressive = SameDomainOrHost(
       ctx->initiator_url,
       url::Origin::CreateFromNormalizedTuple("https", "youtube.com", 80),
@@ -206,6 +207,7 @@ EngineFlags ShouldBlockRequestOnTaskRunner(
        !previous_result.did_match_exception)) {
     ctx->blocked_by = kAdBlocked;
   }
+#endif
 
   return previous_result;
 }
