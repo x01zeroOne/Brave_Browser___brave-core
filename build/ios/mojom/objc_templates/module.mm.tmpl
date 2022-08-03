@@ -6,8 +6,12 @@
 #import <Foundation/Foundation.h>
 #import "{{module_name}}.objc+private.h"
 #include "base/containers/flat_map.h"
+#include "base/sequence_checker.h"
 #include "base/strings/sys_string_conversions.h"
 #include "base/time/time.h"
+#include "base/threading/thread_task_runner_handle.h"
+#include "ios/web/public/thread/web_task_traits.h"
+#include "ios/web/public/thread/web_thread.h"
 #include "mojo/public/cpp/bindings/pending_remote.h"
 #include "mojo/public/cpp/bindings/receiver_set.h"
 #include "mojo/public/cpp/bindings/remote.h"

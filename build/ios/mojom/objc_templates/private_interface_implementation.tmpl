@@ -1,4 +1,4 @@
-{%- macro objc_methods_impls(interface) -%}
+{%- macro objc_methods_impls(interface, is_mojo) -%}
 {%  for method in interface.methods %}
 {%-   set name = method|objc_method_name_formatter %}
 - (void){{name}}
@@ -36,7 +36,10 @@
     );
   };
 {%- endif %}
-  _wrappedValue->{{method.name}}(
+{%- if is_mojo %}
+  web::GetUIThreadTaskRunner({})->PostTask(FROM_HERE, base::BindOnce(^{
+{%- endif %}
+  self->_wrappedValue->{{method.name}}(
 {%- for param in method.parameters -%}
 {{param|objc_to_cpp_assign}}
 {%- if not loop.last -%},{{" "}}{%- endif -%}
@@ -46,6 +49,10 @@
 base::BindOnce(callback)
 {%- endif -%}
   );
+{%- if is_mojo %}
+  }))
+{%- endif -%}
+;
 }
 {% endfor %}
 {%- endmacro %}
@@ -60,12 +67,12 @@ base::BindOnce(callback)
 
 - (instancetype)initWith{{interface.name}}:(mojo::PendingRemote<{{cpp_namespace}}::{{interface.name}}>)obj {
   if ((self = [super init])) {
-    _wrappedValue.Bind(std::move(obj));
+    _wrappedValue.Bind(std::move(obj), web::GetUIThreadTaskRunner({}));
   }
   return self;
 }
 
-{{ objc_methods_impls(interface) }}
+{{ objc_methods_impls(interface, true) }}
 
 @end
 
@@ -83,6 +90,6 @@ base::BindOnce(callback)
   return self;
 }
 
-{{ objc_methods_impls(interface) }}
+{{ objc_methods_impls(interface, false) }}
 
 @end
