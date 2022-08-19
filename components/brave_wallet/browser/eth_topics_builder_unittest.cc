@@ -13,19 +13,19 @@ namespace brave_wallet {
 
 TEST(EthGetLogsTopicBuilderTest, MakeAssetDiscoveryTopics) {
   // Invalid address
-  base::Value topics(base::Value::Type::LIST);
-  ASSERT_FALSE(MakeAssetDiscoveryTopics({"invalid address"}, &topics));
+  base::Value::List topics;
+  ASSERT_FALSE(MakeAssetDiscoveryTopics({"invalid address"}, std::move(topics)));
 
   // Valid
-  topics = base::Value(base::Value::Type::LIST);
+  topics = base::Value::List();
   ASSERT_TRUE(MakeAssetDiscoveryTopics(
-      {"0x16e4476c8fDDc552e3b1C4b8b56261d85977fE52"}, &topics));
-  EXPECT_EQ(topics.GetList()[0], base::Value("0xddf252ad"));
-  EXPECT_EQ(topics.GetList()[1], base::Value());
+      {"0x16e4476c8fDDc552e3b1C4b8b56261d85977fE52"}, std::move(topics)));
+  EXPECT_EQ(topics[0], base::Value("0xddf252ad"));
+  EXPECT_EQ(topics[1], base::Value());
   base::Value to_address_topic(base::Value::Type::LIST);
   to_address_topic.Append(base::Value(
       "0x00000000000000000000000016e4476c8fDDc552e3b1C4b8b56261d85977fE52"));
-  EXPECT_EQ(topics.GetList()[2], to_address_topic);
+  EXPECT_EQ(topics[2], to_address_topic);
 }
 
 }  // namespace brave_wallet

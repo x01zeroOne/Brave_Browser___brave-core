@@ -16,7 +16,6 @@
 #include "base/no_destructor.h"
 #include "base/notreached.h"
 #include "base/strings/utf_string_conversions.h"
-#include "brave/common/brave_services_key.h"
 #include "brave/components/brave_wallet/browser/blockchain_registry.h"
 #include "brave/components/brave_wallet/browser/brave_wallet_prefs.h"
 #include "brave/components/brave_wallet/browser/brave_wallet_utils.h"
@@ -2098,7 +2097,8 @@ void JsonRpcService::GetERC1155TokenBalance(
 
 void JsonRpcService::DiscoverAssets(
     const std::string& chain_id,
-    const std::vector<std::string>& account_addresses,
+    const std::vector<std::string>&
+        account_addresses,  // TODO(nvonpentz) - Use AccountInfoPtr instead
     DiscoverAssetsCallback callback) {
   if (chain_id != mojom::kMainnetChainId) {
     std::move(callback).Run(
@@ -2140,7 +2140,7 @@ void JsonRpcService::OnGetAllTokensDiscoverAssets(
     const std::string& chain_id,
     const std::vector<std::string>& account_addresses,
     DiscoverAssetsCallback callback,
-    std::vector<mojom::BlockchainTokenPtr> token_list) {
+    std::vector<mojom::BlockchainTokenPtr> token_registry) {
   auto network_url = GetNetworkURL(prefs_, chain_id, mojom::CoinType::ETH);
   if (!network_url.is_valid()) {
     std::move(callback).Run(
@@ -2150,8 +2150,8 @@ void JsonRpcService::OnGetAllTokensDiscoverAssets(
     return;
   }
 
-  base::Value topics(base::Value::Type::LIST);
-  if (!MakeAssetDiscoveryTopics(account_addresses, &topics)) {
+  base::Value::List topics;
+  if (!MakeAssetDiscoveryTopics(account_addresses, std::move(topics))) {
     std::move(callback).Run(
         std::vector<mojom::BlockchainTokenPtr>(),
         mojom::ProviderError::kInvalidParams,
@@ -2159,14 +2159,20 @@ void JsonRpcService::OnGetAllTokensDiscoverAssets(
     return;
   }
 
-  base::Value contract_addresses(base::Value::Type::LIST);
-  for (const auto& token : token_list) {
-    if (token->is_erc20 && !token->contract_address.empty()) {
-      contract_addresses.Append(token->contract_address);
+  base::Value::List contract_addresses;
+  for (const auto& registry_token : token_registry) {
+    // Check if registry_token is already a user asset and skip if so
+    mojom::BlockchainTokenPtr user_token =
+        BlockchainRegistry::GetInstance()->GetTokenByAddress(
+            mojom::kMainnetChainId, mojom::CoinType::ETH,
+            registry_token->contract_address);
+    if (registry_token->is_erc20 && !registry_token->contract_address.empty() &&
+        user_token) {
+      contract_addresses.Append(registry_token->contract_address);
     }
   }
 
-  if (contract_addresses.GetList().size() == 0) {
+  if (contract_addresses.size() == 0) {
     std::move(callback).Run(std::vector<mojom::BlockchainTokenPtr>(),
                             mojom::ProviderError::kSuccess, "");
     return;
@@ -2177,7 +2183,7 @@ void JsonRpcService::OnGetAllTokensDiscoverAssets(
                      weak_ptr_factory_.GetWeakPtr(), std::move(callback));
 
   RequestInternal(
-      eth::eth_getLogs("earliest", "latest", &contract_addresses, &topics, ""),
+      eth::eth_getLogs("earliest", "latest", std::move(contract_addresses), std::move(topics), ""),
       true, network_url, std::move(internal_callback));
   return;
 }
@@ -2195,7 +2201,7 @@ void JsonRpcService::OnGetTransferLogs(
     return;
   }
 
-  // Get unique list of addresses
+  // Get unique list of token contract addresses with transfer events
   std::unordered_set<std::string> contract_addresses;
   for (const auto& log : logs) {
     contract_addresses.insert(log.address);
@@ -2211,7 +2217,6 @@ void JsonRpcService::OnGetTransferLogs(
     discovered_assets.push_back(std::move(token));
   }
 
-  // Return the result to the client
   std::move(callback).Run(std::move(discovered_assets),
                           mojom::ProviderError::kSuccess, "");
   return;
