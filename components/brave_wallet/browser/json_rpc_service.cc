@@ -2099,6 +2099,7 @@ void JsonRpcService::DiscoverAssets(
     const std::string& chain_id,
     const std::vector<std::string>&
         account_addresses,  // TODO(nvonpentz) - Use AccountInfoPtr instead
+    std::vector<mojom::BlockchainTokenPtr> user_assets,
     DiscoverAssetsCallback callback) {
   if (chain_id != mojom::kMainnetChainId) {
     std::move(callback).Run(
@@ -2126,10 +2127,10 @@ void JsonRpcService::DiscoverAssets(
     }
   }
 
-  auto internal_callback =
-      base::BindOnce(&JsonRpcService::OnGetAllTokensDiscoverAssets,
-                     weak_ptr_factory_.GetWeakPtr(), chain_id,
-                     account_addresses, std::move(callback));
+  auto internal_callback = base::BindOnce(
+      &JsonRpcService::OnGetAllTokensDiscoverAssets,
+      weak_ptr_factory_.GetWeakPtr(), chain_id, account_addresses,
+      std::move(user_assets), std::move(callback));
 
   BlockchainRegistry::GetInstance()->GetAllTokens(
       chain_id, mojom::CoinType::ETH, std::move(internal_callback));
@@ -2139,6 +2140,7 @@ void JsonRpcService::DiscoverAssets(
 void JsonRpcService::OnGetAllTokensDiscoverAssets(
     const std::string& chain_id,
     const std::vector<std::string>& account_addresses,
+    std::vector<mojom::BlockchainTokenPtr> user_assets,
     DiscoverAssetsCallback callback,
     std::vector<mojom::BlockchainTokenPtr> token_registry) {
   auto network_url = GetNetworkURL(prefs_, chain_id, mojom::CoinType::ETH);
@@ -2159,15 +2161,17 @@ void JsonRpcService::OnGetAllTokensDiscoverAssets(
     return;
   }
 
+  // Create list of contract addresses to search by
+  // removing non erc20 tokens and assets that user has already
+  std::unordered_set<std::string> user_asset_contract_addresses;
+  for (auto& user_asset : user_assets) {
+    user_asset_contract_addresses.insert(user_asset->contract_address);
+  }
   base::Value::List contract_addresses;
   for (const auto& registry_token : token_registry) {
-    // Check if registry_token is already a user asset and skip if so
-    mojom::BlockchainTokenPtr user_token =
-        BlockchainRegistry::GetInstance()->GetTokenByAddress(
-            mojom::kMainnetChainId, mojom::CoinType::ETH,
-            registry_token->contract_address);
     if (registry_token->is_erc20 && !registry_token->contract_address.empty() &&
-        user_token) {
+        user_asset_contract_addresses.find(registry_token->contract_address) ==
+            user_asset_contract_addresses.end()) {
       contract_addresses.Append(registry_token->contract_address);
     }
   }

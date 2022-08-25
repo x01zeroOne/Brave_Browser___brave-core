@@ -47,9 +47,20 @@ void AssetDiscoveryService::AccountsAdded(
   }
 
   auto internal_callback =
+      base::BindOnce(&AssetDiscoveryService::OnGetUserAssets,
+                     weak_ptr_factory_.GetWeakPtr(), addresses);
+  wallet_service_->GetUserAssets(mojom::kMainnetChainId, mojom::CoinType::ETH,
+                                 std::move(internal_callback));
+}
+
+void AssetDiscoveryService::OnGetUserAssets(
+    const std::vector<std::string> addresses,
+    std::vector<mojom::BlockchainTokenPtr> user_assets) {
+  auto internal_callback =
       base::BindOnce(&AssetDiscoveryService::OnAssetsDiscovered,
                      weak_ptr_factory_.GetWeakPtr());
   json_rpc_service_->DiscoverAssets(mojom::kMainnetChainId, addresses,
+                                    std::move(user_assets),
                                     std::move(internal_callback));
 }
 
