@@ -65,7 +65,7 @@ void AssetDiscoveryService::OnGetUserAssets(
 }
 
 void AssetDiscoveryService::OnAssetsDiscovered(
-    const std::vector<mojom::BlockchainTokenPtr> discovered_tokens,
+    std::vector<mojom::BlockchainTokenPtr> discovered_tokens,
     mojom::ProviderError error,
     const std::string& error_message) {
   if (error != mojom::ProviderError::kSuccess) {
@@ -79,10 +79,9 @@ void AssetDiscoveryService::OnAssetsDiscovered(
     return;
   }
 
-  for (const auto& token : discovered_tokens) {
+  for (auto& token : discovered_tokens) {
     wallet_service_->AddUserAsset(
-        token.Clone(),  // TODO(nvonpentz) - figure out why I need to clone
-                        // and/or stop cloning
+        std::move(token),
         base::BindOnce(&AssetDiscoveryService::OnDiscoveredAssetAdded,
                        weak_ptr_factory_.GetWeakPtr()));
   }

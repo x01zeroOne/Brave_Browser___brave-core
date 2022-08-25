@@ -38,7 +38,7 @@ class AssetDiscoveryService : public mojom::KeyringServiceObserver {
   void OnGetUserAssets(const std::vector<std::string> addresses,
                        std::vector<mojom::BlockchainTokenPtr> user_assets);
 
-  void OnAssetsDiscovered(const std::vector<mojom::BlockchainTokenPtr>,
+  void OnAssetsDiscovered(std::vector<mojom::BlockchainTokenPtr>,
                           mojom::ProviderError error,
                           const std::string& error_message);
 
