@@ -1329,7 +1329,7 @@ void KeyringService::OnGetTransactionCount(size_t discovery_account_index,
     size_t last_account_index = keyring->GetAccountsNumber() - 1;
     if (discovery_account_index > last_account_index) {
       AddAccountsWithDefaultName(discovery_account_index - last_account_index);
-      NotifyAccountsChanged();  // todo should we remove this call ?
+      NotifyAccountsChanged();
     }
 
     AddDiscoveryAccountsForKeyring(discovery_account_index + 1,

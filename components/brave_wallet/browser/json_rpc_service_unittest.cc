@@ -3271,7 +3271,6 @@ TEST_F(JsonRpcServiceUnitTest, GetSupportsInterface) {
   EXPECT_TRUE(callback_called);
 
   // Invalid result, should be in hex form
-  // todo can remove this one if we have checks for parsing errors
   callback_called = false;
   SetInterceptor(GetNetwork(mojom::kMainnetChainId, mojom::CoinType::ETH),
                  "eth_call", "",
