@@ -324,6 +324,9 @@ TEST_F(AssetDiscoveryServiceUnitTest, AccountsAdded) {
   base::RunLoop().RunUntilIdle();
   GetUserAssets(mojom::kMainnetChainId, mojom::CoinType::ETH, &user_assets);
   EXPECT_EQ(user_assets.size(), 5u);
+  for (auto& asset : user_assets) {
+    EXPECT_TRUE(asset->visible);
+  }
 
   // TODO(nvonpentz) Adding Solana accounts should not trigger asset discovery
   // service.AddAccountForKeyring(mojom::kSolanaKeyringId, "Account 99");
