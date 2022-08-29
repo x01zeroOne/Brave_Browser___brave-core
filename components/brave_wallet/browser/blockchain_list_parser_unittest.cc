@@ -7,7 +7,10 @@
 #include <utility>
 #include <vector>
 
+#include "base/test/bind.h"
+#include "base/test/task_environment.h"
 #include "brave/components/brave_wallet/browser/blockchain_list_parser.h"
+#include "services/data_decoder/public/cpp/test_support/in_process_data_decoder.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -15,7 +18,22 @@ using testing::ElementsAreArray;
 
 namespace brave_wallet {
 
+void TestParseTokenList(const std::string& json,
+                        TokenListMap* token_list,
+                        mojom::CoinType coin,
+                        bool expected_result) {
+  base::RunLoop run_loop;
+  ParseTokenList(json, token_list, coin,
+                 base::BindLambdaForTesting([&, expected_result](bool result) {
+                   EXPECT_EQ(result, expected_result);
+                   run_loop.Quit();
+                 }));
+  run_loop.Run();
+}
+
 TEST(ParseTokenListUnitTest, ParseTokenList) {
+  base::test::TaskEnvironment task_environment;
+  data_decoder::test::InProcessDataDecoder in_process_data_decoder_;
   std::string json(R"(
     {
      "0x06012c8cf97BEaD5deAe237070F9587f8E7A266d": {
@@ -46,7 +64,7 @@ TEST(ParseTokenListUnitTest, ParseTokenList) {
   )");
 
   TokenListMap token_list_map;
-  ASSERT_TRUE(ParseTokenList(json, &token_list_map, mojom::CoinType::ETH));
+  TestParseTokenList(json, &token_list_map, mojom::CoinType::ETH, true);
   ASSERT_EQ(token_list_map["ethereum.0x1"].size(), 2UL);
   EXPECT_EQ(token_list_map["ethereum.0x2"].size(), 0UL);
   ASSERT_EQ(token_list_map["ethereum.0x3"].size(), 1UL);
@@ -113,8 +131,7 @@ TEST(ParseTokenListUnitTest, ParseTokenList) {
       }
     }
   )");
-  EXPECT_TRUE(
-      ParseTokenList(solana_json, &token_list_map, mojom::CoinType::SOL));
+  TestParseTokenList(solana_json, &token_list_map, mojom::CoinType::SOL, true);
   auto wrapped_sol = mojom::BlockchainToken::New(
       "So11111111111111111111111111111111111111112", "Wrapped SOL",
       "So11111111111111111111111111111111111111112.png", false, false, "SOL", 9,
@@ -135,19 +152,19 @@ TEST(ParseTokenListUnitTest, ParseTokenList) {
 
   token_list_map.clear();
   json = R"({})";
-  EXPECT_TRUE(ParseTokenList(json, &token_list_map, mojom::CoinType::ETH));
+  TestParseTokenList(json, &token_list_map, mojom::CoinType::ETH, true);
   EXPECT_TRUE(token_list_map.empty());
   json = R"({"0x0D8775F648430679A709E98d2b0Cb6250d2887EF": 3})";
-  EXPECT_FALSE(ParseTokenList(json, &token_list_map, mojom::CoinType::ETH));
+  TestParseTokenList(json, &token_list_map, mojom::CoinType::ETH, false);
   json = R"({"0x0D8775F648430679A709E98d2b0Cb6250d2887EF": {}})";
   EXPECT_TRUE(token_list_map.empty());
-  EXPECT_TRUE(ParseTokenList(json, &token_list_map, mojom::CoinType::ETH));
+  TestParseTokenList(json, &token_list_map, mojom::CoinType::ETH, true);
   json = "3";
-  EXPECT_FALSE(ParseTokenList(json, &token_list_map, mojom::CoinType::ETH));
+  TestParseTokenList(json, &token_list_map, mojom::CoinType::ETH, false);
   json = "[3]";
-  EXPECT_FALSE(ParseTokenList(json, &token_list_map, mojom::CoinType::ETH));
+  TestParseTokenList(json, &token_list_map, mojom::CoinType::ETH, false);
   json = "";
-  EXPECT_FALSE(ParseTokenList(json, &token_list_map, mojom::CoinType::ETH));
+  TestParseTokenList(json, &token_list_map, mojom::CoinType::ETH, false);
 }
 
 TEST(ParseTokenListUnitTest, GetTokenListKey) {

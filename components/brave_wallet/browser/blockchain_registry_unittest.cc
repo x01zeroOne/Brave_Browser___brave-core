@@ -11,6 +11,7 @@
 #include "base/test/task_environment.h"
 #include "brave/components/brave_wallet/browser/blockchain_list_parser.h"
 #include "brave/components/brave_wallet/browser/blockchain_registry.h"
+#include "services/data_decoder/public/cpp/test_support/in_process_data_decoder.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -186,16 +187,30 @@ std::vector<std::string> GetChainIds(
   return result;
 }
 
+void TestParseTokenList(const std::string& json,
+                        TokenListMap* token_list,
+                        mojom::CoinType coin,
+                        bool expected_result) {
+  base::RunLoop run_loop;
+  ParseTokenList(json, token_list, coin,
+                 base::BindLambdaForTesting([&, expected_result](bool result) {
+                   EXPECT_EQ(result, expected_result);
+                   run_loop.Quit();
+                 }));
+  run_loop.Run();
+}
+
 }  // namespace
 
 TEST(BlockchainRegistryUnitTest, GetAllTokens) {
   base::test::TaskEnvironment task_environment;
+  data_decoder::test::InProcessDataDecoder in_process_data_decoder_;
   auto* registry = BlockchainRegistry::GetInstance();
   TokenListMap token_list_map;
-  ASSERT_TRUE(
-      ParseTokenList(token_list_json, &token_list_map, mojom::CoinType::ETH));
-  ASSERT_TRUE(ParseTokenList(solana_token_list_json, &token_list_map,
-                             mojom::CoinType::SOL));
+  TestParseTokenList(token_list_json, &token_list_map, mojom::CoinType::ETH,
+                     true);
+  TestParseTokenList(solana_token_list_json, &token_list_map,
+                     mojom::CoinType::SOL, true);
   registry->UpdateTokenList(std::move(token_list_map));
 
   // Loop twice to make sure getting the same list twice works
@@ -278,12 +293,13 @@ TEST(BlockchainRegistryUnitTest, GetAllTokens) {
 
 TEST(BlockchainRegistryUnitTest, GetTokenByAddress) {
   base::test::TaskEnvironment task_environment;
+  data_decoder::test::InProcessDataDecoder in_process_data_decoder_;
   auto* registry = BlockchainRegistry::GetInstance();
   TokenListMap token_list_map;
-  ASSERT_TRUE(
-      ParseTokenList(token_list_json, &token_list_map, mojom::CoinType::ETH));
-  ASSERT_TRUE(ParseTokenList(solana_token_list_json, &token_list_map,
-                             mojom::CoinType::SOL));
+  TestParseTokenList(token_list_json, &token_list_map, mojom::CoinType::ETH,
+                     true);
+  TestParseTokenList(solana_token_list_json, &token_list_map,
+                     mojom::CoinType::SOL, true);
   registry->UpdateTokenList(std::move(token_list_map));
   base::RunLoop run_loop;
   registry->GetTokenByAddress(
@@ -342,12 +358,13 @@ TEST(BlockchainRegistryUnitTest, GetTokenByAddress) {
 
 TEST(BlockchainRegistryUnitTest, GetTokenBySymbol) {
   base::test::TaskEnvironment task_environment;
+  data_decoder::test::InProcessDataDecoder in_process_data_decoder_;
   auto* registry = BlockchainRegistry::GetInstance();
   TokenListMap token_list_map;
-  ASSERT_TRUE(
-      ParseTokenList(token_list_json, &token_list_map, mojom::CoinType::ETH));
-  ASSERT_TRUE(ParseTokenList(solana_token_list_json, &token_list_map,
-                             mojom::CoinType::SOL));
+  TestParseTokenList(token_list_json, &token_list_map, mojom::CoinType::ETH,
+                     true);
+  TestParseTokenList(solana_token_list_json, &token_list_map,
+                     mojom::CoinType::SOL, true);
   registry->UpdateTokenList(std::move(token_list_map));
   base::RunLoop run_loop;
   registry->GetTokenBySymbol(

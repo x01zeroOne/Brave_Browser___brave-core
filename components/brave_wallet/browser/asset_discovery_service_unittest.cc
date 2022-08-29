@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "base/test/bind.h"
+#include "brave/browser/brave_wallet/brave_wallet_service_factory.h"
 #include "brave/browser/brave_wallet/json_rpc_service_factory.h"
 #include "brave/browser/brave_wallet/keyring_service_factory.h"
 #include "brave/browser/brave_wallet/tx_service_factory.h"
@@ -138,6 +139,20 @@ class AssetDiscoveryServiceUnitTest : public testing::Test {
     run_loop.Run();
   }
 
+  void TestParseTokenList(const std::string& json,
+                          TokenListMap* token_list,
+                          mojom::CoinType coin,
+                          bool expected_result) {
+    base::RunLoop run_loop;
+    ParseTokenList(
+        json, token_list, coin,
+        base::BindLambdaForTesting([&, expected_result](bool result) {
+          EXPECT_EQ(result, expected_result);
+          run_loop.Quit();
+        }));
+    run_loop.Run();
+  }
+
   std::unique_ptr<AssetDiscoveryService> asset_discovery_service_;
   raw_ptr<BraveWalletService> wallet_service_;
   raw_ptr<JsonRpcService> json_rpc_service_;
@@ -157,7 +172,7 @@ TEST_F(AssetDiscoveryServiceUnitTest, AccountsAdded) {
   //   * Non-discoverable: Mainnet LilNouns (an ERC721), and Avanche JOE
   auto* blockchain_registry = BlockchainRegistry::GetInstance();
   TokenListMap token_list_map;
-  ASSERT_TRUE(ParseTokenList(R"( {
+  std::string json = R"( {
       "0x6b175474e89094c44da98b954eedeac495271d0f": {
         "name": "Dai Stablecoin",
         "logo": "dai.svg",
@@ -198,8 +213,8 @@ TEST_F(AssetDiscoveryServiceUnitTest, AccountsAdded) {
         "decimals": 18,
         "chainId": "0x1"
       }
-    })",
-                             &token_list_map, mojom::CoinType::ETH));
+    })";
+  TestParseTokenList(json, &token_list_map, mojom::CoinType::ETH, true);
   blockchain_registry->UpdateTokenList(std::move(token_list_map));
 
   // Add DAI, LilNoun, and Joe transfer events for user address,

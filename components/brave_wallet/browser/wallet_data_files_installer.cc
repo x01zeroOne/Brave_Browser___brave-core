@@ -50,6 +50,10 @@ static_assert(std::size(kWalletDataFilesSha2Hash) == crypto::kSHA256Length,
 
 absl::optional<base::Version> last_installed_wallet_version;
 
+void OnParseTokenList(bool result) {
+  VLOG(1) << "Can't parse token list;";
+}
+
 void HandleParseTokenList(base::FilePath absolute_install_dir,
                           const std::string& filename,
                           TokenListMap* token_list_map,
@@ -62,9 +66,8 @@ void HandleParseTokenList(base::FilePath absolute_install_dir,
     return;
   }
 
-  if (!ParseTokenList(token_list_json, token_list_map, coin_type)) {
-    LOG(ERROR) << "Can't parse token list: " << filename;
-  }
+  ParseTokenList(token_list_json, token_list_map, coin_type,
+                 base::BindOnce(OnParseTokenList));
 }
 
 TokenListMap TokenListReady(const base::FilePath& install_dir) {

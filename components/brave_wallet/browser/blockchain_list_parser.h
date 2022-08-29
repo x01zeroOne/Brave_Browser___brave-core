@@ -11,6 +11,7 @@
 
 #include "base/containers/flat_map.h"
 #include "brave/components/brave_wallet/common/brave_wallet.mojom.h"
+#include "services/data_decoder/public/cpp/json_sanitizer.h"
 
 namespace brave_wallet {
 
@@ -18,9 +19,16 @@ using TokenListMap =
     base::flat_map<std::string, std::vector<mojom::BlockchainTokenPtr>>;
 using ChainList = std::vector<mojom::NetworkInfoPtr>;
 
-bool ParseTokenList(const std::string& json,
+using ParseTokenListCallback = base::OnceCallback<void(bool)>;
+void ParseTokenList(const std::string& json,
                     TokenListMap* token_list,
-                    mojom::CoinType coin);
+                    mojom::CoinType coin,
+                    ParseTokenListCallback callback);
+void OnSanitizedTokenList(TokenListMap* token_list,
+                          mojom::CoinType coin,
+                          ParseTokenListCallback callback,
+                          data_decoder::JsonSanitizer::Result result);
+
 std::string GetTokenListKey(mojom::CoinType coin, const std::string& chain_id);
 bool ParseChainList(const std::string& json, ChainList* chain_list);
 

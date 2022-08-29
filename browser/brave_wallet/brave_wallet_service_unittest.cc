@@ -36,6 +36,7 @@
 #include "components/prefs/scoped_user_pref_update.h"
 #include "components/sync_preferences/testing_pref_service_syncable.h"
 #include "content/public/test/browser_task_environment.h"
+#include "services/data_decoder/public/cpp/test_support/in_process_data_decoder.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/base/l10n/l10n_util.h"
 #include "url/origin.h"
@@ -237,6 +238,20 @@ class BraveWalletServiceUnitTest : public testing::Test {
       : task_environment_(base::test::TaskEnvironment::TimeSource::MOCK_TIME) {}
   ~BraveWalletServiceUnitTest() override = default;
 
+  void TestParseTokenList(const std::string& json,
+                          TokenListMap* token_list,
+                          mojom::CoinType coin,
+                          bool expected_result) {
+    base::RunLoop run_loop;
+    ParseTokenList(
+        json, token_list, coin,
+        base::BindLambdaForTesting([&, expected_result](bool result) {
+          EXPECT_EQ(result, expected_result);
+          run_loop.Quit();
+        }));
+    run_loop.Run();
+  }
+
  protected:
   void SetUp() override {
     scoped_feature_list_.InitAndEnableFeature(
@@ -271,12 +286,12 @@ class BraveWalletServiceUnitTest : public testing::Test {
 
     auto* registry = BlockchainRegistry::GetInstance();
     TokenListMap token_list_map;
-    ASSERT_TRUE(
-        ParseTokenList(token_list_json, &token_list_map, mojom::CoinType::ETH));
-    ASSERT_TRUE(ParseTokenList(ropsten_list_json, &token_list_map,
-                               mojom::CoinType::ETH));
-    ASSERT_TRUE(ParseTokenList(solana_token_list_json, &token_list_map,
-                               mojom::CoinType::SOL));
+    TestParseTokenList(token_list_json, &token_list_map, mojom::CoinType::ETH,
+                       true);
+    TestParseTokenList(ropsten_list_json, &token_list_map, mojom::CoinType::ETH,
+                       true);
+    TestParseTokenList(solana_token_list_json, &token_list_map,
+                       mojom::CoinType::SOL, true);
     registry->UpdateTokenList(std::move(token_list_map));
 
     token1_ = GetRegistry()->GetTokenByAddress(
@@ -702,6 +717,9 @@ class BraveWalletServiceUnitTest : public testing::Test {
   mojom::BlockchainTokenPtr sol_usdc_;
   mojom::BlockchainTokenPtr sol_tsla_;
   mojom::BlockchainTokenPtr fil_token_;
+
+ private:
+  data_decoder::test::InProcessDataDecoder in_process_data_decoder_;
 };
 
 TEST_F(BraveWalletServiceUnitTest, GetUserAssets) {
