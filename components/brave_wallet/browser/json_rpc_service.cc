@@ -2153,7 +2153,7 @@ void JsonRpcService::OnGetAllTokensDiscoverAssets(
   }
 
   base::Value::List topics;
-  if (!MakeAssetDiscoveryTopics(account_addresses, std::move(topics))) {
+  if (!MakeAssetDiscoveryTopics(account_addresses, &topics)) {
     std::move(callback).Run(
         std::vector<mojom::BlockchainTokenPtr>(),
         mojom::ProviderError::kInvalidParams,

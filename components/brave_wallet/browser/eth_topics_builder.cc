@@ -14,13 +14,13 @@ namespace brave_wallet {
 
 bool MakeAssetDiscoveryTopics(
     const std::vector<std::string>& to_account_addresses,
-    base::Value::List topics) {
+    base::Value::List* topics) {
   // First topic matches erc20::Transfer function hash
-  topics.Append(
+  topics->Append(
       brave_wallet::GetFunctionHash("Transfer(address,address,uint256)"));
 
   // Second topic matches everything (any from_address)
-  topics.Append(base::Value());
+  topics->Append(base::Value());
 
   // Third topic matches any of the to_addresses
   base::Value::List to_address_topic;
@@ -32,7 +32,7 @@ bool MakeAssetDiscoveryTopics(
     }
     to_address_topic.Append(padded_address);
   }
-  topics.Append(std::move(to_address_topic));
+  topics->Append(std::move(to_address_topic));
   return true;
 }
 
