@@ -20,15 +20,9 @@ using TokenListMap =
 using ChainList = std::vector<mojom::NetworkInfoPtr>;
 
 using ParseTokenListCallback = base::OnceCallback<void(bool)>;
-void ParseTokenList(const std::string& json,
+bool ParseTokenList(const std::string& json,
                     TokenListMap* token_list,
-                    mojom::CoinType coin,
-                    ParseTokenListCallback callback);
-void OnSanitizedTokenList(TokenListMap* token_list,
-                          mojom::CoinType coin,
-                          ParseTokenListCallback callback,
-                          data_decoder::JsonSanitizer::Result result);
-
+                    mojom::CoinType coin);
 std::string GetTokenListKey(mojom::CoinType coin, const std::string& chain_id);
 bool ParseChainList(const std::string& json, ChainList* chain_list);
 

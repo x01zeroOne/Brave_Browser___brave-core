@@ -139,20 +139,6 @@ class AssetDiscoveryServiceUnitTest : public testing::Test {
     run_loop.Run();
   }
 
-  void TestParseTokenList(const std::string& json,
-                          TokenListMap* token_list,
-                          mojom::CoinType coin,
-                          bool expected_result) {
-    base::RunLoop run_loop;
-    ParseTokenList(
-        json, token_list, coin,
-        base::BindLambdaForTesting([&, expected_result](bool result) {
-          EXPECT_EQ(result, expected_result);
-          run_loop.Quit();
-        }));
-    run_loop.Run();
-  }
-
   std::unique_ptr<AssetDiscoveryService> asset_discovery_service_;
   raw_ptr<BraveWalletService> wallet_service_;
   raw_ptr<JsonRpcService> json_rpc_service_;
@@ -214,7 +200,7 @@ TEST_F(AssetDiscoveryServiceUnitTest, AccountsAdded) {
         "chainId": "0x1"
       }
     })";
-  TestParseTokenList(json, &token_list_map, mojom::CoinType::ETH, true);
+  ASSERT_TRUE(ParseTokenList(json, &token_list_map, mojom::CoinType::ETH));
   blockchain_registry->UpdateTokenList(std::move(token_list_map));
 
   // Add DAI, LilNoun, and Joe transfer events for user address,

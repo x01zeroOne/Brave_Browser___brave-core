@@ -238,20 +238,6 @@ class BraveWalletServiceUnitTest : public testing::Test {
       : task_environment_(base::test::TaskEnvironment::TimeSource::MOCK_TIME) {}
   ~BraveWalletServiceUnitTest() override = default;
 
-  void TestParseTokenList(const std::string& json,
-                          TokenListMap* token_list,
-                          mojom::CoinType coin,
-                          bool expected_result) {
-    base::RunLoop run_loop;
-    ParseTokenList(
-        json, token_list, coin,
-        base::BindLambdaForTesting([&, expected_result](bool result) {
-          EXPECT_EQ(result, expected_result);
-          run_loop.Quit();
-        }));
-    run_loop.Run();
-  }
-
  protected:
   void SetUp() override {
     scoped_feature_list_.InitAndEnableFeature(
@@ -286,12 +272,12 @@ class BraveWalletServiceUnitTest : public testing::Test {
 
     auto* registry = BlockchainRegistry::GetInstance();
     TokenListMap token_list_map;
-    TestParseTokenList(token_list_json, &token_list_map, mojom::CoinType::ETH,
-                       true);
-    TestParseTokenList(ropsten_list_json, &token_list_map, mojom::CoinType::ETH,
-                       true);
-    TestParseTokenList(solana_token_list_json, &token_list_map,
-                       mojom::CoinType::SOL, true);
+    ASSERT_TRUE(
+        ParseTokenList(token_list_json, &token_list_map, mojom::CoinType::ETH));
+    ASSERT_TRUE(ParseTokenList(ropsten_list_json, &token_list_map,
+                               mojom::CoinType::ETH));
+    ASSERT_TRUE(ParseTokenList(solana_token_list_json, &token_list_map,
+                               mojom::CoinType::SOL));
     registry->UpdateTokenList(std::move(token_list_map));
 
     token1_ = GetRegistry()->GetTokenByAddress(

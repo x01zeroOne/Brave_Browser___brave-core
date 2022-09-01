@@ -1011,20 +1011,6 @@ class JsonRpcServiceUnitTest : public testing::Test {
     run_loop.Run();
   }
 
-  void TestParseTokenList(const std::string& json,
-                          TokenListMap* token_list,
-                          mojom::CoinType coin,
-                          bool expected_result) {
-    base::RunLoop run_loop;
-    ParseTokenList(
-        json, token_list, coin,
-        base::BindLambdaForTesting([&, expected_result](bool result) {
-          EXPECT_EQ(result, expected_result);
-          run_loop.Quit();
-        }));
-    run_loop.Run();
-  }
-
   void GetFilEstimateGas(const std::string& from,
                          const std::string& to,
                          const std::string& value,
@@ -3372,17 +3358,7 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
        "decimals": 18
      }
     })";
-  TestParseTokenList(json, &token_list_map, mojom::CoinType::ETH, true);
-  // ASSERT_TRUE(ParseTokenList(R"( {
-  //    "0x0d8775f648430679a709e98d2b0cb6250d2887ef": {
-  //      "name": "Basic Attention Token",
-  //      "logo": "bat.svg",
-  //      "erc20": true,
-  //      "symbol": "BAT",
-  //      "decimals": 18
-  //    }
-  //   })",
-  //                            &token_list_map, mojom::CoinType::ETH));
+  ASSERT_TRUE(ParseTokenList(json, &token_list_map, mojom::CoinType::ETH));
   blockchain_registry->UpdateTokenList(std::move(token_list_map));
   SetInterceptor(expected_network, "eth_getLogs", "",
                  "invalid eth_getLogs response");
@@ -3444,7 +3420,7 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
         "chainId": "0x1"
       }
      })";
-  TestParseTokenList(json, &token_list_map, mojom::CoinType::ETH, true);
+  ASSERT_TRUE(ParseTokenList(json, &token_list_map, mojom::CoinType::ETH));
   blockchain_registry->UpdateTokenList(std::move(token_list_map));
 
   response = R"(

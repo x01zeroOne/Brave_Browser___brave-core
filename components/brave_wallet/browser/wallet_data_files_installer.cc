@@ -26,6 +26,7 @@
 #include "components/component_updater/component_installer.h"
 #include "components/component_updater/component_updater_service.h"
 #include "crypto/sha2.h"
+#include "services/data_decoder/public/cpp/json_sanitizer.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace brave_wallet {
@@ -50,8 +51,22 @@ static_assert(std::size(kWalletDataFilesSha2Hash) == crypto::kSHA256Length,
 
 absl::optional<base::Version> last_installed_wallet_version;
 
-void OnParseTokenList(bool result) {
-  VLOG(1) << "Can't parse token list;";
+void OnSanitizedTokenList(TokenListMap* token_list_map,
+                          mojom::CoinType coin,
+                          data_decoder::JsonSanitizer::Result result) {
+  if (result.error) {
+    VLOG(1) << "TokenList JSON validation error:" << *result.error;
+    return;
+  }
+
+  std::string json;
+  if (result.value.has_value()) {
+    json = result.value.value();
+  }
+
+  if (!ParseTokenList(json, token_list_map, coin)) {
+    VLOG(1) << "Can't parse token list.";
+  }
 }
 
 void HandleParseTokenList(base::FilePath absolute_install_dir,
@@ -62,12 +77,13 @@ void HandleParseTokenList(base::FilePath absolute_install_dir,
       absolute_install_dir.AppendASCII(filename);
   std::string token_list_json;
   if (!base::ReadFileToString(token_list_json_path, &token_list_json)) {
-    LOG(ERROR) << "Can't read token list file: " << filename;
+    VLOG(1) << "Can't read token list file: " << filename;
     return;
   }
 
-  ParseTokenList(token_list_json, token_list_map, coin_type,
-                 base::BindOnce(OnParseTokenList));
+  data_decoder::JsonSanitizer::Sanitize(
+      std::move(token_list_json),
+      base::BindOnce(&OnSanitizedTokenList, token_list_map, coin_type));
 }
 
 TokenListMap TokenListReady(const base::FilePath& install_dir) {

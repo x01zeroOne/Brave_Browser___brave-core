@@ -37,10 +37,9 @@ std::string EmptyIfNull(const std::string* str) {
 
 namespace brave_wallet {
 
-void ParseTokenList(const std::string& json,
+bool ParseTokenList(const std::string& json,
                     TokenListMap* token_list_map,
-                    mojom::CoinType coin,
-                    ParseTokenListCallback callback) {
+                    mojom::CoinType coin) {
   DCHECK(token_list_map);
 
   // {
@@ -69,35 +68,12 @@ void ParseTokenList(const std::string& json,
   //  }
   // }
 
-  // Sanitize JSON
-  data_decoder::JsonSanitizer::Sanitize(
-      std::move(json),
-      base::BindOnce(&OnSanitizedTokenList, std::move(token_list_map), coin,
-                     std::move(callback)));
-}
-
-void OnSanitizedTokenList(TokenListMap* token_list_map,
-                          mojom::CoinType coin,
-                          ParseTokenListCallback callback,
-                          data_decoder::JsonSanitizer::Result result) {
-  if (result.error) {
-    VLOG(1) << "TokenList JSON validation error:" << *result.error;
-    std::move(callback).Run(false);
-    return;
-  }
-
-  std::string json;
-  if (result.value.has_value()) {
-    json = result.value.value();
-  }
-
   absl::optional<base::Value> records_v =
       base::JSONReader::Read(json, base::JSON_PARSE_CHROMIUM_EXTENSIONS |
                                        base::JSONParserOptions::JSON_PARSE_RFC);
   if (!records_v || !records_v->is_dict()) {
     VLOG(1) << "Invalid response, could not parse JSON, JSON is: " << json;
-    std::move(callback).Run(false);
-    return;
+    return false;
   }
 
   const auto& response_dict = records_v->GetDict();
@@ -107,8 +83,7 @@ void OnSanitizedTokenList(TokenListMap* token_list_map,
     const auto* blockchain_token_value =
         blockchain_token_value_pair.second.GetIfDict();
     if (!blockchain_token_value) {
-      std::move(callback).Run(false);
-      return;
+      return false;
     }
 
     absl::optional<bool> is_erc20_opt =
@@ -131,8 +106,7 @@ void OnSanitizedTokenList(TokenListMap* token_list_map,
     }
     if (!ParseResultFromDict(blockchain_token_value, "name",
                              &blockchain_token->name)) {
-      std::move(callback).Run(false);
-      return;
+      return false;
     }
     ParseResultFromDict(blockchain_token_value, "logo",
                         &blockchain_token->logo);
@@ -159,7 +133,7 @@ void OnSanitizedTokenList(TokenListMap* token_list_map,
     (*token_list_map)[GetTokenListKey(coin, blockchain_token->chain_id)]
         .push_back(std::move(blockchain_token));
   }
-  std::move(callback).Run(true);
+  return true;
 }
 
 std::string GetTokenListKey(mojom::CoinType coin, const std::string& chain_id) {
