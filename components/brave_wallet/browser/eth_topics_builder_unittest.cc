@@ -14,7 +14,7 @@ namespace brave_wallet {
 TEST(EthGetLogsTopicBuilderTest, MakeAssetDiscoveryTopics) {
   // Invalid address
   base::Value::List topics;
-  ASSERT_FALSE(MakeAssetDiscoveryTopics({"invalid address"}, &topics));
+  EXPECT_FALSE(MakeAssetDiscoveryTopics({"invalid address"}, &topics));
 
   // Valid
   topics = base::Value::List();
