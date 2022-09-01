@@ -160,7 +160,6 @@ void OnSanitizedTokenList(TokenListMap* token_list_map,
         .push_back(std::move(blockchain_token));
   }
   std::move(callback).Run(true);
-  return;
 }
 
 std::string GetTokenListKey(mojom::CoinType coin, const std::string& chain_id) {
