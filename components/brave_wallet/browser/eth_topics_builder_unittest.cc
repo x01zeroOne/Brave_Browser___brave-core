@@ -17,7 +17,7 @@ TEST(EthGetLogsTopicBuilderTest, MakeAssetDiscoveryTopics) {
   EXPECT_FALSE(MakeAssetDiscoveryTopics({"invalid address"}, &topics));
 
   // Valid
-  topics = base::Value::List();
+  topics.clear();
   ASSERT_TRUE(MakeAssetDiscoveryTopics(
       {"0x16e4476c8fDDc552e3b1C4b8b56261d85977fE52"}, &topics));
   EXPECT_EQ(topics[0], base::Value("0xddf252ad"));
