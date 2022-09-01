@@ -9,7 +9,6 @@
 #include <string>
 #include <vector>
 #include "base/values.h"
-#include "brave/components/brave_wallet/common/brave_wallet_types.h"
 
 namespace brave_wallet {
 
