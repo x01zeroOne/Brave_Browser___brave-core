@@ -779,7 +779,7 @@ class JsonRpcServiceUnitTest : public testing::Test {
     run_loop.Run();
   }
 
-  void TestDiscoverAssets(
+  void TestDiscoverAssetsInternal(
       const std::string& chain_id,
       const std::vector<std::string>& account_addresses,
       const std::vector<std::string>& expected_token_contract_addresses,
@@ -788,22 +788,33 @@ class JsonRpcServiceUnitTest : public testing::Test {
       const std::string& expected_error_message) {
     base::RunLoop run_loop;
     std::vector<mojom::BlockchainTokenPtr> expected_tokens;
-    json_rpc_service_->DiscoverAssets(
-        chain_id, account_addresses, std::move(existing_user_assets),
-        base::BindLambdaForTesting(
-            [&](const std::vector<mojom::BlockchainTokenPtr> tokens,
-                mojom::ProviderError error, const std::string& error_message) {
-              EXPECT_EQ(tokens.size(),
-                        expected_token_contract_addresses.size());
-              for (size_t i = 0; i < expected_token_contract_addresses.size();
-                   i++) {
-                EXPECT_EQ(tokens[i]->contract_address,
-                          expected_token_contract_addresses[i]);
-              }
-              EXPECT_EQ(error, expected_error);
-              EXPECT_EQ(error_message, expected_error_message);
-              run_loop.Quit();
-            }));
+    json_rpc_service_->DiscoverAssetsInternal(
+        chain_id, account_addresses,
+        base::BindLambdaForTesting([&](const std::vector<
+                                           mojom::BlockchainTokenPtr> tokens,
+                                       mojom::ProviderError error,
+                                       const std::string& error_message) {
+          VLOG(0) << "TestDiscoverAssetsInternal 0";
+          ASSERT_EQ(tokens.size(), expected_token_contract_addresses.size());
+          VLOG(0) << "TestDiscoverAssetsInternal 1";
+          for (size_t i = 0; i < expected_token_contract_addresses.size();
+               i++) {
+            VLOG(0) << "TestDiscoverAssetsInternal 1.1 "
+                       "expected_token_contract_addresses[i] "
+                    << expected_token_contract_addresses[i];
+            VLOG(0)
+                << "TestDiscoverAssetsInternal 1.1 tokens[i]->contract_address "
+                << tokens[i]->contract_address;
+            EXPECT_EQ(tokens[i]->contract_address,
+                      expected_token_contract_addresses[i]);
+          }
+          VLOG(0) << "TestDiscoverAssetsInternal 2";
+          EXPECT_EQ(error, expected_error);
+          VLOG(0) << "TestDiscoverAssetsInternal 3";
+          EXPECT_EQ(error_message, expected_error_message);
+          VLOG(0) << "TestDiscoverAssetsInternal 4";
+          run_loop.Quit();
+        }));
     run_loop.Run();
   }
 
@@ -3329,21 +3340,22 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
   std::string response;
 
   // Unsupported chainId is not supported
-  TestDiscoverAssets(
+  TestDiscoverAssetsInternal(
       mojom::kPolygonMainnetChainId,
       {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"}, {}, {},
       mojom::ProviderError::kMethodNotSupported,
       l10n_util::GetStringUTF8(IDS_WALLET_METHOD_NOT_SUPPORTED_ERROR));
 
   // Empty address is invalid
-  TestDiscoverAssets(mojom::kMainnetChainId, {}, {}, {},
-                     mojom::ProviderError::kInvalidParams,
-                     l10n_util::GetStringUTF8(IDS_WALLET_INVALID_PARAMETERS));
+  TestDiscoverAssetsInternal(
+      mojom::kMainnetChainId, {}, {}, {}, mojom::ProviderError::kInvalidParams,
+      l10n_util::GetStringUTF8(IDS_WALLET_INVALID_PARAMETERS));
 
   // Invalid address is invalid
-  TestDiscoverAssets(mojom::kMainnetChainId, {"0xinvalid"}, {}, {},
-                     mojom::ProviderError::kInvalidParams,
-                     l10n_util::GetStringUTF8(IDS_WALLET_INVALID_PARAMETERS));
+  TestDiscoverAssetsInternal(
+      mojom::kMainnetChainId, {"0xinvalid"}, {}, {},
+      mojom::ProviderError::kInvalidParams,
+      l10n_util::GetStringUTF8(IDS_WALLET_INVALID_PARAMETERS));
 
   // Invalid json response triggers parsing error
   auto expected_network =
@@ -3362,17 +3374,17 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
   blockchain_registry->UpdateTokenList(std::move(token_list_map));
   SetInterceptor(expected_network, "eth_getLogs", "",
                  "invalid eth_getLogs response");
-  TestDiscoverAssets(mojom::kMainnetChainId,
-                     {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"}, {}, {},
-                     mojom::ProviderError::kParsingError,
-                     l10n_util::GetStringUTF8(IDS_WALLET_PARSING_ERROR));
+  TestDiscoverAssetsInternal(
+      mojom::kMainnetChainId, {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"},
+      {}, {}, mojom::ProviderError::kParsingError,
+      l10n_util::GetStringUTF8(IDS_WALLET_PARSING_ERROR));
 
   // Limit exceeded response triggers parsing error
   SetLimitExceededJsonErrorResponse();
-  TestDiscoverAssets(mojom::kMainnetChainId,
-                     {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"}, {}, {},
-                     mojom::ProviderError::kParsingError,
-                     l10n_util::GetStringUTF8(IDS_WALLET_PARSING_ERROR));
+  TestDiscoverAssetsInternal(
+      mojom::kMainnetChainId, {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"},
+      {}, {}, mojom::ProviderError::kParsingError,
+      l10n_util::GetStringUTF8(IDS_WALLET_PARSING_ERROR));
 
   // Invalid logs (missing addresses) triggers parsing error
   get_logs_response = R"(
@@ -3396,10 +3408,10 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
    ]
   })";
   SetInterceptor(expected_network, "eth_getLogs", "", response);
-  TestDiscoverAssets(mojom::kMainnetChainId,
-                     {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"}, {}, {},
-                     mojom::ProviderError::kParsingError,
-                     l10n_util::GetStringUTF8(IDS_WALLET_PARSING_ERROR));
+  TestDiscoverAssetsInternal(
+      mojom::kMainnetChainId, {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"},
+      {}, {}, mojom::ProviderError::kParsingError,
+      l10n_util::GetStringUTF8(IDS_WALLET_PARSING_ERROR));
 
   // All valid
   json = R"(
@@ -3451,7 +3463,7 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
       "bat.png", true, false, "BAT", 18, true, "", "", "0x1",
       mojom::CoinType::ETH);
   user_assets.push_back(std::move(user_asset));
-  TestDiscoverAssets(
+  TestDiscoverAssetsInternal(
       mojom::kMainnetChainId, {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"},
       {"0x6b175474e89094c44da98b954eedeac495271d0f"}, std::move(user_assets),
       mojom::ProviderError::kSuccess, "");

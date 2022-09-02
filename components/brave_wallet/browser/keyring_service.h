@@ -37,7 +37,6 @@ namespace brave_wallet {
 class EthTransaction;
 class FilTransaction;
 class KeyringServiceUnitTest;
-class KeyringServiceUnitTest2;
 class EthereumProviderImplUnitTest;
 class SolanaProviderImplUnitTest;
 class FilecoinKeyring;
@@ -388,8 +387,6 @@ class KeyringService : public KeyedService, public mojom::KeyringService {
   void MaybeMigratePBKDF2Iterations(const std::string& password);
 
   void NotifyAccountsChanged();
-  void NotifyAccountsAdded(
-      const std::vector<mojom::AccountInfoPtr> account_infos);
   void StopAutoLockTimer();
   void ResetAutoLockTimer();
   void OnAutoLockPreferenceChanged();

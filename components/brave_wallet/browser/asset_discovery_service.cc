@@ -25,14 +25,15 @@ AssetDiscoveryService::AssetDiscoveryService(BraveWalletService* wallet_service,
   DCHECK(wallet_service_);
   DCHECK(keyring_service_);
   DCHECK(json_rpc_service_);
-  keyring_service_->AddObserver(
-      keyring_service_observer_receiver_.BindNewPipeAndPassRemote());
+  // keyring_service_->AddObserver(
+  //     keyring_service_observer_receiver_.BindNewPipeAndPassRemote());
 }
 
 AssetDiscoveryService::~AssetDiscoveryService() = default;
 
 // KeyringServiceObserver
-void AssetDiscoveryService::AccountsAdded(
+// void AssetDiscoveryService::AccountsAdded(
+void AssetDiscoveryService::DiscoverAssets(
     const std::vector<mojom::AccountInfoPtr> account_infos) {
   std::vector<std::string> addresses;
   for (const auto& account_info : account_infos) {
@@ -59,9 +60,6 @@ void AssetDiscoveryService::OnGetUserAssets(
   auto internal_callback =
       base::BindOnce(&AssetDiscoveryService::OnAssetsDiscovered,
                      weak_ptr_factory_.GetWeakPtr());
-  json_rpc_service_->DiscoverAssets(mojom::kMainnetChainId, addresses,
-                                    std::move(user_assets),
-                                    std::move(internal_callback));
 }
 
 void AssetDiscoveryService::OnAssetsDiscovered(

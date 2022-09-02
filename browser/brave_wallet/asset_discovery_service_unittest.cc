@@ -34,9 +34,9 @@
 
 namespace {
 
-const char kMnemonic[] =
-    "divide cruise upon flag harsh carbon filter merit once advice bright "
-    "drive";
+// const char kMnemonic[] =
+//     "divide cruise upon flag harsh carbon filter merit once advice bright "
+//     "drive";
 const char kPassword[] = "password";
 
 }  // namespace
@@ -152,191 +152,212 @@ class AssetDiscoveryServiceUnitTest : public testing::Test {
   data_decoder::test::InProcessDataDecoder in_process_data_decoder_;
 };
 
-TEST_F(AssetDiscoveryServiceUnitTest, AccountsAdded) {
-  // Add disoverable and non-discoverable tokens to registry:
-  //   * Discoverable: Mainnet Dai, Mainnet USDC, Mainnet USDC
-  //   * Non-discoverable: Mainnet LilNouns (an ERC721), and Avanche JOE
-  auto* blockchain_registry = BlockchainRegistry::GetInstance();
-  TokenListMap token_list_map;
-  std::string json = R"( {
-      "0x6b175474e89094c44da98b954eedeac495271d0f": {
-        "name": "Dai Stablecoin",
-        "logo": "dai.svg",
-        "erc20": true,
-        "symbol": "DAI",
-        "decimals": 18,
-        "chainId": "0x1"
-      },
-      "0x4b10701Bfd7BFEdc47d50562b76b436fbB5BdB3B": {
-        "name": "Lil Nouns",
-        "logo": "lilnouns.svg",
-        "erc20": false,
-        "erc721": true,
-        "symbol": "LilNouns",
-        "chainId": "0x1"
-      },
-      "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd": {
-        "name": "JoeToken",
-        "logo": "joe.svg",
-        "erc20": true,
-        "symbol": "JOE",
-        "decimals": 18,
-        "chainId": "0xa86a"
-      },
-      "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48": {
-        "name": "USD Coin",
-        "logo": "usdc.svg",
-        "erc20": true,
-        "symbol": "USDC",
-        "decimals": 18,
-        "chainId": "0x1"
-      },
-      "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": {
-        "name": "Wrapped Eth",
-        "logo": "weth.svg",
-        "erc20": true,
-        "symbol": "WETH",
-        "decimals": 18,
-        "chainId": "0x1"
-      }
-    })";
-  ASSERT_TRUE(ParseTokenList(json, &token_list_map, mojom::CoinType::ETH));
-  blockchain_registry->UpdateTokenList(std::move(token_list_map));
+// TEST_F(AssetDiscoveryServiceUnitTest, DiscoverAssets) {
+//   // Add disoverable and non-discoverable tokens to registry:
+//   //   * Discoverable: Mainnet Dai, Mainnet USDC, Mainnet USDC
+//   //   * Non-discoverable: Mainnet LilNouns (an ERC721), and Avanche JOE
+//   auto* blockchain_registry = BlockchainRegistry::GetInstance();
+//   TokenListMap token_list_map;
+//   std::string json = R"( {
+//       "0x6b175474e89094c44da98b954eedeac495271d0f": {
+//         "name": "Dai Stablecoin",
+//         "logo": "dai.svg",
+//         "erc20": true,
+//         "symbol": "DAI",
+//         "decimals": 18,
+//         "chainId": "0x1"
+//       },
+//       "0x4b10701Bfd7BFEdc47d50562b76b436fbB5BdB3B": {
+//         "name": "Lil Nouns",
+//         "logo": "lilnouns.svg",
+//         "erc20": false,
+//         "erc721": true,
+//         "symbol": "LilNouns",
+//         "chainId": "0x1"
+//       },
+//       "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd": {
+//         "name": "JoeToken",
+//         "logo": "joe.svg",
+//         "erc20": true,
+//         "symbol": "JOE",
+//         "decimals": 18,
+//         "chainId": "0xa86a"
+//       },
+//       "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48": {
+//         "name": "USD Coin",
+//         "logo": "usdc.svg",
+//         "erc20": true,
+//         "symbol": "USDC",
+//         "decimals": 18,
+//         "chainId": "0x1"
+//       },
+//       "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": {
+//         "name": "Wrapped Eth",
+//         "logo": "weth.svg",
+//         "erc20": true,
+//         "symbol": "WETH",
+//         "decimals": 18,
+//         "chainId": "0x1"
+//       }
+//     })";
+//   ASSERT_TRUE(ParseTokenList(json, &token_list_map, mojom::CoinType::ETH));
+//   blockchain_registry->UpdateTokenList(std::move(token_list_map));
 
-  // Add DAI, LilNoun, and Joe transfer events for user address,
-  // 0xf81229FE54D8a20fBc1e1e2a3451D1c7489437Db to ethLogs response
-  // so it is discovered
-  std::string eth_get_logs_response = R"(
-   {"jsonrpc": "2.0",
-    "id": 1,
-    "result": [
-      {
-        "address": "0x6b175474e89094c44da98b954eedeac495271d0f",
-        "blockHash": "0x2961ceb6c16bab72a55f79e394a35f2bf1c62b30446e3537280f7c22c3115e6e",
-        "blockNumber": "0xd6464c",
-        "data": "0x00000000000000000000000000000000000000000000000555aff1f0fae8c000",
-        "logIndex": "0x159",
-        "removed": false,
-        "topics": [
-          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-          "0x000000000000000000000000503828976d22510aad0201ac7ec88293211d23da",
-          "0x000000000000000000000000f81229FE54D8a20fBc1e1e2a3451D1c7489437Db"
-        ],
-        "transactionHash": "0x2e652b70966c6a05f4b3e68f20d6540b7a5ab712385464a7ccf62774d39b7066",
-        "transactionIndex": "0x9f"
-      },
-      {
-        "address": "0x4b10701Bfd7BFEdc47d50562b76b436fbB5BdB3B",
-        "blockHash": "0x2961ceb6c16bab72a55f79e394a35f2bf1c62b30446e3537280f7c22c3115e6e",
-        "blockNumber": "0xd6464c",
-        "data": "0x00000000000000000000000000000000000000000000000555aff1f0fae8c000",
-        "logIndex": "0x159",
-        "removed": false,
-        "topics": [
-          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-          "0x000000000000000000000000503828976d22510aad0201ac7ec88293211d23da",
-          "0x000000000000000000000000f81229FE54D8a20fBc1e1e2a3451D1c7489437Db"
-        ],
-        "transactionHash": "0x2e652b70966c6a05f4b3e68f20d6540b7a5ab712385464a7ccf62774d39b7066",
-        "transactionIndex": "0x9f"
-      },
-      {
-        "address": "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd",
-        "blockHash": "0x2961ceb6c16bab72a55f79e394a35f2bf1c62b30446e3537280f7c22c3115e6e",
-        "blockNumber": "0xd6464c",
-        "data": "0x00000000000000000000000000000000000000000000000555aff1f0fae8c000",
-        "logIndex": "0x159",
-        "removed": false,
-        "topics": [
-          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-          "0x000000000000000000000000503828976d22510aad0201ac7ec88293211d23da",
-          "0x000000000000000000000000f81229FE54D8a20fBc1e1e2a3451D1c7489437Db"
-        ],
-        "transactionHash": "0x2e652b70966c6a05f4b3e68f20d6540b7a5ab712385464a7ccf62774d39b7066",
-        "transactionIndex": "0x9f"
-      },
-    ]
-   })";
-  SetInterceptor(eth_get_logs_response);
+//   // Add DAI, LilNoun, and Joe transfer events for user address,
+//   // 0xf81229FE54D8a20fBc1e1e2a3451D1c7489437Db to ethLogs response
+//   // so it is discovered
+//   std::string eth_get_logs_response = R"(
+//    {"jsonrpc": "2.0",
+//     "id": 1,
+//     "result": [
+//       {
+//         "address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+//         "blockHash":
+//         "0x2961ceb6c16bab72a55f79e394a35f2bf1c62b30446e3537280f7c22c3115e6e",
+//         "blockNumber": "0xd6464c",
+//         "data":
+//         "0x00000000000000000000000000000000000000000000000555aff1f0fae8c000",
+//         "logIndex": "0x159",
+//         "removed": false,
+//         "topics": [
+//           "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+//           "0x000000000000000000000000503828976d22510aad0201ac7ec88293211d23da",
+//           "0x000000000000000000000000f81229FE54D8a20fBc1e1e2a3451D1c7489437Db"
+//         ],
+//         "transactionHash":
+//         "0x2e652b70966c6a05f4b3e68f20d6540b7a5ab712385464a7ccf62774d39b7066",
+//         "transactionIndex": "0x9f"
+//       },
+//       {
+//         "address": "0x4b10701Bfd7BFEdc47d50562b76b436fbB5BdB3B",
+//         "blockHash":
+//         "0x2961ceb6c16bab72a55f79e394a35f2bf1c62b30446e3537280f7c22c3115e6e",
+//         "blockNumber": "0xd6464c",
+//         "data":
+//         "0x00000000000000000000000000000000000000000000000555aff1f0fae8c000",
+//         "logIndex": "0x159",
+//         "removed": false,
+//         "topics": [
+//           "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+//           "0x000000000000000000000000503828976d22510aad0201ac7ec88293211d23da",
+//           "0x000000000000000000000000f81229FE54D8a20fBc1e1e2a3451D1c7489437Db"
+//         ],
+//         "transactionHash":
+//         "0x2e652b70966c6a05f4b3e68f20d6540b7a5ab712385464a7ccf62774d39b7066",
+//         "transactionIndex": "0x9f"
+//       },
+//       {
+//         "address": "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd",
+//         "blockHash":
+//         "0x2961ceb6c16bab72a55f79e394a35f2bf1c62b30446e3537280f7c22c3115e6e",
+//         "blockNumber": "0xd6464c",
+//         "data":
+//         "0x00000000000000000000000000000000000000000000000555aff1f0fae8c000",
+//         "logIndex": "0x159",
+//         "removed": false,
+//         "topics": [
+//           "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+//           "0x000000000000000000000000503828976d22510aad0201ac7ec88293211d23da",
+//           "0x000000000000000000000000f81229FE54D8a20fBc1e1e2a3451D1c7489437Db"
+//         ],
+//         "transactionHash":
+//         "0x2e652b70966c6a05f4b3e68f20d6540b7a5ab712385464a7ccf62774d39b7066",
+//         "transactionIndex": "0x9f"
+//       },
+//     ]
+//    })";
+//   SetInterceptor(eth_get_logs_response);
 
-  // RestoreWallet adds account 0xf81229FE54D8a20fBc1e1e2a3451D1c7489437Db and
-  // triggers asset discovery
-  ASSERT_TRUE(RestoreWallet(kMnemonic, keyring_service_));
-  base::RunLoop().RunUntilIdle();
+//   // RestoreWallet adds account 0xf81229FE54D8a20fBc1e1e2a3451D1c7489437Db
+//   and
+//   // triggers asset discovery
+//   ASSERT_TRUE(RestoreWallet(kMnemonic, keyring_service_));
+//   base::RunLoop().RunUntilIdle();
 
-  // DAI should have been added to user assets, LilNoun and JOE should not have
-  std::vector<mojom::BlockchainTokenPtr> user_assets;
-  GetUserAssets(mojom::kMainnetChainId, mojom::CoinType::ETH, &user_assets);
-  EXPECT_EQ(user_assets.size(), 3u);  // BAT and ETH (preloaded) + DAI = 3u
-  EXPECT_EQ(user_assets[2]->name, "Dai Stablecoin");
+//   // DAI should have been added to user assets, LilNoun and JOE should not
+//   have std::vector<mojom::BlockchainTokenPtr> user_assets;
+//   GetUserAssets(mojom::kMainnetChainId, mojom::CoinType::ETH, &user_assets);
+//   EXPECT_EQ(user_assets.size(), 3u);  // BAT and ETH (preloaded) + DAI = 3u
+//   EXPECT_EQ(user_assets[2]->name, "Dai Stablecoin");
 
-  // Add WETH and USDC Transfer events to eth_getLogs response
-  // for next accounts to be restored
-  // 0x00c0f72E601C31DEb7890612cB92Ac0Fb7090EB0, and
-  // 0xc103691F9E860104E5A0605449005Ebf51450258 respectively
-  eth_get_logs_response = R"(
-   {"jsonrpc": "2.0",
-    "id": 1,
-    "result": [
-      {
-        "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-        "blockHash": "0x2961ceb6c16bab72a55f79e394a35f2bf1c62b30446e3537280f7c22c3115e6e",
-        "blockNumber": "0xd6464c",
-        "data": "0x00000000000000000000000000000000000000000000000555aff1f0fae8c000",
-        "logIndex": "0x159",
-        "removed": false,
-        "topics": [
-          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-          "0x000000000000000000000000503828976d22510aad0201ac7ec88293211d23da",
-          "0x00000000000000000000000000c0f72E601C31DEb7890612cB92Ac0Fb7090EB0",
-        ],
-        "transactionHash": "0x2e652b70966c6a05f4b3e68f20d6540b7a5ab712385464a7ccf62774d39b7066",
-        "transactionIndex": "0x9f"
-      },
-      {
-        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-        "blockHash": "0x2961ceb6c16bab72a55f79e394a35f2bf1c62b30446e3537280f7c22c3115e6e",
-        "blockNumber": "0xd6464c",
-        "data": "0x00000000000000000000000000000000000000000000000555aff1f0fae8c000",
-        "logIndex": "0x159",
-        "removed": false,
-        "topics": [
-          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-          "0x000000000000000000000000503828976d22510aad0201ac7ec88293211d23da",
-          "0x000000000000000000000000c103691F9E860104E5A0605449005Ebf51450258"
-        ],
-        "transactionHash": "0x2e652b70966c6a05f4b3e68f20d6540b7a5ab712385464a7ccf62774d39b7066",
-        "transactionIndex": "0x9f"
-      }
-    ]
-   })";
-  SetInterceptor(eth_get_logs_response);
-  keyring_service_->AddAccountsWithDefaultName(2);
-  base::RunLoop().RunUntilIdle();
-  GetUserAssets(mojom::kMainnetChainId, mojom::CoinType::ETH, &user_assets);
-  EXPECT_EQ(user_assets.size(), 5u);  // BAT and ETH (preloaded) + DAI = 3u
-  EXPECT_EQ(user_assets[3]->name, "USD Coin");
-  EXPECT_EQ(user_assets[4]->name, "Wrapped Eth");
+//   // Add WETH and USDC Transfer events to eth_getLogs response
+//   // for next accounts to be restored
+//   // 0x00c0f72E601C31DEb7890612cB92Ac0Fb7090EB0, and
+//   // 0xc103691F9E860104E5A0605449005Ebf51450258 respectively
+//   eth_get_logs_response = R"(
+//    {"jsonrpc": "2.0",
+//     "id": 1,
+//     "result": [
+//       {
+//         "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+//         "blockHash":
+//         "0x2961ceb6c16bab72a55f79e394a35f2bf1c62b30446e3537280f7c22c3115e6e",
+//         "blockNumber": "0xd6464c",
+//         "data":
+//         "0x00000000000000000000000000000000000000000000000555aff1f0fae8c000",
+//         "logIndex": "0x159",
+//         "removed": false,
+//         "topics": [
+//           "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+//           "0x000000000000000000000000503828976d22510aad0201ac7ec88293211d23da",
+//           "0x00000000000000000000000000c0f72E601C31DEb7890612cB92Ac0Fb7090EB0",
+//         ],
+//         "transactionHash":
+//         "0x2e652b70966c6a05f4b3e68f20d6540b7a5ab712385464a7ccf62774d39b7066",
+//         "transactionIndex": "0x9f"
+//       },
+//       {
+//         "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+//         "blockHash":
+//         "0x2961ceb6c16bab72a55f79e394a35f2bf1c62b30446e3537280f7c22c3115e6e",
+//         "blockNumber": "0xd6464c",
+//         "data":
+//         "0x00000000000000000000000000000000000000000000000555aff1f0fae8c000",
+//         "logIndex": "0x159",
+//         "removed": false,
+//         "topics": [
+//           "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+//           "0x000000000000000000000000503828976d22510aad0201ac7ec88293211d23da",
+//           "0x000000000000000000000000c103691F9E860104E5A0605449005Ebf51450258"
+//         ],
+//         "transactionHash":
+//         "0x2e652b70966c6a05f4b3e68f20d6540b7a5ab712385464a7ccf62774d39b7066",
+//         "transactionIndex": "0x9f"
+//       }
+//     ]
+//    })";
+//   SetInterceptor(eth_get_logs_response);
+//   keyring_service_->AddAccountsWithDefaultName(2);
+//   base::RunLoop().RunUntilIdle();
+//   GetUserAssets(mojom::kMainnetChainId, mojom::CoinType::ETH, &user_assets);
+//   EXPECT_EQ(user_assets.size(), 5u);  // BAT and ETH (preloaded) + DAI = 3u
+//   EXPECT_EQ(user_assets[3]->name, "USD Coin");
+//   EXPECT_EQ(user_assets[4]->name, "Wrapped Eth");
 
-  // HTTP Timeout should be handled gracefully
-  SetHTTPRequestTimeoutInterceptor();
-  keyring_service_->AddAccountsWithDefaultName(1);
-  base::RunLoop().RunUntilIdle();
-  GetUserAssets(mojom::kMainnetChainId, mojom::CoinType::ETH, &user_assets);
-  EXPECT_EQ(user_assets.size(), 5u);
-  for (auto& asset : user_assets) {
-    EXPECT_TRUE(asset->visible);
-  }
+//   // HTTP Timeout should be handled gracefully
+//   SetHTTPRequestTimeoutInterceptor();
+//   keyring_service_->AddAccountsWithDefaultName(1);
+//   base::RunLoop().RunUntilIdle();
+//   GetUserAssets(mojom::kMainnetChainId, mojom::CoinType::ETH, &user_assets);
+//   EXPECT_EQ(user_assets.size(), 5u);
+//   for (auto& asset : user_assets) {
+//     EXPECT_TRUE(asset->visible);
+//   }
 
-  // TODO(nvonpentz) Adding Solana accounts should not trigger asset discovery
-  // service.AddAccountForKeyring(mojom::kSolanaKeyringId, "Account 99");
-  // base::RunLoop().RunUntilIdle();
-  // GetUserAssets(mojom::kMainnetChainId, mojom::CoinType::ETH, &user_assets);
-  // EXPECT_EQ(user_assets.size(), 5u);
-  // How to assert no request made / JsonRpcService::DiscoverAssets not called?
+//   // TODO(nvonpentz) Adding Solana accounts should not trigger asset
+//   discovery
+//   // service.AddAccountForKeyring(mojom::kSolanaKeyringId, "Account 99");
+//   // base::RunLoop().RunUntilIdle();
+//   // GetUserAssets(mojom::kMainnetChainId, mojom::CoinType::ETH,
+//   &user_assets);
+//   // EXPECT_EQ(user_assets.size(), 5u);
+//   // How to assert no request made / JsonRpcService::DiscoverAssets not
+//   called?
 
-  // TODO(nvonpentz) If asset is already discovered, no request should be made
-  // How to assert no request made / JsonRpcService::DiscoverAssets not called?
-}
+//   // TODO(nvonpentz) If asset is already discovered, no request should be
+//   made
+//   // How to assert no request made / JsonRpcService::DiscoverAssets not
+//   called?
+// }
 
 }  // namespace brave_wallet

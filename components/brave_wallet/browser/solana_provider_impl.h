@@ -127,8 +127,6 @@ class SolanaProviderImpl final : public mojom::SolanaProvider,
   void Unlocked() override;
   void BackedUp() override {}
   void AccountsChanged() override {}
-  void AccountsAdded(
-      const std::vector<mojom::AccountInfoPtr> account_infos) override {}
   void AutoLockMinutesChanged() override {}
   void SelectedAccountChanged(mojom::CoinType coin) override;
 

@@ -312,9 +312,15 @@ class JsonRpcService : public KeyedService, public mojom::JsonRpcService {
       mojom::ProviderError error,
       const std::string& error_message)>;
   void DiscoverAssets(const std::string& chain_id,
-                      const std::vector<std::string>& account_addresses,
-                      std::vector<mojom::BlockchainTokenPtr> user_assets,
-                      DiscoverAssetsCallback callback);
+                      const std::vector<std::string>& account_addresses);
+  // std::vector<mojom::BlockchainTokenPtr> user_assets);
+  // DiscoverAssetsCallback callback);
+
+  void DiscoverAssetsInternal(
+      const std::string& chain_id,
+      const std::vector<std::string>& account_addresses,
+      // std::vector<mojom::BlockchainTokenPtr> user_assets,
+      DiscoverAssetsCallback callback);
 
   void OnGetAllTokensDiscoverAssets(
       const std::string& chain_id,
@@ -323,11 +329,13 @@ class JsonRpcService : public KeyedService, public mojom::JsonRpcService {
       DiscoverAssetsCallback callback,
       std::vector<mojom::BlockchainTokenPtr> token_list);
 
-  void OnGetTransferLogs(
-      DiscoverAssetsCallback callback,
-      const int status,
-      const std::string& body,
-      const base::flat_map<std::string, std::string>& headers);
+  void OnGetTransferLogs(DiscoverAssetsCallback callback,
+                         APIRequestResult api_request_result);
+
+  void OnDiscoverAssetsCompleted(
+      std::vector<mojom::BlockchainTokenPtr> discovered_assets,
+      mojom::ProviderError error,
+      const std::string& error_message);
 
   // Resets things back to the original state of BraveWalletService.
   // To be used when the Wallet is reset / erased

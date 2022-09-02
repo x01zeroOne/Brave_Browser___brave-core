@@ -88,6 +88,13 @@ class BraveWalletService : public KeyedService,
   void AddObserver(::mojo::PendingRemote<mojom::BraveWalletServiceObserver>
                        observer) override;
 
+  static std::vector<mojom::BlockchainTokenPtr> GetUserAssets(
+      const std::string& chain_id,
+      mojom::CoinType coin,
+      PrefService* prefs);
+  static bool AddUserAsset(mojom::BlockchainTokenPtr token, PrefService* prefs);
+  // static bool AddUserAsset(mojom::BlockchainTokenPtr token);
+
   void GetUserAssets(const std::string& chain_id,
                      mojom::CoinType coin,
                      GetUserAssetsCallback callback) override;

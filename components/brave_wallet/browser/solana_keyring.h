@@ -22,7 +22,7 @@ class SolanaKeyring : public HDKeyring {
 
   void ConstructRootHDKey(const std::vector<uint8_t>& seed,
                           const std::string& hd_path) override;
-  std::vector<size_t> AddAccounts(size_t number) override;
+  void AddAccounts(size_t number) override;
 
   std::string ImportAccount(const std::vector<uint8_t>& keypair) override;
 
