@@ -315,7 +315,6 @@ class KeyringService : public KeyedService, public mojom::KeyringService {
   friend class EthTxManagerUnitTest;
   friend class FilTxManagerUnitTest;
   friend class KeyringServiceUnitTest;
-  friend class AssetDiscoveryServiceUnitTest;
 
   absl::optional<std::string> FindImportedFilecoinKeyringId(
       const std::string& address) const;

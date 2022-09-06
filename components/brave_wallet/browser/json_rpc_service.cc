@@ -2203,7 +2203,6 @@ void JsonRpcService::OnGetAllTokensDiscoverAssets(
 
   auto internal_callback =
       base::BindOnce(&JsonRpcService::OnGetTransferLogs,
-                     // weak_ptr_factory_.GetWeakPtr());
                      weak_ptr_factory_.GetWeakPtr(), std::move(callback));
 
   VLOG(1) << "JsonRpcService::OnGetAllTokensDiscoverAssets 1";

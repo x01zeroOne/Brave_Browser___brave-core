@@ -754,9 +754,7 @@ void KeyringService::RestoreWallet(const std::string& mnemonic,
                                    RestoreWalletCallback callback) {
   auto* keyring = RestoreKeyring(mojom::kDefaultKeyringId, mnemonic, password,
                                  is_legacy_brave_wallet);
-  VLOG(0) << "KeyringService::RestoreWallet 0";
   if (keyring && !keyring->GetAccountsNumber()) {
-    VLOG(0) << "KeyringService::RestoreWallet 1";
     const auto address =
         AddAccountForKeyring(mojom::kDefaultKeyringId, GetAccountName(1));
     if (address) {
@@ -1327,18 +1325,15 @@ absl::optional<std::string> KeyringService::ImportAccountForKeyring(
     const std::string& keyring_id,
     const std::string& account_name,
     const std::vector<uint8_t>& private_key) {
-  VLOG(0) << "KeyringService::ImportAccountForKeyring 0";
   auto* keyring = GetHDKeyringById(keyring_id);
   if (!keyring) {
     return absl::nullopt;
   }
 
-  VLOG(0) << "KeyringService::ImportAccountForKeyring 1";
   const std::string address = keyring->ImportAccount(private_key);
   if (address.empty()) {
     return absl::nullopt;
   }
-  VLOG(0) << "KeyringService::ImportAccountForKeyring 2";
   std::vector<uint8_t> encrypted_private_key = encryptors_[keyring_id]->Encrypt(
       private_key, GetOrCreateNonceForKeyring(keyring_id));
   ImportedAccountInfo info(account_name, address,
@@ -1349,7 +1344,6 @@ absl::optional<std::string> KeyringService::ImportAccountForKeyring(
   SetSelectedAccountForCoinSilently(GetCoinForKeyring(keyring_id), address);
   SetSelectedCoin(prefs_, GetCoinForKeyring(keyring_id));
 
-  VLOG(0) << "!!!! KeyringService::ImportAccountForKeyring";
   json_rpc_service_->DiscoverAssets(mojom::kMainnetChainId, {address});
   NotifyAccountsChanged();
 

@@ -11,7 +11,6 @@
 #include "base/test/task_environment.h"
 #include "brave/components/brave_wallet/browser/blockchain_list_parser.h"
 #include "brave/components/brave_wallet/browser/blockchain_registry.h"
-#include "services/data_decoder/public/cpp/test_support/in_process_data_decoder.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -191,7 +190,6 @@ std::vector<std::string> GetChainIds(
 
 TEST(BlockchainRegistryUnitTest, GetAllTokens) {
   base::test::TaskEnvironment task_environment;
-  data_decoder::test::InProcessDataDecoder in_process_data_decoder_;
   auto* registry = BlockchainRegistry::GetInstance();
   TokenListMap token_list_map;
   ASSERT_TRUE(
@@ -280,7 +278,6 @@ TEST(BlockchainRegistryUnitTest, GetAllTokens) {
 
 TEST(BlockchainRegistryUnitTest, GetTokenByAddress) {
   base::test::TaskEnvironment task_environment;
-  data_decoder::test::InProcessDataDecoder in_process_data_decoder_;
   auto* registry = BlockchainRegistry::GetInstance();
   TokenListMap token_list_map;
   ASSERT_TRUE(
@@ -345,7 +342,6 @@ TEST(BlockchainRegistryUnitTest, GetTokenByAddress) {
 
 TEST(BlockchainRegistryUnitTest, GetTokenBySymbol) {
   base::test::TaskEnvironment task_environment;
-  data_decoder::test::InProcessDataDecoder in_process_data_decoder_;
   auto* registry = BlockchainRegistry::GetInstance();
   TokenListMap token_list_map;
   ASSERT_TRUE(

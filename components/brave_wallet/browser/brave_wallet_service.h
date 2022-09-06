@@ -93,7 +93,6 @@ class BraveWalletService : public KeyedService,
       mojom::CoinType coin,
       PrefService* prefs);
   static bool AddUserAsset(mojom::BlockchainTokenPtr token, PrefService* prefs);
-  // static bool AddUserAsset(mojom::BlockchainTokenPtr token);
 
   void GetUserAssets(const std::string& chain_id,
                      mojom::CoinType coin,

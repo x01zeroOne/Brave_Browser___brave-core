@@ -313,14 +313,10 @@ class JsonRpcService : public KeyedService, public mojom::JsonRpcService {
       const std::string& error_message)>;
   void DiscoverAssets(const std::string& chain_id,
                       const std::vector<std::string>& account_addresses);
-  // std::vector<mojom::BlockchainTokenPtr> user_assets);
-  // DiscoverAssetsCallback callback);
 
-  void DiscoverAssetsInternal(
-      const std::string& chain_id,
-      const std::vector<std::string>& account_addresses,
-      // std::vector<mojom::BlockchainTokenPtr> user_assets,
-      DiscoverAssetsCallback callback);
+  void DiscoverAssetsInternal(const std::string& chain_id,
+                              const std::vector<std::string>& account_addresses,
+                              DiscoverAssetsCallback callback);
 
   void OnGetAllTokensDiscoverAssets(
       const std::string& chain_id,

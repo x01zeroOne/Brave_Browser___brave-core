@@ -214,7 +214,7 @@ TEST(EthResponseParserUnitTest, ParseEthGetLogs) {
   EXPECT_EQ(
       logs[0].block_hash,
       "0x2961ceb6c16bab72a55f79e394a35f2bf1c62b30446e3537280f7c22c3115e6e");
-  // EXPECT_EQ(logs[0].block_number, 14042700);
+  EXPECT_EQ(logs[0].block_number, static_cast<uint256_t>(14042700));
   EXPECT_EQ(
       logs[0].data,
       "0x00000000000000000000000000000000000000000000000555aff1f0fae8c000");

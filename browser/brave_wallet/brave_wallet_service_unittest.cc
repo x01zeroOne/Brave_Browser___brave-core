@@ -36,7 +36,6 @@
 #include "components/prefs/scoped_user_pref_update.h"
 #include "components/sync_preferences/testing_pref_service_syncable.h"
 #include "content/public/test/browser_task_environment.h"
-#include "services/data_decoder/public/cpp/test_support/in_process_data_decoder.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "ui/base/l10n/l10n_util.h"
 #include "url/origin.h"
@@ -703,9 +702,6 @@ class BraveWalletServiceUnitTest : public testing::Test {
   mojom::BlockchainTokenPtr sol_usdc_;
   mojom::BlockchainTokenPtr sol_tsla_;
   mojom::BlockchainTokenPtr fil_token_;
-
- private:
-  data_decoder::test::InProcessDataDecoder in_process_data_decoder_;
 };
 
 TEST_F(BraveWalletServiceUnitTest, GetUserAssets) {

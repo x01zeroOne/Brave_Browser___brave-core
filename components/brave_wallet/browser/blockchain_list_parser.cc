@@ -13,7 +13,6 @@
 #include "base/strings/stringprintf.h"
 #include "brave/components/brave_wallet/browser/brave_wallet_utils.h"
 #include "brave/components/brave_wallet/common/value_conversion_utils.h"
-#include "services/data_decoder/public/cpp/json_sanitizer.h"
 
 namespace {
 
@@ -133,6 +132,7 @@ bool ParseTokenList(const std::string& json,
     (*token_list_map)[GetTokenListKey(coin, blockchain_token->chain_id)]
         .push_back(std::move(blockchain_token));
   }
+
   return true;
 }
 

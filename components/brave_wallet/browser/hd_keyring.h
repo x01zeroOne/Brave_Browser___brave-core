@@ -32,7 +32,6 @@ class HDKeyring {
                                   const std::string& hd_path);
 
   virtual void AddAccounts(size_t number);
-
   // This will return vector of address of all accounts
   std::vector<std::string> GetAccounts() const;
   absl::optional<size_t> GetAccountIndex(const std::string& address) const;
