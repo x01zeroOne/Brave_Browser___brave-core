@@ -15,7 +15,9 @@
 #include "base/test/bind.h"
 #include "base/test/scoped_feature_list.h"
 #include "brave/browser/brave_wallet/json_rpc_service_factory.h"
+#include "brave/components/brave_wallet/browser/blockchain_registry.h"
 #include "brave/components/brave_wallet/browser/brave_wallet_constants.h"
+#include "brave/components/brave_wallet/browser/brave_wallet_service.h"
 #include "brave/components/brave_wallet/browser/brave_wallet_utils.h"
 #include "brave/components/brave_wallet/browser/fil_transaction.h"
 #include "brave/components/brave_wallet/browser/filecoin_keyring.h"
@@ -25,6 +27,7 @@
 #include "brave/components/brave_wallet/common/brave_wallet.mojom-shared.h"
 #include "brave/components/brave_wallet/common/brave_wallet.mojom.h"
 #include "brave/components/brave_wallet/common/features.h"
+#include "brave/components/brave_wallet/common/hex_utils.h"
 #include "build/build_config.h"
 #include "chrome/browser/prefs/browser_prefs.h"
 #include "chrome/test/base/testing_browser_process.h"
@@ -183,6 +186,17 @@ class KeyringServiceUnitTest : public testing::Test {
         JsonRpcServiceFactory::GetServiceForContext(browser_context());
     json_rpc_service_->SetAPIRequestHelperForTesting(
         shared_url_loader_factory_);
+  }
+
+  void SetInterceptor(const std::string& content,
+                      const std::string expected_header = "") {
+    url_loader_factory_.SetInterceptor(base::BindLambdaForTesting(
+        [&, content, expected_header](const network::ResourceRequest& request) {
+          url_loader_factory_.ClearResponses();
+          std::string header;
+          request.headers.GetHeader("Authorization", &header);
+          url_loader_factory_.AddResponse(request.url.spec(), content);
+        }));
   }
 
   PrefService* GetPrefs() { return profile_->GetPrefs(); }
@@ -4320,115 +4334,289 @@ TEST_F(KeyringServiceEncryptionKeysMigrationUnitTest,
   EXPECT_TRUE(ValidatePassword(&service, "brave"));
 }
 
-// TEST_F(KeyringServiceUnitTest, AccountsAdded) {
-//   base::test::ScopedFeatureList feature_list;
-//   feature_list.InitWithFeatures(
-//       {brave_wallet::features::kBraveWalletFilecoinFeature}, {});
+TEST_F(KeyringServiceUnitTest, DiscoverAssets) {
+  // Verifies JsonRpcService::DiscoverAssets is run as expected in AddAccount
+  // CreateWallet, RestoreWallet, AddHardwareAccounts, and
+  // ImportAccountForKeyring
+  base::test::ScopedFeatureList feature_list;
+  feature_list.InitWithFeatures(
+      {brave_wallet::features::kBraveWalletFilecoinFeature}, {});
 
-//   KeyringService service(json_rpc_service(), GetPrefs());
-//   TestKeyringServiceObserver observer;
-//   service.AddObserver(observer.GetReceiver());
+  KeyringService service(json_rpc_service(), GetPrefs());
+  auto* blockchain_registry = BlockchainRegistry::GetInstance();
+  TokenListMap token_list_map;
+  std::string token_list_json = R"({
+      "0x6b175474e89094c44da98b954eedeac495271d0f": {
+        "name": "Dai Stablecoin",
+        "logo": "dai.svg",
+        "erc20": true,
+        "symbol": "DAI",
+        "decimals": 18,
+        "chainId": "0x1"
+      },
+      "0x4b10701Bfd7BFEdc47d50562b76b436fbB5BdB3B": {
+        "name": "Lil Nouns",
+        "logo": "lilnouns.svg",
+        "erc20": false,
+        "erc721": true,
+        "symbol": "LilNouns",
+        "chainId": "0x1"
+      },
+      "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd": {
+        "name": "JoeToken",
+        "logo": "joe.svg",
+        "erc20": true,
+        "symbol": "JOE",
+        "decimals": 18,
+        "chainId": "0xa86a"
+      },
+      "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48": {
+        "name": "USD Coin",
+        "logo": "usdc.svg",
+        "erc20": true,
+        "symbol": "USDC",
+        "decimals": 18,
+        "chainId": "0x1"
+      },
+      "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": {
+        "name": "Wrapped Eth",
+        "logo": "weth.svg",
+        "erc20": true,
+        "symbol": "WETH",
+        "decimals": 18,
+        "chainId": "0x1"
+      },
+      "0x03ab458634910aad20ef5f1c8ee96f1d6ac54919": {
+        "name": "Rai Reflex Index",
+        "logo": "rai.svg",
+        "erc20": true,
+        "symbol": "RAI",
+        "decimals": 18,
+        "chainId": "0x1"
+      }
+    })";
+  ASSERT_TRUE(
+      ParseTokenList(token_list_json, &token_list_map, mojom::CoinType::ETH));
+  blockchain_registry->UpdateTokenList(std::move(token_list_map));
 
-//   // CreateWallet
-//   absl::optional<std::string> mnemonic_to_be_restored =
-//       CreateWallet(&service, "brave");
-//   ASSERT_TRUE(mnemonic_to_be_restored.has_value());
-//   base::RunLoop().RunUntilIdle();
-//   std::vector<mojom::AccountInfoPtr> account_infos =
-//       service.GetAccountInfosForKeyring(mojom::kDefaultKeyringId);
-//   account_infos =
-//   service.GetAccountInfosForKeyring(mojom::kDefaultKeyringId);
-//   EXPECT_EQ(account_infos.size(), 1u);
-//   observer.TestAccountsAddedEqual(std::move(account_infos));
-//   service.Reset();
-//   observer.Reset();
+  // CreateWallet
+  // TODO(nvonpentz) Not sure how to test CreateWallet since the account is
+  // generated non-deterministically' and we need to mock std::string response =
+  // R"({
+  //   "jsonrpc": "2.0",
+  //     "id": 1,
+  //     "result": [
+  //     ]
+  // })";
+  // SetInterceptor(response);
+  // ASSERT_TRUE(CreateWallet(&service, "brave"));
+  // base::RunLoop().RunUntilIdle();
+  // std::vector<mojom::AccountInfoPtr> account_infos =
+  //     service.GetAccountInfosForKeyring(mojom::kDefaultKeyringId);
+  // std::vector<mojom::BlockchainTokenPtr> user_assets =
+  //     BraveWalletService::GetUserAssets(mojom::kMainnetChainId,
+  //     mojom::CoinType::ETH, GetPrefs());
 
-//   // RestoreWallet
-//   RestoreWallet(&service, *mnemonic_to_be_restored, "brave1", false);
-//   base::RunLoop().RunUntilIdle();
-//   account_infos =
-//   service.GetAccountInfosForKeyring(mojom::kDefaultKeyringId);
-//   EXPECT_EQ(account_infos.size(), 1u);
-//   observer.TestAccountsAddedEqual(std::move(account_infos));
-//   service.Reset();
-//   observer.Reset();
+  // RestoreWallet
+  // Mock an eth_getLogs response that includes
+  //  * DAI transfers to next account,
+  //  0xf81229FE54D8a20fBc1e1e2a3451D1c7489437Db (valid)
+  //  * JOE transfers to next account (invalid, wrong network)
+  //  * LilNouns transfers to next account (invalid, not an ERC20 token)
+  std::string response = R"({
+    "jsonrpc": "2.0",
+      "id": 1,
+      "result": [
+        {
+          "address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "blockHash":
+          "0x2961ceb6c16bab72a55f79e394a35f2bf1c62b30446e3537280f7c22c3115e6e",
+          "blockNumber": "0xd6464c",
+          "data":
+          "0x00000000000000000000000000000000000000000000000555aff1f0fae8c000",
+          "logIndex": "0x159",
+          "removed": false,
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            "0x000000000000000000000000503828976d22510aad0201ac7ec88293211d23da",
+            "0x000000000000000000000000f81229FE54D8a20fBc1e1e2a3451D1c7489437Db"
+          ],
+          "transactionHash":
+          "0x2e652b70966c6a05f4b3e68f20d6540b7a5ab712385464a7ccf62774d39b7066",
+          "transactionIndex": "0x9f"
+        },
+        {
+          "address": "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd",
+          "blockHash":
+          "0x2961ceb6c16bab72a55f79e394a35f2bf1c62b30446e3537280f7c22c3115e6e",
+          "blockNumber": "0xd6464c",
+          "data":
+          "0x00000000000000000000000000000000000000000000000555aff1f0fae8c000",
+          "logIndex": "0x159",
+          "removed": false,
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            "0x000000000000000000000000503828976d22510aad0201ac7ec88293211d23da",
+            "0x000000000000000000000000f81229FE54D8a20fBc1e1e2a3451D1c7489437Db"
+          ],
+          "transactionHash":
+          "0x2e652b70966c6a05f4b3e68f20d6540b7a5ab712385464a7ccf62774d39b7066",
+          "transactionIndex": "0x9f"
+        },
+        {
+          "address": "0x4b10701Bfd7BFEdc47d50562b76b436fbB5BdB3B",
+          "blockHash":
+          "0x2961ceb6c16bab72a55f79e394a35f2bf1c62b30446e3537280f7c22c3115e6e",
+          "blockNumber": "0xd6464c",
+          "data":
+          "0x00000000000000000000000000000000000000000000000555aff1f0fae8c000",
+          "logIndex": "0x159",
+          "removed": false,
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            "0x000000000000000000000000503828976d22510aad0201ac7ec88293211d23da",
+            "0x000000000000000000000000f81229FE54D8a20fBc1e1e2a3451D1c7489437Db"
+          ],
+          "transactionHash":
+          "0x2e652b70966c6a05f4b3e68f20d6540b7a5ab712385464a7ccf62774d39b7066",
+          "transactionIndex": "0x9f"
+        },
+      ]
+  })";
+  SetInterceptor(response);
+  RestoreWallet(
+      &service, kMnemonic1, kPasswordBrave,
+      false);  // Creates account 0xf81229FE54D8a20fBc1e1e2a3451D1c7489437Db
+  base::RunLoop().RunUntilIdle();
+  std::vector<mojom::AccountInfoPtr> account_infos =
+      service.GetAccountInfosForKeyring(mojom::kDefaultKeyringId);
+  EXPECT_EQ(account_infos.size(), 1u);
+  std::vector<mojom::BlockchainTokenPtr> user_assets =
+      BraveWalletService::GetUserAssets(mojom::kMainnetChainId,
+                                        mojom::CoinType::ETH, GetPrefs());
+  EXPECT_EQ(user_assets.size(), 3u);
+  EXPECT_EQ(user_assets[user_assets.size() - 1]->symbol, "DAI");
 
-//   // AddAccountForKeyring
-//   ASSERT_TRUE(CreateWallet(&service, "brave"));
-//   service.AddAccountForKeyring(mojom::kDefaultKeyringId, "Ethereum Account");
-//   base::RunLoop().RunUntilIdle();
-//   account_infos =
-//   service.GetAccountInfosForKeyring(mojom::kDefaultKeyringId);
-//   EXPECT_EQ(account_infos.size(), 2u);
-//   observer.TestAccountsAddedEqual(std::move(account_infos));
-//   service.Reset();
-//   observer.Reset();
+  // AddAccount
+  // Mock an eth_getLogs response that includes logs for WETH transfers to the
+  // account to be added, 0x00c0f72E601C31DEb7890612cB92Ac0Fb7090EB0
+  response = R"({
+    "jsonrpc": "2.0",
+      "id": 1,
+      "result": [
+        {
+          "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+          "blockHash":
+          "0x2961ceb6c16bab72a55f79e394a35f2bf1c62b30446e3537280f7c22c3115e6e",
+          "blockNumber": "0xd6464c",
+          "data":
+          "0x00000000000000000000000000000000000000000000000555aff1f0fae8c000",
+          "logIndex": "0x159",
+          "removed": false,
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            "0x000000000000000000000000503828976d22510aad0201ac7ec88293211d23da",
+            "0x00000000000000000000000000c0f72E601C31DEb7890612cB92Ac0Fb7090EB0",
+          ],
+          "transactionHash":
+          "0x2e652b70966c6a05f4b3e68f20d6540b7a5ab712385464a7ccf62774d39b7066",
+          "transactionIndex": "0x9f"
+        },
+      ]
+  })";
+  SetInterceptor(response);
+  EXPECT_TRUE(AddAccount(
+      &service, "Account",
+      mojom::CoinType::ETH));  // Creates account
+                               // 0x00c0f72E601C31DEb7890612cB92Ac0Fb7090EB0
+  base::RunLoop().RunUntilIdle();
+  user_assets = BraveWalletService::GetUserAssets(
+      mojom::kMainnetChainId, mojom::CoinType::ETH, GetPrefs());
+  EXPECT_EQ(user_assets.size(), 4u);
+  EXPECT_EQ(user_assets[user_assets.size() - 1]->symbol, "WETH");
 
-//   // ImportAccount
-//   ASSERT_TRUE(CreateWallet(&service, "brave"));
-//   absl::optional<std::string> imported_account = ImportAccount(
-//       &service, "Imported account1",
-//       "d118a12a1e3b595d7d9e5599370df4ddc58d246a3ae4a795597e50eb6a32afb5",
-//       mojom::CoinType::ETH);
-//   base::RunLoop().RunUntilIdle();
-//   account_infos =
-//   service.GetAccountInfosForKeyring(mojom::kDefaultKeyringId);
-//   EXPECT_EQ(account_infos.size(), 2u);
-//   observer.TestAccountsAddedEqual(std::move(account_infos));
-//   service.Reset();
-//   observer.Reset();
+  // AddHardwareAccounts
+  // Mock an eth_getLogs response that includes logs for USDC transfers to the
+  // hardware account to be added, 0x595a0583621FDe81A935021707e81343f75F9324
+  response = R"({
+    "jsonrpc": "2.0",
+      "id": 1,
+      "result": [
+        {
+          "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "blockHash":
+          "0x2961ceb6c16bab72a55f79e394a35f2bf1c62b30446e3537280f7c22c3115e6e",
+          "blockNumber": "0xd6464c",
+          "data":
+          "0x00000000000000000000000000000000000000000000000555aff1f0fae8c000",
+          "logIndex": "0x159",
+          "removed": false,
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            "0x000000000000000000000000503828976d22510aad0201ac7ec88293211d23da",
+            "0x000000000000000000000000595a0583621FDe81A935021707e81343f75F9324"
+          ],
+          "transactionHash":
+          "0x2e652b70966c6a05f4b3e68f20d6540b7a5ab712385464a7ccf62774d39b7066",
+          "transactionIndex": "0x9f"
+        },
+      ]
+  })";
+  SetInterceptor(response);
+  std::vector<mojom::HardwareWalletAccountPtr> hardware_accounts;
+  hardware_accounts.push_back(mojom::HardwareWalletAccount::New(
+      "0x595a0583621FDe81A935021707e81343f75F9324", "m/44'/60'/1'/0/0",
+      "name 1", "Ledger", "device1", mojom::CoinType::ETH, absl::nullopt));
+  service.AddHardwareAccounts(std::move(hardware_accounts));
+  base::RunLoop().RunUntilIdle();
+  account_infos = service.GetAccountInfosForKeyring(mojom::kDefaultKeyringId);
+  for (const auto& acc : account_infos) {
+    VLOG(0) << "acc " << acc->address;
+  }
+  user_assets = BraveWalletService::GetUserAssets(
+      mojom::kMainnetChainId, mojom::CoinType::ETH, GetPrefs());
+  EXPECT_EQ(user_assets[user_assets.size() - 1]->symbol, "USDC");
+  EXPECT_EQ(user_assets.size(), 5u);
 
-//   // ImportFilecoinAccount
-//   ASSERT_TRUE(CreateWallet(&service, "brave"));
-//   ASSERT_TRUE(
-//       AddFilecoinAccount(&service, "FIL Account 1",
-//       mojom::kFilecoinMainnet));
-//   absl::optional<std::string> imported_fil_account = ImportFilecoinAccount(
-//       &service, "fil m acc 1",
-//       "7b2254797065223a22736563703235366b31222c22507269766174"
-//       "654b6579223a224169776f6a344469323155316844776835735348"
-//       "434d7a37342b346c45303472376e5349454d706d6258493d227d",
-//       mojom::kFilecoinMainnet);
-//   base::RunLoop().RunUntilIdle();
-//   ASSERT_TRUE(imported_fil_account.has_value());
-//   EXPECT_EQ(*imported_fil_account,
-//   "f1syhomjrwhjmavadwmrofjpiocb6r72h4qoy7ucq"); account_infos =
-//   service.GetAccountInfosForKeyring(mojom::kDefaultKeyringId);
-//   EXPECT_EQ(account_infos.size(), 1u);
-//   std::vector<mojom::AccountInfoPtr> filecoin_account_infos =
-//       service.GetAccountInfosForKeyring(mojom::kFilecoinKeyringId);
-//   EXPECT_EQ(filecoin_account_infos.size(), 2u);
-//   // Combine default account infos and filecoin account infos since both
-//   would
-//   // have fired AccountsAdded
-//   account_infos.push_back(std::move(filecoin_account_infos[0]));
-//   account_infos.push_back(std::move(filecoin_account_infos[1]));
-//   EXPECT_EQ(account_infos.size(), 3u);
-//   observer.TestAccountsAddedEqual(std::move(account_infos));
-//   service.Reset();
-//   observer.Reset();
-
-//   // AddAccountsWithDefaultName
-//   ASSERT_TRUE(CreateWallet(&service, "brave"));
-//   service.AddAccountsWithDefaultName(3);
-//   base::RunLoop().RunUntilIdle();
-//   account_infos =
-//   service.GetAccountInfosForKeyring(mojom::kDefaultKeyringId);
-//   ASSERT_EQ(account_infos.size(), 4u);
-//   observer.TestAccountsAddedEqual(std::move(account_infos));
-//   service.Reset();
-//   observer.Reset();
-
-//   // AddAccount
-//   ASSERT_TRUE(CreateWallet(&service, "brave"));
-//   EXPECT_TRUE(AddAccount(&service, "Account 99", mojom::CoinType::ETH));
-//   base::RunLoop().RunUntilIdle();
-//   account_infos =
-//   service.GetAccountInfosForKeyring(mojom::kDefaultKeyringId);
-//   EXPECT_EQ(account_infos.size(), 2u);
-//   observer.TestAccountsAddedEqual(std::move(account_infos));
-//   service.Reset();
-//   observer.Reset();
-// }
+  // ImportAccountForKeyring
+  // Mock an eth_getLogs response that includes logs for RAI transfers to the
+  // account to be imported, 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+  response = R"({
+    "jsonrpc": "2.0",
+      "id": 1,
+      "result": [
+        {
+          "address": "0x03ab458634910aad20ef5f1c8ee96f1d6ac54919",
+          "blockHash":
+          "0x2961ceb6c16bab72a55f79e394a35f2bf1c62b30446e3537280f7c22c3115e6e",
+          "blockNumber": "0xd6464c",
+          "data":
+          "0x00000000000000000000000000000000000000000000000555aff1f0fae8c000",
+          "logIndex": "0x159",
+          "removed": false,
+          "topics": [
+            "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+            "0x000000000000000000000000503828976d22510aad0201ac7ec88293211d23da",
+            "0x000000000000000000000000f39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+          ],
+          "transactionHash":
+          "0x2e652b70966c6a05f4b3e68f20d6540b7a5ab712385464a7ccf62774d39b7066",
+          "transactionIndex": "0x9f"
+        },
+      ]
+  })";
+  SetInterceptor(response);
+  const std::string private_key_str =
+      "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+  std::vector<uint8_t> private_key_bytes;
+  ASSERT_TRUE(PrefixedHexStringToBytes(private_key_str, &private_key_bytes));
+  ASSERT_TRUE(service.ImportAccountForKeyring(
+      mojom::kDefaultKeyringId, "Imported Account", private_key_bytes));
+  base::RunLoop().RunUntilIdle();
+  user_assets = BraveWalletService::GetUserAssets(
+      mojom::kMainnetChainId, mojom::CoinType::ETH, GetPrefs());
+  EXPECT_EQ(user_assets[user_assets.size() - 1]->symbol, "RAI");
+  EXPECT_EQ(user_assets.size(), 6u);
+}
 
 }  // namespace brave_wallet

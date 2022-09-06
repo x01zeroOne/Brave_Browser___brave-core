@@ -2206,6 +2206,7 @@ void JsonRpcService::OnGetAllTokensDiscoverAssets(
                      // weak_ptr_factory_.GetWeakPtr());
                      weak_ptr_factory_.GetWeakPtr(), std::move(callback));
 
+  VLOG(1) << "JsonRpcService::OnGetAllTokensDiscoverAssets 1";
   RequestInternal(
       eth::eth_getLogs("earliest", "latest", std::move(contract_addresses),
                        std::move(topics), ""),

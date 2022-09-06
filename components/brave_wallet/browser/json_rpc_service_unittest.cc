@@ -783,38 +783,26 @@ class JsonRpcServiceUnitTest : public testing::Test {
       const std::string& chain_id,
       const std::vector<std::string>& account_addresses,
       const std::vector<std::string>& expected_token_contract_addresses,
-      std::vector<mojom::BlockchainTokenPtr> existing_user_assets,
       mojom::ProviderError expected_error,
       const std::string& expected_error_message) {
     base::RunLoop run_loop;
     std::vector<mojom::BlockchainTokenPtr> expected_tokens;
     json_rpc_service_->DiscoverAssetsInternal(
         chain_id, account_addresses,
-        base::BindLambdaForTesting([&](const std::vector<
-                                           mojom::BlockchainTokenPtr> tokens,
-                                       mojom::ProviderError error,
-                                       const std::string& error_message) {
-          VLOG(0) << "TestDiscoverAssetsInternal 0";
-          ASSERT_EQ(tokens.size(), expected_token_contract_addresses.size());
-          VLOG(0) << "TestDiscoverAssetsInternal 1";
-          for (size_t i = 0; i < expected_token_contract_addresses.size();
-               i++) {
-            VLOG(0) << "TestDiscoverAssetsInternal 1.1 "
-                       "expected_token_contract_addresses[i] "
-                    << expected_token_contract_addresses[i];
-            VLOG(0)
-                << "TestDiscoverAssetsInternal 1.1 tokens[i]->contract_address "
-                << tokens[i]->contract_address;
-            EXPECT_EQ(tokens[i]->contract_address,
-                      expected_token_contract_addresses[i]);
-          }
-          VLOG(0) << "TestDiscoverAssetsInternal 2";
-          EXPECT_EQ(error, expected_error);
-          VLOG(0) << "TestDiscoverAssetsInternal 3";
-          EXPECT_EQ(error_message, expected_error_message);
-          VLOG(0) << "TestDiscoverAssetsInternal 4";
-          run_loop.Quit();
-        }));
+        base::BindLambdaForTesting(
+            [&](const std::vector<mojom::BlockchainTokenPtr> tokens,
+                mojom::ProviderError error, const std::string& error_message) {
+              ASSERT_EQ(tokens.size(),
+                        expected_token_contract_addresses.size());
+              for (size_t i = 0; i < expected_token_contract_addresses.size();
+                   i++) {
+                EXPECT_EQ(tokens[i]->contract_address,
+                          expected_token_contract_addresses[i]);
+              }
+              EXPECT_EQ(error, expected_error);
+              EXPECT_EQ(error_message, expected_error_message);
+              run_loop.Quit();
+            }));
     run_loop.Run();
   }
 
@@ -3342,26 +3330,25 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
   // Unsupported chainId is not supported
   TestDiscoverAssetsInternal(
       mojom::kPolygonMainnetChainId,
-      {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"}, {}, {},
+      {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"}, {},
       mojom::ProviderError::kMethodNotSupported,
       l10n_util::GetStringUTF8(IDS_WALLET_METHOD_NOT_SUPPORTED_ERROR));
 
   // Empty address is invalid
   TestDiscoverAssetsInternal(
-      mojom::kMainnetChainId, {}, {}, {}, mojom::ProviderError::kInvalidParams,
+      mojom::kMainnetChainId, {}, {}, mojom::ProviderError::kInvalidParams,
       l10n_util::GetStringUTF8(IDS_WALLET_INVALID_PARAMETERS));
 
   // Invalid address is invalid
   TestDiscoverAssetsInternal(
-      mojom::kMainnetChainId, {"0xinvalid"}, {}, {},
+      mojom::kMainnetChainId, {"0xinvalid"}, {},
       mojom::ProviderError::kInvalidParams,
       l10n_util::GetStringUTF8(IDS_WALLET_INVALID_PARAMETERS));
 
-  // Invalid json response triggers parsing error
+  // Invalid RPC response json response triggers parsing error
   auto expected_network =
       GetNetwork(mojom::kMainnetChainId, mojom::CoinType::ETH);
-
-  std::string json = R"( {
+  std::string token_list_json = R"( {
      "0x0d8775f648430679a709e98d2b0cb6250d2887ef": {
        "name": "Basic Attention Token",
        "logo": "bat.svg",
@@ -3370,20 +3357,21 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
        "decimals": 18
      }
     })";
-  ASSERT_TRUE(ParseTokenList(json, &token_list_map, mojom::CoinType::ETH));
+  ASSERT_TRUE(
+      ParseTokenList(token_list_json, &token_list_map, mojom::CoinType::ETH));
   blockchain_registry->UpdateTokenList(std::move(token_list_map));
   SetInterceptor(expected_network, "eth_getLogs", "",
                  "invalid eth_getLogs response");
   TestDiscoverAssetsInternal(
       mojom::kMainnetChainId, {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"},
-      {}, {}, mojom::ProviderError::kParsingError,
+      {}, mojom::ProviderError::kParsingError,
       l10n_util::GetStringUTF8(IDS_WALLET_PARSING_ERROR));
 
-  // Limit exceeded response triggers parsing error
+  // Invalid limit exceeded response triggers parsing error
   SetLimitExceededJsonErrorResponse();
   TestDiscoverAssetsInternal(
       mojom::kMainnetChainId, {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"},
-      {}, {}, mojom::ProviderError::kParsingError,
+      {}, mojom::ProviderError::kParsingError,
       l10n_util::GetStringUTF8(IDS_WALLET_PARSING_ERROR));
 
   // Invalid logs (missing addresses) triggers parsing error
@@ -3410,11 +3398,13 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
   SetInterceptor(expected_network, "eth_getLogs", "", response);
   TestDiscoverAssetsInternal(
       mojom::kMainnetChainId, {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"},
-      {}, {}, mojom::ProviderError::kParsingError,
+      {}, mojom::ProviderError::kParsingError,
       l10n_util::GetStringUTF8(IDS_WALLET_PARSING_ERROR));
 
-  // All valid
-  json = R"(
+  // Valid registry token DAI is discovered and added
+  // Valid BAT is not added because it is a already a user asset
+  // Invalid LilNoun is not added because it is an ERC721 - TODO
+  token_list_json = R"(
      {
       "0x0d8775f648430679a709e98d2b0cb6250d2887ef": {
         "name": "Basic Attention Token",
@@ -3430,9 +3420,18 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
         "symbol": "DAI",
         "decimals": 18,
         "chainId": "0x1"
+      },
+      "0x4b10701Bfd7BFEdc47d50562b76b436fbB5BdB3B": {
+        "name": "Lil Nouns",
+        "logo": "lilnouns.svg",
+        "erc20": false,
+        "erc721": true,
+        "symbol": "LilNouns",
+        "chainId": "0x1"
       }
      })";
-  ASSERT_TRUE(ParseTokenList(json, &token_list_map, mojom::CoinType::ETH));
+  ASSERT_TRUE(
+      ParseTokenList(token_list_json, &token_list_map, mojom::CoinType::ETH));
   blockchain_registry->UpdateTokenList(std::move(token_list_map));
 
   response = R"(
@@ -3454,19 +3453,35 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
         "transactionHash": "0x2e652b70966c6a05f4b3e68f20d6540b7a5ab712385464a7ccf62774d39b7066",
         "transactionIndex": "0x9f"
       },
+      {
+        "address": "0x4b10701Bfd7BFEdc47d50562b76b436fbB5BdB3B",
+        "blockHash":
+        "0x2961ceb6c16bab72a55f79e394a35f2bf1c62b30446e3537280f7c22c3115e6e",
+        "blockNumber": "0xd6464c",
+        "data":
+        "0x00000000000000000000000000000000000000000000000555aff1f0fae8c000",
+        "logIndex": "0x159",
+        "removed": false,
+        "topics": [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x000000000000000000000000503828976d22510aad0201ac7ec88293211d23da",
+          "0x000000000000000000000000b4b2802129071b2b9ebb8cbb01ea1e4d14b34961"
+        ],
+        "transactionHash":
+        "0x2e652b70966c6a05f4b3e68f20d6540b7a5ab712385464a7ccf62774d39b7066",
+        "transactionIndex": "0x9f"
+      },
     ]
    })";
   SetInterceptor(expected_network, "eth_getLogs", "", response);
-  std::vector<mojom::BlockchainTokenPtr> user_assets;
   mojom::BlockchainTokenPtr user_asset = mojom::BlockchainToken::New(
       "0x0d8775f648430679a709e98d2b0cb6250d2887ef", "Basic Attention Token",
       "bat.png", true, false, "BAT", 18, true, "", "", "0x1",
       mojom::CoinType::ETH);
-  user_assets.push_back(std::move(user_asset));
-  TestDiscoverAssetsInternal(
-      mojom::kMainnetChainId, {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"},
-      {"0x6b175474e89094c44da98b954eedeac495271d0f"}, std::move(user_assets),
-      mojom::ProviderError::kSuccess, "");
+  TestDiscoverAssetsInternal(mojom::kMainnetChainId,
+                             {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"},
+                             {"0x6b175474e89094c44da98b954eedeac495271d0f"},
+                             mojom::ProviderError::kSuccess, "");
 }
 
 TEST_F(JsonRpcServiceUnitTest, Reset) {
