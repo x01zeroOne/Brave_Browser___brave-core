@@ -16,6 +16,10 @@
 #include "ui/views/controls/button/menu_button_controller.h"
 #include "ui/views/widget/widget.h"
 
+namespace ash {
+class PulsingBlockView;
+}
+
 class TabStripModel;
 class IconWithBadgeImageSource;
 
@@ -40,6 +44,7 @@ class BraveShieldsActionView
   views::Widget* GetBubbleWidget() {
     return webui_bubble_manager_->GetBubbleWidget();
   }
+  void Layout() override;
 
  private:
   void ButtonPressed();
@@ -57,8 +62,9 @@ class BraveShieldsActionView
       const TabStripSelectionChange& selection) override;
 
   raw_ptr<views::MenuButtonController> menu_button_controller_ = nullptr;
-  Profile* profile_ = nullptr;
-  TabStripModel* tab_strip_model_ = nullptr;
+  raw_ptr<Profile> profile_ = nullptr;
+  raw_ptr<TabStripModel> tab_strip_model_ = nullptr;
+  raw_ptr<ash::PulsingBlockView> placeholder_ = nullptr;
   std::unique_ptr<WebUIBubbleManagerT<ShieldsPanelUI>> webui_bubble_manager_;
 };
 

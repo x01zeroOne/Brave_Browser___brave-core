@@ -35,6 +35,8 @@ class PulsingBlockView : public views::View {
   // running.
   bool IsAnimating();
 
+  ui::Layer* GetAnimatingLayer();
+
   // Starts the animation by immediately firing `start_delay_timer`. Returns
   // false if the timer was not running.
   bool FireAnimationTimerForTest();

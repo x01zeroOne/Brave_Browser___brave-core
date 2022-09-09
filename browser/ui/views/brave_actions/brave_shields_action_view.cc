@@ -36,7 +36,7 @@
 #include "ui/views/controls/highlight_path_generator.h"
 #include "ui/views/view.h"
 #include "url/gurl.h"
-#include "ash/app_list/views/pulsing_block_view.h"
+#include "brave/browser/ui/views/brave_actions/pulsing_block_view.h"
 #include "ui/compositor/layer.h"
 
 namespace {
@@ -85,10 +85,13 @@ BraveShieldsActionView::BraveShieldsActionView(Profile* profile,
 
   // LAYER
   // auto* placeholder = AddChildView(std::make_unique<ash::PulsingBlockView>(gfx::Size(50, 50), base::TimeDelta()));
-  std::unique_ptr<ash::PulsingBlockView> placeholder = std::make_unique<ash::PulsingBlockView>(gfx::Size(50, 50), base::TimeDelta());
-  placeholder->SetBoundsRect(this->bounds());
-  placeholder->SetPaintToLayer();
-  this->AddLayerBeneathView(placeholder->layer());
+  // placeholder->SetBoundsRect(this->bounds());
+  // placeholder->SetPaintToLayer();
+  // this->AddLayerBeneathView(placeholder->layer());
+  placeholder_ = AddChildView(std::make_unique<ash::PulsingBlockView>(gfx::Size(100, 100), base::TimeDelta()));
+  AddLayerBeneathView(placeholder_->GetAnimatingLayer());
+  placeholder_->GetAnimatingLayer()->SetMasksToBounds(false);
+  ink_drop_container()->layer()->SetMasksToBounds(false);
 
   // The MenuButtonController makes sure the panel closes when clicked if the
   // panel is already open.
@@ -127,6 +130,12 @@ SkPath BraveShieldsActionView::GetHighlightPath() const {
   SkPath path;
   path.addRoundRect(gfx::RectToSkRect(rect), radii, radii);
   return path;
+}
+
+void BraveShieldsActionView::Layout() {
+  LabelButton::Layout();
+  if (placeholder_)
+    placeholder_->SetBoundsRect(GetLocalBounds());
 }
 
 std::unique_ptr<IconWithBadgeImageSource>

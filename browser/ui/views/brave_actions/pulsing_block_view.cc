@@ -28,7 +28,7 @@
 #include "ui/views/layout/fill_layout.h"
 
 namespace ash::features {
-  bool IsLauncherPulsingBlocksRefreshEnabled() { return true; }
+  bool IsLauncherPulsingBlocksRefreshEnabled() { return false; }
 }
 
 namespace {
@@ -40,7 +40,7 @@ const int kBlockSize = 64;
 
 const int kAnimationDurationInMs = 600;
 const float kAnimationOpacity[] = {0.4f, 0.8f, 0.4f};
-const float kAnimationScale[] = {0.8f, 1.0f, 0.8f};
+const float kAnimationScale[] = {0.8f, 3.0f, 0.8f};
 
 void SchedulePulsingAnimation(ui::Layer* layer) {
   DCHECK(layer);
@@ -163,9 +163,11 @@ void PulsingBlockView::OnPaint(gfx::Canvas* canvas) {
     views::View::OnPaint(canvas);
     return;
   }
+  cc::PaintFlags flags;
+  flags.setColor(kBlockColor);
   gfx::Rect rect(GetContentsBounds());
   rect.ClampToCenteredSize(gfx::Size(kBlockSize, kBlockSize));
-  canvas->FillRect(rect, kBlockColor);
+  canvas->DrawRoundRect(rect, 30, flags);
 }
 
 bool PulsingBlockView::IsAnimating() {
@@ -176,6 +178,14 @@ bool PulsingBlockView::IsAnimating() {
   return animating_view->layer()
              ? animating_view->layer()->GetAnimator()->is_animating()
              : false;
+}
+
+ui::Layer* PulsingBlockView::GetAnimatingLayer() {
+  views::View* animating_view =
+      ash::features::IsLauncherPulsingBlocksRefreshEnabled()
+          ? background_color_view_
+          : this;
+  return animating_view->layer();
 }
 
 bool PulsingBlockView::FireAnimationTimerForTest() {
