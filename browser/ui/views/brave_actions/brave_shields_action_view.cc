@@ -36,6 +36,8 @@
 #include "ui/views/controls/highlight_path_generator.h"
 #include "ui/views/view.h"
 #include "url/gurl.h"
+#include "ash/app_list/views/pulsing_block_view.h"
+#include "ui/compositor/layer.h"
 
 namespace {
 
@@ -76,10 +78,17 @@ BraveShieldsActionView::BraveShieldsActionView(Profile* profile,
 
   SetAccessibleName(
       brave_l10n::GetLocalizedResourceUTF16String(IDS_BRAVE_SHIELDS));
-  SetHasInkDropActionOnClick(true);
-  SetHorizontalAlignment(gfx::ALIGN_CENTER);
-  ink_drop->SetVisibleOpacity(kToolbarInkDropVisibleOpacity);
+  // SetHasInkDropActionOnClick(true);
+  // SetHorizontalAlignment(gfx::ALIGN_CENTER);
+  // ink_drop->SetVisibleOpacity(kToolbarInkDropVisibleOpacity);
   tab_strip_model_->AddObserver(this);
+
+  // LAYER
+  // auto* placeholder = AddChildView(std::make_unique<ash::PulsingBlockView>(gfx::Size(50, 50), base::TimeDelta()));
+  std::unique_ptr<ash::PulsingBlockView> placeholder = std::make_unique<ash::PulsingBlockView>(gfx::Size(50, 50), base::TimeDelta());
+  placeholder->SetBoundsRect(this->bounds());
+  placeholder->SetPaintToLayer();
+  this->AddLayerBeneathView(placeholder->layer());
 
   // The MenuButtonController makes sure the panel closes when clicked if the
   // panel is already open.
