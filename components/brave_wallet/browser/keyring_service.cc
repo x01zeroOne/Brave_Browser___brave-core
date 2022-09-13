@@ -717,7 +717,7 @@ void KeyringService::CreateWallet(const std::string& password,
 
   auto* keyring = CreateKeyring(mojom::kDefaultKeyringId, password);
   if (keyring) {
-    const auto& address =
+    const auto address =
         AddAccountForKeyring(mojom::kDefaultKeyringId, GetAccountName(1));
     if (address) {
       SetPrefForKeyring(prefs_, kSelectedAccount, base::Value(*address),
