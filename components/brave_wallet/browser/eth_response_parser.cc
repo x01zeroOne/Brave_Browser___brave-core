@@ -272,58 +272,78 @@ bool ParseEthGetLogs(const std::string& json, std::vector<Log>* logs) {
 
   for (const auto& logs_list_it : *result) {
     Log log;
-    const base::DictionaryValue* log_dict = nullptr;
-    if (!logs_list_it.GetAsDictionary(&log_dict))
+    const auto* log_dict = logs_list_it.GetIfDict();
+    if (!log_dict) {
       return false;
+    }
 
-    if (!log_dict->GetString("address", &log.address))
+    const std::string* address = log_dict->FindString("address");
+    if (!address) {
       return false;
-    if (!log_dict->GetString("blockHash", &log.block_hash))
-      return false;
-    std::string block_number;
-    if (!log_dict->GetString("blockNumber", &block_number))
-      return false;
+    }
+    log.address = *address;
 
+    const std::string* block_hash = log_dict->FindString("blockHash");
+    if (!block_hash) {
+      return false;
+    }
+    log.block_hash = *block_hash;
+
+    const std::string* block_number = log_dict->FindString("blockNumber");
+    if (!block_number) {
+      return false;
+    }
     uint256_t block_number_int = 0;
-    if (!HexValueToUint256(block_number, &block_number_int))
+    if (!HexValueToUint256(*block_number, &block_number_int))
       return false;
     log.block_number = block_number_int;
-    if (!log_dict->GetString("data", &log.data))
-      return false;
 
-    std::string log_index;
-    if (!log_dict->GetString("logIndex", &log_index))
+    const std::string* data = log_dict->FindString("data");
+    if (!data) {
       return false;
+    }
+    log.data = *data;
+
+    const std::string* log_index = log_dict->FindString("logIndex");
+    if (!log_index) {
+      return false;
+    }
     uint32_t log_index_int = 0;
-    if (!base::HexStringToUInt(log_index, &log_index_int))
+    if (!base::HexStringToUInt(*log_index, &log_index_int))
       return false;
     log.log_index = log_index_int;
 
-    absl::optional<bool> removed = log_dict->FindBoolKey("removed");
+    absl::optional<bool> removed = log_dict->FindBool("removed");
     if (!removed.has_value())
       return false;
     log.removed = removed.value_or(false);
 
-    if (!log_dict->GetString("transactionHash", &log.transaction_hash))
+    const std::string* transaction_hash =
+        log_dict->FindString("transactionHash");
+    if (!transaction_hash) {
       return false;
+    }
+    log.transaction_hash = *transaction_hash;
 
-    std::string transaction_index;
-    if (!log_dict->GetString("transactionIndex", &transaction_index))
+    const std::string* transaction_index =
+        log_dict->FindString("transactionIndex");
+    if (!transaction_index) {
       return false;
+    }
     uint32_t transaction_index_int = 0;
-    if (!base::HexStringToUInt(transaction_index, &transaction_index_int))
+    if (!base::HexStringToUInt(*transaction_index, &transaction_index_int))
       return false;
     log.transaction_index = transaction_index_int;
 
-    const base::ListValue* topics_list = nullptr;
     std::vector<std::string> topics;
-    if (!log_dict->GetList("topics", &topics_list))
+    const auto* topics_list = log_dict->FindList("topics");
+    if (!topics_list) {
       return false;
-    for (const base::Value& entry : topics_list->GetList()) {
-      const std::string* v = entry.GetIfString();
-      if (!v)
-        return false;
-      topics.push_back(*v);
+    }
+    for (const auto& entry : *topics_list) {
+      if (!entry.is_string())
+        continue;
+      topics.push_back(entry.GetString());
     }
     log.topics = topics;
     logs->push_back(log);
