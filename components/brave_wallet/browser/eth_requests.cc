@@ -343,6 +343,11 @@ std::string eth_getLogs(const std::string& from_block_quantity_tag,
                         const std::string& block_hash) {
   base::Value::List params;
   base::Value::Dict filter_options;
+  // The `address` filter option accepts either a single address, or a list of
+  // addresses (See spec:
+  // https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_getlogs). At
+  // time of writing Infura's documentation suggests they only support a single
+  // address, however we have verified they also support a list.
   if (!addresses.empty()) {
     filter_options.Set("address", std::move(addresses));
   }
