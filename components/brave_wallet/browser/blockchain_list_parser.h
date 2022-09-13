@@ -18,7 +18,6 @@ using TokenListMap =
     base::flat_map<std::string, std::vector<mojom::BlockchainTokenPtr>>;
 using ChainList = std::vector<mojom::NetworkInfoPtr>;
 
-using ParseTokenListCallback = base::OnceCallback<void(bool)>;
 bool ParseTokenList(const std::string& json,
                     TokenListMap* token_list,
                     mojom::CoinType coin);
