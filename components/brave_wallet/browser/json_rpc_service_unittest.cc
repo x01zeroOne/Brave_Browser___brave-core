@@ -781,6 +781,7 @@ class JsonRpcServiceUnitTest : public testing::Test {
 
   void TestDiscoverAssetsInternal(
       const std::string& chain_id,
+      mojom::CoinType coin,
       const std::vector<std::string>& account_addresses,
       const std::vector<std::string>& expected_token_contract_addresses,
       mojom::ProviderError expected_error,
@@ -788,7 +789,7 @@ class JsonRpcServiceUnitTest : public testing::Test {
     base::RunLoop run_loop;
     std::vector<mojom::BlockchainTokenPtr> expected_tokens;
     json_rpc_service_->DiscoverAssetsInternal(
-        chain_id, account_addresses,
+        chain_id, mojom::CoinType::ETH, account_addresses,
         base::BindLambdaForTesting(
             [&](const std::vector<mojom::BlockchainTokenPtr> tokens,
                 mojom::ProviderError error, const std::string& error_message) {
@@ -3329,19 +3330,20 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
 
   // Unsupported chainId is not supported
   TestDiscoverAssetsInternal(
-      mojom::kPolygonMainnetChainId,
+      mojom::kPolygonMainnetChainId, mojom::CoinType::ETH,
       {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"}, {},
       mojom::ProviderError::kMethodNotSupported,
       l10n_util::GetStringUTF8(IDS_WALLET_METHOD_NOT_SUPPORTED_ERROR));
 
   // Empty address is invalid
   TestDiscoverAssetsInternal(
-      mojom::kMainnetChainId, {}, {}, mojom::ProviderError::kInvalidParams,
+      mojom::kMainnetChainId, mojom::CoinType::ETH, {}, {},
+      mojom::ProviderError::kInvalidParams,
       l10n_util::GetStringUTF8(IDS_WALLET_INVALID_PARAMETERS));
 
   // Invalid address is invalid
   TestDiscoverAssetsInternal(
-      mojom::kMainnetChainId, {"0xinvalid"}, {},
+      mojom::kMainnetChainId, mojom::CoinType::ETH, {"0xinvalid"}, {},
       mojom::ProviderError::kInvalidParams,
       l10n_util::GetStringUTF8(IDS_WALLET_INVALID_PARAMETERS));
 
@@ -3363,15 +3365,17 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
   SetInterceptor(expected_network, "eth_getLogs", "",
                  "invalid eth_getLogs response");
   TestDiscoverAssetsInternal(
-      mojom::kMainnetChainId, {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"},
-      {}, mojom::ProviderError::kParsingError,
+      mojom::kMainnetChainId, mojom::CoinType::ETH,
+      {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"}, {},
+      mojom::ProviderError::kParsingError,
       l10n_util::GetStringUTF8(IDS_WALLET_PARSING_ERROR));
 
   // Invalid limit exceeded response triggers parsing error
   SetLimitExceededJsonErrorResponse();
   TestDiscoverAssetsInternal(
-      mojom::kMainnetChainId, {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"},
-      {}, mojom::ProviderError::kParsingError,
+      mojom::kMainnetChainId, mojom::CoinType::ETH,
+      {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"}, {},
+      mojom::ProviderError::kParsingError,
       l10n_util::GetStringUTF8(IDS_WALLET_PARSING_ERROR));
 
   // Invalid logs (missing addresses) triggers parsing error
@@ -3397,8 +3401,9 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
   })";
   SetInterceptor(expected_network, "eth_getLogs", "", response);
   TestDiscoverAssetsInternal(
-      mojom::kMainnetChainId, {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"},
-      {}, mojom::ProviderError::kParsingError,
+      mojom::kMainnetChainId, mojom::CoinType::ETH,
+      {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"}, {},
+      mojom::ProviderError::kParsingError,
       l10n_util::GetStringUTF8(IDS_WALLET_PARSING_ERROR));
 
   // Valid registry token DAI is discovered and added
@@ -3478,7 +3483,7 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
       "0x0d8775f648430679a709e98d2b0cb6250d2887ef", "Basic Attention Token",
       "bat.png", true, false, "BAT", 18, true, "", "", "0x1",
       mojom::CoinType::ETH);
-  TestDiscoverAssetsInternal(mojom::kMainnetChainId,
+  TestDiscoverAssetsInternal(mojom::kMainnetChainId, mojom::CoinType::ETH,
                              {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"},
                              {"0x6b175474e89094c44da98b954eedeac495271d0f"},
                              mojom::ProviderError::kSuccess, "");

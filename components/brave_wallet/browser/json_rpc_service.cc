@@ -2098,10 +2098,12 @@ void JsonRpcService::GetERC1155TokenBalance(
 
 void JsonRpcService::DiscoverAssets(
     const std::string& chain_id,
+    mojom::CoinType coin,
     const std::vector<std::string>& account_addresses) {
   auto callback = base::BindOnce(&JsonRpcService::OnDiscoverAssetsCompleted,
                                  weak_ptr_factory_.GetWeakPtr());
-  DiscoverAssetsInternal(chain_id, account_addresses, std::move(callback));
+  DiscoverAssetsInternal(chain_id, coin, account_addresses,
+                         std::move(callback));
 }
 
 void JsonRpcService::OnDiscoverAssetsCompleted(
@@ -2116,11 +2118,10 @@ void JsonRpcService::OnDiscoverAssetsCompleted(
 
 void JsonRpcService::DiscoverAssetsInternal(
     const std::string& chain_id,
+    mojom::CoinType coin,
     const std::vector<std::string>& account_addresses,
     DiscoverAssetsCallback callback) {
-  std::vector<mojom::BlockchainTokenPtr> user_assets =
-      BraveWalletService::GetUserAssets(chain_id, mojom::CoinType::ETH, prefs_);
-  if (chain_id != mojom::kMainnetChainId) {
+  if (coin != mojom::CoinType::ETH || chain_id != mojom::kMainnetChainId) {
     std::move(callback).Run(
         std::vector<mojom::BlockchainTokenPtr>(),
         mojom::ProviderError::kMethodNotSupported,
@@ -2128,6 +2129,8 @@ void JsonRpcService::DiscoverAssetsInternal(
     return;
   }
 
+  std::vector<mojom::BlockchainTokenPtr> user_assets =
+      BraveWalletService::GetUserAssets(chain_id, mojom::CoinType::ETH, prefs_);
   if (account_addresses.empty()) {
     std::move(callback).Run(
         std::vector<mojom::BlockchainTokenPtr>(),

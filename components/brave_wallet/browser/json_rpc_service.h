@@ -312,9 +312,11 @@ class JsonRpcService : public KeyedService, public mojom::JsonRpcService {
       mojom::ProviderError error,
       const std::string& error_message)>;
   void DiscoverAssets(const std::string& chain_id,
+                      mojom::CoinType coin,
                       const std::vector<std::string>& account_addresses);
 
   void DiscoverAssetsInternal(const std::string& chain_id,
+                              mojom::CoinType coin,
                               const std::vector<std::string>& account_addresses,
                               DiscoverAssetsCallback callback);
 

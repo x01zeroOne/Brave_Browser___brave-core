@@ -722,8 +722,8 @@ void KeyringService::CreateWallet(const std::string& password,
     if (address) {
       SetPrefForKeyring(prefs_, kSelectedAccount, base::Value(*address),
                         mojom::kDefaultKeyringId);
-      json_rpc_service_->DiscoverAssets(mojom::kMainnetChainId,
-                                        {address.value()});
+      json_rpc_service_->DiscoverAssets(
+          mojom::kMainnetChainId, mojom::CoinType::ETH, {address.value()});
     }
   }
 
@@ -760,9 +760,8 @@ void KeyringService::RestoreWallet(const std::string& mnemonic,
     if (address) {
       SetPrefForKeyring(prefs_, kSelectedAccount, base::Value(*address),
                         mojom::kDefaultKeyringId);
-      VLOG(0) << "KeyringService::RestoreWallet 2";
-      json_rpc_service_->DiscoverAssets(mojom::kMainnetChainId,
-                                        {address.value()});
+      json_rpc_service_->DiscoverAssets(
+          mojom::kMainnetChainId, mojom::CoinType::ETH, {address.value()});
     }
   }
 
@@ -905,7 +904,7 @@ void KeyringService::AddAccount(const std::string& account_name,
     SetSelectedAccountForCoinSilently(coin, address.value());
     SetSelectedCoin(prefs_, coin);
     json_rpc_service_->DiscoverAssets(mojom::kMainnetChainId,
-                                      {address.value()});
+                                      mojom::CoinType::ETH, {address.value()});
   }
 
   NotifyAccountsChanged();
@@ -1344,7 +1343,8 @@ absl::optional<std::string> KeyringService::ImportAccountForKeyring(
   SetSelectedAccountForCoinSilently(GetCoinForKeyring(keyring_id), address);
   SetSelectedCoin(prefs_, GetCoinForKeyring(keyring_id));
 
-  json_rpc_service_->DiscoverAssets(mojom::kMainnetChainId, {address});
+  json_rpc_service_->DiscoverAssets(mojom::kMainnetChainId,
+                                    mojom::CoinType::ETH, {address});
   NotifyAccountsChanged();
 
   return address;
@@ -1465,7 +1465,8 @@ void KeyringService::AddHardwareAccounts(
       account_selected = true;
     }
   }
-  json_rpc_service_->DiscoverAssets(mojom::kMainnetChainId, addresses);
+  json_rpc_service_->DiscoverAssets(mojom::kMainnetChainId,
+                                    mojom::CoinType::ETH, addresses);
   NotifyAccountsChanged();
 }
 
