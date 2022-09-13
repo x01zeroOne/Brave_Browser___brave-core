@@ -26,6 +26,7 @@
 #include "components/component_updater/component_installer.h"
 #include "components/component_updater/component_updater_service.h"
 #include "crypto/sha2.h"
+#include "services/data_decoder/public/cpp/json_sanitizer.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace brave_wallet {

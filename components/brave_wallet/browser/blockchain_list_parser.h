@@ -11,7 +11,6 @@
 
 #include "base/containers/flat_map.h"
 #include "brave/components/brave_wallet/common/brave_wallet.mojom.h"
-#include "services/data_decoder/public/cpp/json_sanitizer.h"
 
 namespace brave_wallet {
 
