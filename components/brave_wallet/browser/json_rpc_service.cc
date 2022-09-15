@@ -2156,7 +2156,6 @@ void JsonRpcService::DiscoverAssetsInternal(
 
   BlockchainRegistry::GetInstance()->GetAllTokens(
       chain_id, mojom::CoinType::ETH, std::move(internal_callback));
-  return;
 }
 
 void JsonRpcService::OnGetAllTokensDiscoverAssets(
@@ -2208,12 +2207,10 @@ void JsonRpcService::OnGetAllTokensDiscoverAssets(
       base::BindOnce(&JsonRpcService::OnGetTransferLogs,
                      weak_ptr_factory_.GetWeakPtr(), std::move(callback));
 
-  VLOG(1) << "JsonRpcService::OnGetAllTokensDiscoverAssets 1";
   RequestInternal(
       eth::eth_getLogs("earliest", "latest", std::move(contract_addresses),
                        std::move(topics), ""),
       true, network_url, std::move(internal_callback));
-  return;
 }
 
 void JsonRpcService::OnGetTransferLogs(DiscoverAssetsCallback callback,
