@@ -2220,6 +2220,7 @@ void JsonRpcService::OnGetTransferLogs(DiscoverAssetsCallback callback,
         std::vector<mojom::BlockchainTokenPtr>(),
         mojom::ProviderError::kInternalError,
         l10n_util::GetStringUTF8(IDS_WALLET_INTERNAL_ERROR));
+    return;
   }
 
   std::vector<Log> logs;
