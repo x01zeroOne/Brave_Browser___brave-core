@@ -2096,6 +2096,9 @@ void JsonRpcService::GetERC1155TokenBalance(
       network_url, std::move(internal_callback));
 }
 
+// Called by KeyringService::CreateWallet, KeyringService::RestoreWallet,
+// KeyringService::AddAccount, KeyringService::ImportAccountForKeyring,
+// and KeyringService::AddHardwareAccounts
 void JsonRpcService::DiscoverAssets(
     const std::string& chain_id,
     mojom::CoinType coin,
