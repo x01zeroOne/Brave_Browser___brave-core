@@ -54,21 +54,23 @@ base::Value::List HistoryItemToDetailRowsValue(
 HistoryItemInfo HistoryItemFromValue(const base::Value::Dict& root) {
   HistoryItemInfo history_item;
 
-  if (const auto* value = root.FindString(kCreatedAtKey)) {
+  if (const auto* created_at_value_string = root.FindString(kCreatedAtKey)) {
     double created_at_as_double = 0.0;
-    if (base::StringToDouble(*value, &created_at_as_double)) {
+    if (base::StringToDouble(*created_at_value_string, &created_at_as_double)) {
       history_item.created_at = base::Time::FromDoubleT(created_at_as_double);
     }
-  } else if (const auto value = root.FindDouble(kCreatedAtKey)) {
-    history_item.created_at = base::Time::FromDoubleT(*value);
+  } else if (const auto created_at_value_double =
+                 root.FindDouble(kCreatedAtKey)) {
+    history_item.created_at = base::Time::FromDoubleT(*created_at_value_double);
   }
 
-  if (const auto* value = root.FindDict(kAdContentKey)) {
-    history_item.ad_content = AdContentFromValue(*value);
+  if (const auto* ad_content_value = root.FindDict(kAdContentKey)) {
+    history_item.ad_content = AdContentFromValue(*ad_content_value);
   }
 
-  if (const auto* value = root.FindDict(kCategoryContentKey)) {
-    history_item.category_content = CategoryContentFromValue(*value);
+  if (const auto* category_content_value = root.FindDict(kCategoryContentKey)) {
+    history_item.category_content =
+        CategoryContentFromValue(*category_content_value);
   }
 
   return history_item;

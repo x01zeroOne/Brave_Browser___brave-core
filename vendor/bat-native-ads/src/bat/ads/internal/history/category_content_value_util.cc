@@ -31,16 +31,17 @@ base::Value::Dict CategoryContentToValue(
 CategoryContentInfo CategoryContentFromValue(const base::Value::Dict& root) {
   CategoryContentInfo category_content;
 
-  if (const auto* value = root.FindString(kCategoryKey)) {
-    category_content.category = *value;
+  if (const auto* category_key_value = root.FindString(kCategoryKey)) {
+    category_content.category = *category_key_value;
   }
 
-  if (const auto value = root.FindInt(kOptActionKey)) {
+  if (const auto opt_action_key_value = root.FindInt(kOptActionKey)) {
     category_content.opt_action_type =
-        static_cast<CategoryContentOptActionType>(*value);
-  } else if (const auto value = root.FindInt(kLegacyOptActionKey)) {
+        static_cast<CategoryContentOptActionType>(*opt_action_key_value);
+  } else if (const auto legacy_opt_action_key_value =
+                 root.FindInt(kLegacyOptActionKey)) {
     category_content.opt_action_type =
-        static_cast<CategoryContentOptActionType>(*value);
+        static_cast<CategoryContentOptActionType>(*legacy_opt_action_key_value);
   }
 
   return category_content;

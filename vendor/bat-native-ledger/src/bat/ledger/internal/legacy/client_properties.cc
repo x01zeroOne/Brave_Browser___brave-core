@@ -104,10 +104,12 @@ bool ClientProperties::FromValue(const base::Value::Dict& dict) {
   // to the JS spec. Since then, the value is now transported as a string and
   // then converted to an int64_t. In case that fails, there's a fallback to old
   // double conversion, for backwards compatibility.)
-  if (auto value = base::ValueToInt64(dict.Find(kBootTimestampKey))) {
-    boot_timestamp = *value;
-  } else if (auto value = dict.FindDouble(kBootTimestampKey)) {
-    boot_timestamp = static_cast<uint64_t>(*value);
+  if (auto boot_timestamp_value_int64 =
+          base::ValueToInt64(dict.Find(kBootTimestampKey))) {
+    boot_timestamp = *boot_timestamp_value_int64;
+  } else if (auto boot_timestamp_value_double =
+                 dict.FindDouble(kBootTimestampKey)) {
+    boot_timestamp = static_cast<uint64_t>(*boot_timestamp_value_double);
   } else {
     NOTREACHED();
     return false;
@@ -118,42 +120,45 @@ bool ClientProperties::FromValue(const base::Value::Dict& dict) {
   // according to the JS spec. Since then, the value is now transported as a
   // string and then converted to an int64_t. In case that fails, there's a
   // fallback to old double conversion, for backwards compatibility.)
-  if (auto value = base::ValueToInt64(dict.Find(kReconcileTimestampKey))) {
-    reconcile_timestamp = *value;
-  } else if (auto value = dict.FindDouble(kReconcileTimestampKey)) {
-    reconcile_timestamp = static_cast<uint64_t>(*value);
+  if (auto reconcile_timestamp_value_int64 =
+          base::ValueToInt64(dict.Find(kReconcileTimestampKey))) {
+    reconcile_timestamp = *reconcile_timestamp_value_int64;
+  } else if (auto reconcile_timestamp_value_double =
+                 dict.FindDouble(kReconcileTimestampKey)) {
+    reconcile_timestamp =
+        static_cast<uint64_t>(*reconcile_timestamp_value_double);
   } else {
     NOTREACHED();
     return false;
   }
 
   // Fee Amount
-  if (auto value = dict.FindDouble(kFeeAmountKey)) {
-    fee_amount = *value;
+  if (auto fee_amount_value = dict.FindDouble(kFeeAmountKey)) {
+    fee_amount = *fee_amount_value;
   } else {
     NOTREACHED();
     return false;
   }
 
   // User Changed Fee
-  if (auto value = dict.FindBool(kUserChangedFeeKey)) {
-    user_changed_fee = *value;
+  if (auto user_changed_fee_value = dict.FindBool(kUserChangedFeeKey)) {
+    user_changed_fee = *user_changed_fee_value;
   } else {
     NOTREACHED();
     return false;
   }
 
   // Auto Contribute
-  if (auto value = dict.FindBool(kAutoContributeKey)) {
-    auto_contribute = *value;
+  if (auto auto_contribute_value = dict.FindBool(kAutoContributeKey)) {
+    auto_contribute = *auto_contribute_value;
   } else {
     NOTREACHED();
     return false;
   }
 
   // Rewards Enabled
-  if (auto value = dict.FindBool(kRewardsEnabledKey)) {
-    rewards_enabled = *value;
+  if (auto rewards_enabled_value = dict.FindBool(kRewardsEnabledKey)) {
+    rewards_enabled = *rewards_enabled_value;
   } else {
     NOTREACHED();
     return false;
@@ -161,8 +166,8 @@ bool ClientProperties::FromValue(const base::Value::Dict& dict) {
 
   // Inline Tips
   if (const auto* value = dict.FindDict(kInlineTipsKey)) {
-    for (const auto [key, value] : *value) {
-      inline_tips.emplace(key, value.GetBool());
+    for (const auto [k, v] : *value) {
+      inline_tips.emplace(k, v.GetBool());
     }
   } else {
     NOTREACHED();

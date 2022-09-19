@@ -246,8 +246,8 @@ void BravePrefProvider::MigrateShieldsSettingsFromResourceIds() {
       base::Time last_modified =
           base::ValueToTime(settings_dict->Find(kLastModifiedPath))
               .value_or(base::Time());
-      for (const auto [key, value] : *resource_dict) {
-        const std::string& resource_identifier(key);
+      for (const auto [resource_key, resource_value] : *resource_dict) {
+        const std::string& resource_identifier(resource_key);
         std::string shields_preference_name;
 
         // For "ads" and "cookies" we need to adapt the name to the new one,
@@ -270,8 +270,8 @@ void BravePrefProvider::MigrateShieldsSettingsFromResourceIds() {
           continue;
         }
 
-        DCHECK(value.is_int());
-        int setting = value.GetInt();
+        DCHECK(resource_value.is_int());
+        int setting = resource_value.GetInt();
         DCHECK_NE(CONTENT_SETTING_DEFAULT, setting);
 
         MigrateShieldsSettingsFromResourceIdsForOneType(

@@ -194,10 +194,11 @@ void BraveVPNOSConnectionAPIMac::CreateVPNConnection(
     [vpn_manager setLocalizedDescription:base::SysUTF8ToNSString(
                                              info_.connection_name())];
 
-    [vpn_manager saveToPreferencesWithCompletionHandler:^(NSError* error) {
-      if (error) {
+    [vpn_manager saveToPreferencesWithCompletionHandler:^(NSError* save_error) {
+      if (save_error) {
         LOG(ERROR) << "Create - saveToPrefs error: "
-                   << base::SysNSStringToUTF8([error localizedDescription]);
+                   << base::SysNSStringToUTF8(
+                          [save_error localizedDescription]);
         for (Observer& obs : observers_)
           obs.OnCreateFailed();
 
@@ -223,10 +224,11 @@ void BraveVPNOSConnectionAPIMac::RemoveVPNConnection(const std::string& name) {
                  << base::SysNSStringToUTF8([error localizedDescription]);
     } else {
       [vpn_manager removeFromPreferencesWithCompletionHandler:^(
-                       NSError* error) {
-        if (error) {
+                       NSError* remove_error) {
+        if (remove_error) {
           LOG(ERROR) << "RemoveVPNConnection - removeFromPrefs: "
-                     << base::SysNSStringToUTF8([error localizedDescription]);
+                     << base::SysNSStringToUTF8(
+                            [remove_error localizedDescription]);
         }
         VLOG(2) << "RemoveVPNConnection - successfully removed";
         for (Observer& obs : observers_)
