@@ -681,8 +681,7 @@ TEST_F(KeyringServiceUnitTest, HasAndGetPrefForKeyring) {
 TEST_F(KeyringServiceUnitTest, SetPrefForKeyring) {
   KeyringService::SetPrefForKeyring(GetPrefs(), "pref1", base::Value("123"),
                                     mojom::kDefaultKeyringId);
-  const base::Value::Dict& keyrings_pref =
-      GetPrefs()->GetValueDict(kBraveWalletKeyrings);
+  const auto& keyrings_pref = GetPrefs()->GetDict(kBraveWalletKeyrings);
   const std::string* value =
       keyrings_pref.FindStringByDottedPath("default.pref1");
   ASSERT_NE(value, nullptr);
@@ -1627,7 +1626,7 @@ TEST_F(KeyringServiceUnitTest, MigrationPrefs) {
   GetPrefs()->SetDict(kBraveWalletKeyrings,
                       GetHardwareKeyringValueForTesting());
   EXPECT_EQ(*GetPrefs()
-                 ->GetValueDict(kBraveWalletKeyrings)
+                 ->GetDict(kBraveWalletKeyrings)
                  .FindStringByDottedPath(
                      "hardware.A1.account_metas.0x111.account_name"),
             "test1");
@@ -1659,7 +1658,7 @@ TEST_F(KeyringServiceUnitTest, MigrationPrefs) {
                 "B2.account_metas.0x222.hardware_vendor"),
             "vendor2");
   ASSERT_FALSE(GetPrefs()
-                   ->GetValueDict(kBraveWalletKeyrings)
+                   ->GetDict(kBraveWalletKeyrings)
                    .FindStringByDottedPath(
                        "hardware.A1.account_metas.0x111.account_name"));
 }
@@ -2246,7 +2245,7 @@ TEST_F(KeyringServiceUnitTest, HardwareAccounts) {
     auto path = keyring_id + ".hardware." + account->device_id +
                 ".account_metas." + account->address;
     ASSERT_TRUE(
-        GetPrefs()->GetValueDict(kBraveWalletKeyrings).FindByDottedPath(path));
+        GetPrefs()->GetDict(kBraveWalletKeyrings).FindByDottedPath(path));
   }
   {
     // Checking Default keyring accounts
@@ -2351,27 +2350,27 @@ TEST_F(KeyringServiceUnitTest, HardwareAccounts) {
 
   ASSERT_FALSE(
       GetPrefs()
-          ->GetValueDict(kBraveWalletKeyrings)
+          ->GetDict(kBraveWalletKeyrings)
           .FindByDottedPath("default.hardware.device1.account_metas.0x111"));
 
   ASSERT_FALSE(
       GetPrefs()
-          ->GetValueDict(kBraveWalletKeyrings)
+          ->GetDict(kBraveWalletKeyrings)
           .FindByDottedPath("default.hardware.device1.account_metas.0x264"));
 
   ASSERT_TRUE(
       GetPrefs()
-          ->GetValueDict(kBraveWalletKeyrings)
+          ->GetDict(kBraveWalletKeyrings)
           .FindByDottedPath("default.hardware.device2.account_metas.0xEA0"));
 
   ASSERT_TRUE(
       GetPrefs()
-          ->GetValueDict(kBraveWalletKeyrings)
+          ->GetDict(kBraveWalletKeyrings)
           .FindByDottedPath("filecoin.hardware.device2.account_metas.0xFIL"));
 
   ASSERT_TRUE(
       GetPrefs()
-          ->GetValueDict(kBraveWalletKeyrings)
+          ->GetDict(kBraveWalletKeyrings)
           .FindByDottedPath(
               "filecoin_testnet.hardware.device2.account_metas.0xFILTEST"));
 
@@ -2411,11 +2410,11 @@ TEST_F(KeyringServiceUnitTest, HardwareAccounts) {
 
   ASSERT_FALSE(
       GetPrefs()
-          ->GetValueDict(kBraveWalletKeyrings)
+          ->GetDict(kBraveWalletKeyrings)
           .FindByDottedPath("default.hardware.device2.account_metas.0xEA0"));
 
   ASSERT_FALSE(GetPrefs()
-                   ->GetValueDict(kBraveWalletKeyrings)
+                   ->GetDict(kBraveWalletKeyrings)
                    .FindByDottedPath("default.hardware.device2"));
 
   EXPECT_TRUE(RemoveHardwareAccount(&service, "0xFIL", kPasswordBrave,
@@ -2425,7 +2424,7 @@ TEST_F(KeyringServiceUnitTest, HardwareAccounts) {
   observer.Reset();
   ASSERT_FALSE(
       GetPrefs()
-          ->GetValueDict(kBraveWalletKeyrings)
+          ->GetDict(kBraveWalletKeyrings)
           .FindByDottedPath("filecoin.hardware.device2.account_metas.0xFIL"));
 
   EXPECT_TRUE(RemoveHardwareAccount(&service, "0xFILTEST", kPasswordBrave,
@@ -2435,7 +2434,7 @@ TEST_F(KeyringServiceUnitTest, HardwareAccounts) {
   observer.Reset();
   ASSERT_FALSE(
       GetPrefs()
-          ->GetValueDict(kBraveWalletKeyrings)
+          ->GetDict(kBraveWalletKeyrings)
           .FindByDottedPath(
               "filecoin_testnet.hardware.device2.account_metas.0xFILTEST"));
 }

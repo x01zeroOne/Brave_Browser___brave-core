@@ -1386,8 +1386,7 @@ void RemoveCustomNetwork(PrefService* prefs,
 std::vector<std::string> GetAllHiddenNetworks(PrefService* prefs,
                                               mojom::CoinType coin) {
   std::vector<std::string> result;
-  const base::Value::Dict& hidden_networks =
-      prefs->GetValueDict(kBraveWalletHiddenNetworks);
+  const auto& hidden_networks = prefs->GetDict(kBraveWalletHiddenNetworks);
 
   auto* hidden_eth_networks =
       hidden_networks.FindList(GetPrefKeyForCoinType(coin));
@@ -1438,8 +1437,7 @@ void RemoveHiddenNetwork(PrefService* prefs,
 }
 
 std::string GetCurrentChainId(PrefService* prefs, mojom::CoinType coin) {
-  const base::Value::Dict& selected_networks =
-      prefs->GetValueDict(kBraveWalletSelectedNetworks);
+  const auto& selected_networks = prefs->GetDict(kBraveWalletSelectedNetworks);
   const std::string* chain_id =
       selected_networks.FindString(GetPrefKeyForCoinType(coin));
   if (!chain_id)
