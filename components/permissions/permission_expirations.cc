@@ -243,16 +243,14 @@ void PermissionExpirations::ReadExpirationsFromPrefs() {
     return;
   }
 
-  const base::Value* type_expirations_map_val =
-      prefs_->GetDictionary(prefs::kPermissionLifetimeExpirations);
-  DCHECK(type_expirations_map_val);
-  DCHECK(type_expirations_map_val->is_dict());
+  const auto& type_expirations_map_val =
+      prefs_->GetDict(prefs::kPermissionLifetimeExpirations);
 
   std::vector<std::string> invalid_content_type_names;
-  for (const auto type_expirations_val :
-       type_expirations_map_val->DictItems()) {
-    const std::string& content_type_name = type_expirations_val.first;
-    const base::Value& key_expirations_map_val = type_expirations_val.second;
+  for (auto it = type_expirations_map_val.begin();
+       it != type_expirations_map_val.end(); ++it) {
+    const std::string& content_type_name = it->first;
+    const base::Value& key_expirations_map_val = it->second;
     if (!key_expirations_map_val.is_dict()) {
       continue;
     }

@@ -90,9 +90,10 @@ void BravePrefProvider::CopyPluginSettingsForMigration(PrefService* prefs) {
     return;
   }
 
-  auto* plugins =
-      prefs->GetDictionary("profile.content_settings.exceptions.plugins");
-  prefs->Set("brave.migrate.content_settings.exceptions.plugins", *plugins);
+  const auto& plugins =
+      prefs->GetDict("profile.content_settings.exceptions.plugins");
+  prefs->SetDict("brave.migrate.content_settings.exceptions.plugins",
+                 plugins.Clone());
 
   // Upstream won't clean this up for ANDROID, need to do it ourselves.
   prefs->ClearPref("profile.content_settings.exceptions.plugins");
@@ -164,12 +165,10 @@ void BravePrefProvider::MigrateShieldsSettings(bool incognito) {
     return;
 
   const int version = prefs_->GetInteger(kBraveShieldsSettingsVersion);
-  auto* shields_cookies = prefs_->GetDictionary(kObsoleteShieldCookies);
-  if (shields_cookies) {
-    if (version < 4) {
-      prefs_->Set("profile.content_settings.exceptions.shieldsCookiesV3",
-                  *shields_cookies);
-    }
+  const auto& shields_cookies = prefs_->GetDict(kObsoleteShieldCookies);
+  if (version < 4) {
+    prefs_->SetDict("profile.content_settings.exceptions.shieldsCookiesV3",
+                    shields_cookies.Clone());
   }
 
   // Fix any wildcard entries that could cause issues like

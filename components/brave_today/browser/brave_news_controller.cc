@@ -157,16 +157,17 @@ void BraveNewsController::SubscribeToNewDirectFeed(
               return;
             }
             // Check if feed url already exists
-            auto* existing_items = controller->prefs_->GetDictionary(
-                prefs::kBraveTodayDirectFeeds);
-            for (const auto kv : existing_items->DictItems()) {
-              if (!kv.second.is_dict()) {
+            const auto& existing_items =
+                controller->prefs_->GetDict(prefs::kBraveTodayDirectFeeds);
+            for (auto it = existing_items.begin(); it != existing_items.end();
+                 ++it) {
+              if (!it->second.is_dict()) {
                 // This will be flagged as an issue in the error log elsewhere.
                 continue;
               }
-              auto existing_url = *kv.second.FindStringKey(
+              auto* existing_url = it->second.FindStringKey(
                   prefs::kBraveTodayDirectFeedsKeySource);
-              if (GURL(existing_url) == feed_url.spec()) {
+              if (existing_url && GURL(*existing_url) == feed_url.spec()) {
                 // Handle is duplicate
                 std::move(callback).Run(true, true, absl::nullopt);
                 return;

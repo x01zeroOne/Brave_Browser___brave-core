@@ -385,9 +385,7 @@ class JsonRpcServiceUnitTest : public testing::Test {
     if (chain_id == mojom::kLocalhostChainId)
       return prefs()->GetBoolean(kSupportEip1559OnLocalhostChain);
     const base::Value* custom_networks =
-        prefs()
-            ->GetDictionary(kBraveWalletCustomNetworks)
-            ->FindKey(kEthereumPrefKey);
+        prefs()->GetDict(kBraveWalletCustomNetworks).Find(kEthereumPrefKey);
     if (!custom_networks)
       return false;
 
@@ -1344,9 +1342,8 @@ TEST_F(JsonRpcServiceUnitTest, AddEthereumChainApproved) {
   ASSERT_EQ(GetAllEthCustomChains(prefs()).size(), 1u);
   EXPECT_EQ(GetAllEthCustomChains(prefs())[0], chain.Clone());
 
-  const base::Value* assets_pref =
-      prefs()->GetDictionary(kBraveWalletUserAssets);
-  const base::Value* list = assets_pref->FindPath("ethereum.0x111");
+  const auto& assets_pref = prefs()->GetDict(kBraveWalletUserAssets);
+  const base::Value* list = assets_pref.FindByDottedPath("ethereum.0x111");
   ASSERT_TRUE(list->is_list());
   const base::Value::List& asset_list = list->GetList();
   ASSERT_EQ(asset_list.size(), 1u);
@@ -1409,9 +1406,8 @@ TEST_F(JsonRpcServiceUnitTest, AddEthereumChainApprovedForOrigin) {
   ASSERT_EQ(GetAllEthCustomChains(prefs()).size(), 1u);
   EXPECT_EQ(GetAllEthCustomChains(prefs())[0], chain.Clone());
 
-  const base::Value* assets_pref =
-      prefs()->GetDictionary(kBraveWalletUserAssets);
-  const base::Value* list = assets_pref->FindPath("ethereum.0x111");
+  const auto& assets_pref = prefs()->GetDict(kBraveWalletUserAssets);
+  const base::Value* list = assets_pref.FindByDottedPath("ethereum.0x111");
   ASSERT_TRUE(list->is_list());
   const base::Value::List& asset_list = list->GetList();
   ASSERT_EQ(asset_list.size(), 1u);
@@ -3516,28 +3512,26 @@ TEST_F(JsonRpcServiceUnitTest, MigrateMultichainNetworks) {
 
   JsonRpcService::MigrateMultichainNetworks(prefs());
 
-  const base::Value* new_custom_networks =
-      prefs()->GetDictionary(kBraveWalletCustomNetworks);
-  ASSERT_TRUE(new_custom_networks);
+  const auto& new_custom_networks =
+      prefs()->GetDict(kBraveWalletCustomNetworks);
   const base::Value* eth_custom_networks =
-      new_custom_networks->FindKey(kEthereumPrefKey);
+      new_custom_networks.Find(kEthereumPrefKey);
   ASSERT_TRUE(eth_custom_networks);
   EXPECT_EQ(*eth_custom_networks, *old_custom_networks);
 
-  const base::Value* selected_networks =
-      prefs()->GetDictionary(kBraveWalletSelectedNetworks);
-  ASSERT_TRUE(selected_networks);
+  const auto& selected_networks =
+      prefs()->GetDict(kBraveWalletSelectedNetworks);
   const std::string* eth_selected_networks =
-      selected_networks->FindStringKey(kEthereumPrefKey);
+      selected_networks.FindString(kEthereumPrefKey);
   ASSERT_TRUE(eth_selected_networks);
   EXPECT_EQ(*eth_selected_networks, "0x3");
   const std::string* sol_selected_networks =
-      selected_networks->FindStringKey(kSolanaPrefKey);
+      selected_networks.FindString(kSolanaPrefKey);
   ASSERT_TRUE(sol_selected_networks);
   EXPECT_EQ(*sol_selected_networks, mojom::kSolanaMainnet);
 
   const std::string* fil_selected_networks =
-      selected_networks->FindStringKey(kFilecoinPrefKey);
+      selected_networks.FindString(kFilecoinPrefKey);
   ASSERT_TRUE(fil_selected_networks);
   EXPECT_EQ(*fil_selected_networks, mojom::kFilecoinMainnet);
 
