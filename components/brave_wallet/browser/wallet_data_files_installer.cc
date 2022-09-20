@@ -86,8 +86,7 @@ void HandleParseTokenList(base::FilePath absolute_install_dir,
       base::BindOnce(&OnSanitizedTokenList, token_list_map, coin_type));
 }
 
-TokenListMap TokenListReady(const base::FilePath& install_dir) {
-  TokenListMap lists;
+void TokenListReady(const base::FilePath& install_dir, TokenListMap* lists) {
   // On some platforms (e.g. Mac) we use symlinks for paths. Convert paths to
   // absolute paths to avoid unexpected failure. base::MakeAbsoluteFilePath()
   // requires IO so it can only be done in this function.
@@ -96,23 +95,20 @@ TokenListMap TokenListReady(const base::FilePath& install_dir) {
 
   if (absolute_install_dir.empty()) {
     LOG(ERROR) << "Failed to get absolute install path.";
-    return lists;
   }
 
   // Used for Ethereum mainnet
-  HandleParseTokenList(absolute_install_dir, "contract-map.json", &lists,
+  HandleParseTokenList(absolute_install_dir, "contract-map.json", lists,
                        mojom::CoinType::ETH);
   // Used for EVM compatabile networks including testnets
-  HandleParseTokenList(absolute_install_dir, "evm-contract-map.json", &lists,
+  HandleParseTokenList(absolute_install_dir, "evm-contract-map.json", lists,
                        mojom::CoinType::ETH);
-  HandleParseTokenList(absolute_install_dir, "solana-contract-map.json", &lists,
+  HandleParseTokenList(absolute_install_dir, "solana-contract-map.json", lists,
                        mojom::CoinType::SOL);
-
-  return lists;
 }
 
-void UpdateTokenRegistry(TokenListMap lists) {
-  BlockchainRegistry::GetInstance()->UpdateTokenList(std::move(lists));
+void UpdateTokenRegistry(TokenListMap* lists) {
+  BlockchainRegistry::GetInstance()->UpdateTokenList(std::move(*lists));
 }
 
 void HandleParseChainList(base::FilePath absolute_install_dir,
@@ -210,10 +206,13 @@ void WalletDataFilesInstallerPolicy::ComponentReady(
     const base::FilePath& path,
     base::Value manifest) {
   last_installed_wallet_version = version;
-  base::ThreadPool::PostTaskAndReplyWithResult(
-      FROM_HERE, {base::MayBlock(), base::TaskPriority::BEST_EFFORT},
-      base::BindOnce(TokenListReady, path),
-      base::BindOnce(UpdateTokenRegistry));
+
+  TokenListMap* lists;
+  base::SequencedTaskRunnerHandle::Get()->PostTask(
+      FROM_HERE, base::BindOnce(&TokenListReady, path, lists));
+
+  base::SequencedTaskRunnerHandle::Get()->PostTask(
+      FROM_HERE, base::BindOnce(&UpdateTokenRegistry, lists));
 
   base::ThreadPool::PostTaskAndReplyWithResult(
       FROM_HERE, {base::MayBlock(), base::TaskPriority::BEST_EFFORT},
