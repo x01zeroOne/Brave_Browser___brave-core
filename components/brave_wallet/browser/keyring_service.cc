@@ -1431,11 +1431,11 @@ void KeyringService::AddHardwareAccounts(
   for (const auto& info : infos) {
     const auto& hardware_vendor = info->hardware_vendor;
     std::string device_id = info->device_id;
+
     DCHECK_EQ(hardware_vendor, info->hardware_vendor);
     if (hardware_vendor != info->hardware_vendor)
       continue;
     base::Value hw_account(base::Value::Type::DICTIONARY);
-
     hw_account.SetStringKey(kAccountName, info->name);
     hw_account.SetStringKey(kHardwareVendor, info->hardware_vendor);
     hw_account.SetStringKey(kHardwareDerivationPath, info->derivation_path);
@@ -1465,6 +1465,7 @@ void KeyringService::AddHardwareAccounts(
       account_selected = true;
     }
   }
+
   json_rpc_service_->DiscoverAssets(mojom::kMainnetChainId,
                                     mojom::CoinType::ETH, addresses);
   NotifyAccountsChanged();

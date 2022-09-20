@@ -131,7 +131,6 @@ class TestKeyringServiceObserver
   }
   bool AccountsChangedFired() { return accounts_changed_fired_count_ > 0; }
   int AccountsChangedFiredCount() { return accounts_changed_fired_count_; }
-
   bool KeyringResetFired() { return keyring_reset_fired_; }
   bool IsKeyringCreated(const std::string& keyring_id) {
     return keyring_created_.contains(keyring_id);
