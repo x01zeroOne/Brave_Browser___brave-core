@@ -327,8 +327,10 @@ class JsonRpcService : public KeyedService, public mojom::JsonRpcService {
       DiscoverAssetsCallback callback,
       std::vector<mojom::BlockchainTokenPtr> token_list);
 
-  void OnGetTransferLogs(DiscoverAssetsCallback callback,
-                         APIRequestResult api_request_result);
+  void OnGetTransferLogs(
+      DiscoverAssetsCallback callback,
+      base::flat_map<std::string, mojom::BlockchainTokenPtr>& user_assets_map,
+      APIRequestResult api_request_result);
 
   void OnDiscoverAssetsCompleted(
       std::vector<mojom::BlockchainTokenPtr> discovered_assets,

@@ -2185,39 +2185,48 @@ void JsonRpcService::OnGetAllTokensDiscoverAssets(
     return;
   }
 
-  // Create list of contract addresses to search by
-  // removing non erc20 tokens and assets that user has already
-  std::unordered_set<std::string> user_asset_contract_addresses;
+  // Create set of contract addresses the user already has for easy lookups
+  base::flat_set<std::string> user_asset_contract_addresses;
   for (auto& user_asset : user_assets) {
     user_asset_contract_addresses.insert(user_asset->contract_address);
   }
-  base::Value::List contract_addresses;
-  for (const auto& registry_token : token_registry) {
+
+  // Create a list of contract addresses to search by removing
+  // all erc20s and assets the user has already added,
+  base::Value::List contract_addresses_to_search;
+  // Also create a map for addresses to blockchain tokens for easy lookup
+  // for blockchain tokens in OnGetTransferLogs
+  base::flat_map<std::string, mojom::BlockchainTokenPtr> tokens_to_search;
+  for (auto& registry_token : token_registry) {
     if (registry_token->is_erc20 && !registry_token->contract_address.empty() &&
-        user_asset_contract_addresses.find(registry_token->contract_address) ==
-            user_asset_contract_addresses.end()) {
-      contract_addresses.Append(registry_token->contract_address);
+        !user_asset_contract_addresses.contains(
+            registry_token->contract_address)) {
+      contract_addresses_to_search.Append(registry_token->contract_address);
+      tokens_to_search[registry_token->contract_address] =
+          std::move(registry_token);
     }
   }
 
-  if (contract_addresses.size() == 0) {
+  if (contract_addresses_to_search.size() == 0) {
     std::move(callback).Run(std::vector<mojom::BlockchainTokenPtr>(),
                             mojom::ProviderError::kSuccess, "");
     return;
   }
 
-  auto internal_callback =
-      base::BindOnce(&JsonRpcService::OnGetTransferLogs,
-                     weak_ptr_factory_.GetWeakPtr(), std::move(callback));
+  auto internal_callback = base::BindOnce(
+      &JsonRpcService::OnGetTransferLogs, weak_ptr_factory_.GetWeakPtr(),
+      std::move(callback), base::OwnedRef(std::move(tokens_to_search)));
 
-  RequestInternal(
-      eth::eth_getLogs("earliest", "latest", std::move(contract_addresses),
-                       std::move(topics), ""),
-      true, network_url, std::move(internal_callback));
+  RequestInternal(eth::eth_getLogs("earliest", "latest",
+                                   std::move(contract_addresses_to_search),
+                                   std::move(topics), ""),
+                  true, network_url, std::move(internal_callback));
 }
 
-void JsonRpcService::OnGetTransferLogs(DiscoverAssetsCallback callback,
-                                       APIRequestResult api_request_result) {
+void JsonRpcService::OnGetTransferLogs(
+    DiscoverAssetsCallback callback,
+    base::flat_map<std::string, mojom::BlockchainTokenPtr>& tokens_to_search,
+    APIRequestResult api_request_result) {
   if (!api_request_result.Is2XXResponseCode()) {
     std::move(callback).Run(
         std::vector<mojom::BlockchainTokenPtr>(),
@@ -2234,20 +2243,19 @@ void JsonRpcService::OnGetTransferLogs(DiscoverAssetsCallback callback,
     return;
   }
 
-  // Get unique list of token contract addresses with transfer events
-  std::unordered_set<std::string> contract_addresses;
+  // Create unique list of addresses that matched eth_getLogs query
+  base::flat_set<std::string> matching_contract_addresses;
   for (const auto& log : logs) {
-    contract_addresses.insert(log.address);
+    matching_contract_addresses.insert(log.address);
   }
   std::vector<mojom::BlockchainTokenPtr> discovered_assets;
 
-  for (const auto& contract_address : contract_addresses) {
-    mojom::BlockchainTokenPtr token =
-        BlockchainRegistry::GetInstance()->GetTokenByAddress(
-            mojom::kMainnetChainId, mojom::CoinType::ETH, contract_address);
-    if (!token) {
+  for (auto& contract_address : matching_contract_addresses) {
+    if (!tokens_to_search.contains(contract_address)) {
       continue;
     }
+    mojom::BlockchainTokenPtr token =
+        std::move(tokens_to_search.at(contract_address));
 
     if (!BraveWalletService::AddUserAsset(token.Clone(), prefs_)) {
       continue;

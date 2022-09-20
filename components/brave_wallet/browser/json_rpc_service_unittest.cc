@@ -2011,7 +2011,7 @@ TEST_F(JsonRpcServiceUnitTest, GetERC20TokenBalance) {
       "}");
 
   json_rpc_service_->GetERC20TokenBalance(
-      "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+      "0x0D8775F648430679A709E98d2b0Cb6250d2887EF",
       "0x4e02f254184E904300e0775E4b8eeCB1", mojom::kMainnetChainId,
       base::BindOnce(&OnStringResponse, &callback_called,
                      mojom::ProviderError::kSuccess, "",
@@ -2022,7 +2022,7 @@ TEST_F(JsonRpcServiceUnitTest, GetERC20TokenBalance) {
   callback_called = false;
   SetHTTPRequestTimeoutInterceptor();
   json_rpc_service_->GetERC20TokenBalance(
-      "0x0d8775f648430679a709e98d2b0cb6250d2887ef",
+      "0x0D8775F648430679A709E98d2b0Cb6250d2887EF",
       "0x4e02f254184E904300e0775E4b8eeCB1", mojom::kMainnetChainId,
       base::BindOnce(&OnStringResponse, &callback_called,
                      mojom::ProviderError::kInternalError,
@@ -3408,7 +3408,7 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
 
   // Valid registry token DAI is discovered and added
   // Valid BAT is not added because it is a already a user asset
-  // Invalid LilNoun is not added because it is an ERC721 - TODO
+  // Invalid LilNoun is not added because it is an ERC721
   token_list_json = R"(
      {
       "0x0d8775f648430679a709e98d2b0cb6250d2887ef": {
@@ -3418,13 +3418,12 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
         "symbol": "BAT",
         "decimals": 18
       },
-      "0x6b175474e89094c44da98b954eedeac495271d0f": {
+      "0x6B175474E89094C44Da98b954EedeAC495271d0F": {
         "name": "Dai Stablecoin",
         "logo": "dai.svg",
         "erc20": true,
         "symbol": "DAI",
-        "decimals": 18,
-        "chainId": "0x1"
+        "decimals": 18
       },
       "0x4b10701Bfd7BFEdc47d50562b76b436fbB5BdB3B": {
         "name": "Lil Nouns",
@@ -3444,7 +3443,7 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
     "id": 1,
     "result": [
       {
-        "address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+        "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
         "blockHash": "0x2961ceb6c16bab72a55f79e394a35f2bf1c62b30446e3537280f7c22c3115e6e",
         "blockNumber": "0xd6464c",
         "data": "0x00000000000000000000000000000000000000000000000555aff1f0fae8c000",
@@ -3479,13 +3478,9 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
     ]
    })";
   SetInterceptor(expected_network, "eth_getLogs", "", response);
-  mojom::BlockchainTokenPtr user_asset = mojom::BlockchainToken::New(
-      "0x0d8775f648430679a709e98d2b0cb6250d2887ef", "Basic Attention Token",
-      "bat.png", true, false, "BAT", 18, true, "", "", "0x1",
-      mojom::CoinType::ETH);
   TestDiscoverAssetsInternal(mojom::kMainnetChainId, mojom::CoinType::ETH,
                              {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"},
-                             {"0x6b175474e89094c44da98b954eedeac495271d0f"},
+                             {"0x6B175474E89094C44Da98b954EedeAC495271d0F"},
                              mojom::ProviderError::kSuccess, "");
 }
 
