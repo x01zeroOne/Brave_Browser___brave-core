@@ -4399,24 +4399,6 @@ TEST_F(KeyringServiceUnitTest, DiscoverAssets) {
       ParseTokenList(token_list_json, &token_list_map, mojom::CoinType::ETH));
   blockchain_registry->UpdateTokenList(std::move(token_list_map));
 
-  // CreateWallet
-  // TODO(nvonpentz) Not sure how to test CreateWallet since the account is
-  // generated non-deterministically' and we need to mock std::string response =
-  // R"({
-  //   "jsonrpc": "2.0",
-  //     "id": 1,
-  //     "result": [
-  //     ]
-  // })";
-  // SetInterceptor(response);
-  // ASSERT_TRUE(CreateWallet(&service, "brave"));
-  // base::RunLoop().RunUntilIdle();
-  // std::vector<mojom::AccountInfoPtr> account_infos =
-  //     service.GetAccountInfosForKeyring(mojom::kDefaultKeyringId);
-  // std::vector<mojom::BlockchainTokenPtr> user_assets =
-  //     BraveWalletService::GetUserAssets(mojom::kMainnetChainId,
-  //     mojom::CoinType::ETH, GetPrefs());
-
   // RestoreWallet
   // Mock an eth_getLogs response that includes
   //  * DAI transfers to next account,
