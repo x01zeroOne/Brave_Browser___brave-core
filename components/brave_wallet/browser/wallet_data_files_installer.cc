@@ -15,6 +15,7 @@
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
 #include "base/logging.h"
+#include "base/task/task_runner_util.h"
 #include "base/task/thread_pool.h"
 #include "base/values.h"
 #include "brave/components/brave_component_updater/browser/brave_on_demand_updater.h"
@@ -50,12 +51,14 @@ static_assert(std::size(kWalletDataFilesSha2Hash) == crypto::kSHA256Length,
               "Wrong hash length");
 
 absl::optional<base::Version> last_installed_wallet_version;
-
-void OnSanitizedTokenList(TokenListMap* token_list_map,
-                          mojom::CoinType coin,
-                          data_decoder::JsonSanitizer::Result result) {
+void OnSanitizedTokenList(
+    mojom::CoinType coin,
+    base::OnceCallback<void(TokenListMap* lists)> callback,
+    data_decoder::JsonSanitizer::Result result) {
+  TokenListMap lists;
   if (result.error) {
     VLOG(1) << "TokenList JSON validation error:" << *result.error;
+    std::move(callback).Run(&lists);
     return;
   }
 
@@ -63,16 +66,20 @@ void OnSanitizedTokenList(TokenListMap* token_list_map,
   if (result.value.has_value()) {
     json = result.value.value();
   }
-
-  if (!ParseTokenList(json, token_list_map, coin)) {
+  if (!ParseTokenList(json, &lists, coin)) {
     VLOG(1) << "Can't parse token list.";
+    std::move(callback).Run(&lists);
+    return;
   }
+
+  std::move(callback).Run(&lists);
 }
 
-void HandleParseTokenList(base::FilePath absolute_install_dir,
-                          const std::string& filename,
-                          TokenListMap* token_list_map,
-                          mojom::CoinType coin_type) {
+void HandleParseTokenList(
+    base::FilePath absolute_install_dir,
+    const std::string& filename,
+    mojom::CoinType coin_type,
+    base::OnceCallback<void(TokenListMap* lists)> callback) {
   const base::FilePath token_list_json_path =
       absolute_install_dir.AppendASCII(filename);
   std::string token_list_json;
@@ -83,10 +90,17 @@ void HandleParseTokenList(base::FilePath absolute_install_dir,
 
   data_decoder::JsonSanitizer::Sanitize(
       std::move(token_list_json),
-      base::BindOnce(&OnSanitizedTokenList, token_list_map, coin_type));
+      base::BindOnce(&OnSanitizedTokenList, coin_type, std::move(callback)));
 }
 
-void TokenListReady(const base::FilePath& install_dir, TokenListMap* lists) {
+void UpdateTokenRegistry(TokenListMap* lists) {
+  for (auto& list_pair : *lists) {
+    BlockchainRegistry::GetInstance()->UpdateTokenList(
+        list_pair.first, std::move(list_pair.second));
+  }
+}
+
+void ParseTokenListAndUpdateRegistry(const base::FilePath& install_dir) {
   // On some platforms (e.g. Mac) we use symlinks for paths. Convert paths to
   // absolute paths to avoid unexpected failure. base::MakeAbsoluteFilePath()
   // requires IO so it can only be done in this function.
@@ -97,18 +111,15 @@ void TokenListReady(const base::FilePath& install_dir, TokenListMap* lists) {
     LOG(ERROR) << "Failed to get absolute install path.";
   }
 
-  // Used for Ethereum mainnet
-  HandleParseTokenList(absolute_install_dir, "contract-map.json", lists,
-                       mojom::CoinType::ETH);
-  // Used for EVM compatabile networks including testnets
-  HandleParseTokenList(absolute_install_dir, "evm-contract-map.json", lists,
-                       mojom::CoinType::ETH);
-  HandleParseTokenList(absolute_install_dir, "solana-contract-map.json", lists,
-                       mojom::CoinType::SOL);
-}
-
-void UpdateTokenRegistry(TokenListMap* lists) {
-  BlockchainRegistry::GetInstance()->UpdateTokenList(std::move(*lists));
+  HandleParseTokenList(absolute_install_dir, "contract-map.json",
+                       mojom::CoinType::ETH,
+                       base::BindOnce(&UpdateTokenRegistry));
+  HandleParseTokenList(absolute_install_dir, "evm-contract-map.json",
+                       mojom::CoinType::ETH,
+                       base::BindOnce(&UpdateTokenRegistry));
+  HandleParseTokenList(absolute_install_dir, "solana-contract-map.json",
+                       mojom::CoinType::SOL,
+                       base::BindOnce(&UpdateTokenRegistry));
 }
 
 void HandleParseChainList(base::FilePath absolute_install_dir,
@@ -158,6 +169,7 @@ class WalletDataFilesInstallerPolicy
   ~WalletDataFilesInstallerPolicy() override = default;
 
  private:
+  scoped_refptr<base::SequencedTaskRunner> sequenced_task_runner_;
   // The following methods override ComponentInstallerPolicy.
   bool SupportsGroupPolicyEnabledComponentUpdates() const override;
   bool RequiresNetworkEncryption() const override;
@@ -181,7 +193,12 @@ class WalletDataFilesInstallerPolicy
       const WalletDataFilesInstallerPolicy&) = delete;
 };
 
-WalletDataFilesInstallerPolicy::WalletDataFilesInstallerPolicy() = default;
+// WalletDataFilesInstallerPolicy::WalletDataFilesInstallerPolicy() = default;
+WalletDataFilesInstallerPolicy::WalletDataFilesInstallerPolicy() {
+  sequenced_task_runner_ = base::ThreadPool::CreateSequencedTaskRunner(
+      {base::MayBlock(), base::TaskPriority::BEST_EFFORT,
+       base::TaskShutdownBehavior::BLOCK_SHUTDOWN});
+}
 
 bool WalletDataFilesInstallerPolicy::
     SupportsGroupPolicyEnabledComponentUpdates() const {
@@ -206,13 +223,8 @@ void WalletDataFilesInstallerPolicy::ComponentReady(
     const base::FilePath& path,
     base::Value manifest) {
   last_installed_wallet_version = version;
-
-  TokenListMap* lists;
-  base::SequencedTaskRunnerHandle::Get()->PostTask(
-      FROM_HERE, base::BindOnce(&TokenListReady, path, lists));
-
-  base::SequencedTaskRunnerHandle::Get()->PostTask(
-      FROM_HERE, base::BindOnce(&UpdateTokenRegistry, lists));
+  sequenced_task_runner_->PostTask(FROM_HERE,
+                                   base::BindOnce(&ParseTokenListAndUpdateRegistry, path));
 
   base::ThreadPool::PostTaskAndReplyWithResult(
       FROM_HERE, {base::MayBlock(), base::TaskPriority::BEST_EFFORT},
