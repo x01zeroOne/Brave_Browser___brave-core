@@ -51,11 +51,15 @@ static_assert(std::size(kWalletDataFilesSha2Hash) == crypto::kSHA256Length,
 
 absl::optional<base::Version> last_installed_wallet_version;
 
-void OnSanitizedTokenList(TokenListMap* token_list_map,
+// using HandleParseTokenListCallback = base::OnceCallback<void(TokenListMap* lists)>;
+
+void OnSanitizedTokenList(TokenListMap* lists,
                           mojom::CoinType coin,
+                          base::OnceCallback<void(TokenListMap* lists)> callback,
                           data_decoder::JsonSanitizer::Result result) {
   if (result.error) {
     VLOG(1) << "TokenList JSON validation error:" << *result.error;
+    std::move(callback).Run(lists);
     return;
   }
 
@@ -64,15 +68,20 @@ void OnSanitizedTokenList(TokenListMap* token_list_map,
     json = result.value.value();
   }
 
-  if (!ParseTokenList(json, token_list_map, coin)) {
+  if (!ParseTokenList(json, lists, coin)) {
     VLOG(1) << "Can't parse token list.";
+    std::move(callback).Run(lists);
+    return;
   }
+
+  std::move(callback).Run(lists);
 }
 
 void HandleParseTokenList(base::FilePath absolute_install_dir,
                           const std::string& filename,
-                          TokenListMap* token_list_map,
-                          mojom::CoinType coin_type) {
+                          TokenListMap* lists,
+                          mojom::CoinType coin_type,
+                          base::OnceCallback<void(TokenListMap* lists)> callback) {
   const base::FilePath token_list_json_path =
       absolute_install_dir.AppendASCII(filename);
   std::string token_list_json;
@@ -80,13 +89,48 @@ void HandleParseTokenList(base::FilePath absolute_install_dir,
     VLOG(1) << "Can't read token list file: " << filename;
     return;
   }
-
+  
   data_decoder::JsonSanitizer::Sanitize(
       std::move(token_list_json),
-      base::BindOnce(&OnSanitizedTokenList, token_list_map, coin_type));
+      base::BindOnce(&OnSanitizedTokenList, lists, coin_type, std::move(callback)));
 }
 
-void TokenListReady(const base::FilePath& install_dir, TokenListMap* lists) {
+void UpdateTokenRegistry(TokenListMap* lists) {
+  BlockchainRegistry::GetInstance()->UpdateTokenList(std::move(*lists));
+}
+
+void OnSolanaTokenListParsed(TokenListMap* lists) {
+  UpdateTokenRegistry(std::move(lists));
+}
+
+void OnEvmTokenListParsed(
+    const base::FilePath& absolute_install_dir,
+    TokenListMap* lists)
+{
+  HandleParseTokenList(
+      absolute_install_dir,
+      "solana-contract-map.json",
+      std::move(lists),
+      mojom::CoinType::SOL,
+      base::BindOnce(&OnSolanaTokenListParsed)
+  );
+} 
+
+void OnEthereumTokenListParsed(
+    const base::FilePath& absolute_install_dir,
+    TokenListMap* lists)
+{
+  HandleParseTokenList(
+      absolute_install_dir,
+      "evm-contract-map.json",
+      std::move(lists),
+      mojom::CoinType::ETH,
+      base::BindOnce(&OnEvmTokenListParsed, absolute_install_dir)
+  );
+} 
+
+void ParseTokenListAndUpdateRegistry(const base::FilePath& install_dir) {
+  TokenListMap lists;
   // On some platforms (e.g. Mac) we use symlinks for paths. Convert paths to
   // absolute paths to avoid unexpected failure. base::MakeAbsoluteFilePath()
   // requires IO so it can only be done in this function.
@@ -97,19 +141,35 @@ void TokenListReady(const base::FilePath& install_dir, TokenListMap* lists) {
     LOG(ERROR) << "Failed to get absolute install path.";
   }
 
-  // Used for Ethereum mainnet
-  HandleParseTokenList(absolute_install_dir, "contract-map.json", lists,
-                       mojom::CoinType::ETH);
-  // Used for EVM compatabile networks including testnets
-  HandleParseTokenList(absolute_install_dir, "evm-contract-map.json", lists,
-                       mojom::CoinType::ETH);
-  HandleParseTokenList(absolute_install_dir, "solana-contract-map.json", lists,
-                       mojom::CoinType::SOL);
+  HandleParseTokenList(
+      absolute_install_dir,
+      "contract-map.json",
+      &lists,
+      mojom::CoinType::ETH,
+      base::BindOnce(&OnEthereumTokenListParsed, absolute_install_dir)
+  );
 }
 
-void UpdateTokenRegistry(TokenListMap* lists) {
-  BlockchainRegistry::GetInstance()->UpdateTokenList(std::move(*lists));
-}
+// void TokenListReady(const base::FilePath& install_dir, TokenListMap* lists) {
+//   // On some platforms (e.g. Mac) we use symlinks for paths. Convert paths to
+//   // absolute paths to avoid unexpected failure. base::MakeAbsoluteFilePath()
+//   // requires IO so it can only be done in this function.
+//   const base::FilePath absolute_install_dir =
+//       base::MakeAbsoluteFilePath(install_dir);
+
+//   if (absolute_install_dir.empty()) {
+//     LOG(ERROR) << "Failed to get absolute install path.";
+//   }
+
+//   // Used for Ethereum mainnet
+//   HandleParseTokenList(absolute_install_dir, "contract-map.json", lists,
+//                        mojom::CoinType::ETH);
+//   // Used for EVM compatabile networks including testnets
+//   HandleParseTokenList(absolute_install_dir, "evm-contract-map.json", lists,
+//                        mojom::CoinType::ETH);
+//   HandleParseTokenList(absolute_install_dir, "solana-contract-map.json", lists,
+//                        mojom::CoinType::SOL);
+// }
 
 void HandleParseChainList(base::FilePath absolute_install_dir,
                           const std::string& filename,
@@ -207,12 +267,9 @@ void WalletDataFilesInstallerPolicy::ComponentReady(
     base::Value manifest) {
   last_installed_wallet_version = version;
 
-  TokenListMap* lists;
-  base::SequencedTaskRunnerHandle::Get()->PostTask(
-      FROM_HERE, base::BindOnce(&TokenListReady, path, lists));
-
-  base::SequencedTaskRunnerHandle::Get()->PostTask(
-      FROM_HERE, base::BindOnce(&UpdateTokenRegistry, lists));
+  base::ThreadPool::PostTask(
+      FROM_HERE, {base::MayBlock(), base::TaskPriority::BEST_EFFORT},
+      base::BindOnce(ParseTokenListAndUpdateRegistry, path));
 
   base::ThreadPool::PostTaskAndReplyWithResult(
       FROM_HERE, {base::MayBlock(), base::TaskPriority::BEST_EFFORT},
