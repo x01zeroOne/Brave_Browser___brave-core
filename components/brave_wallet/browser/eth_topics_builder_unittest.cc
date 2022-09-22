@@ -19,7 +19,8 @@ TEST(EthGetLogsTopicBuilderTest, MakeAssetDiscoveryTopics) {
   topics.clear();
   ASSERT_TRUE(MakeAssetDiscoveryTopics(
       {"0x16e4476c8fDDc552e3b1C4b8b56261d85977fE52"}, &topics));
-  EXPECT_EQ(topics[0], base::Value("0xddf252ad"));
+  EXPECT_EQ(topics[0], base::Value("0xddf252ad1be2c89b69c2b068fc378daa952ba7f16"
+                                   "3c4a11628f55a4df523b3ef"));
   EXPECT_EQ(topics[1], base::Value());
   base::Value::List to_address_topic;
   to_address_topic.Append(base::Value(

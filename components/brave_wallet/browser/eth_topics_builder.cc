@@ -17,8 +17,7 @@ bool MakeAssetDiscoveryTopics(
     const std::vector<std::string>& to_account_addresses,
     base::Value::List* topics) {
   // First topic matches erc20::Transfer function hash
-  topics->Append(
-      brave_wallet::GetFunctionHash("Transfer(address,address,uint256)"));
+  topics->Append(brave_wallet::KeccakHash("Transfer(address,address,uint256)"));
 
   // Second topic matches everything (any from_address)
   topics->Append(base::Value());
