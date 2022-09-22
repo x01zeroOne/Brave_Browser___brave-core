@@ -75,6 +75,28 @@ void OnSanitizedTokenList(
   std::move(callback).Run(&lists);
 }
 
+void OnSanitizedChainList(base::OnceCallback<void(ChainList* chains)> callback,
+                          data_decoder::JsonSanitizer::Result result) {
+  ChainList chains;
+  if (result.error) {
+    VLOG(1) << "TokenList JSON validation error:" << *result.error;
+    std::move(callback).Run(&chains);
+    return;
+  }
+
+  std::string json;
+  if (result.value.has_value()) {
+    json = result.value.value();
+  }
+  if (!ParseChainList(json, &chains)) {
+    VLOG(1) << "Can't parse chain list.";
+    std::move(callback).Run(&chains);
+    return;
+  }
+
+  std::move(callback).Run(&chains);
+}
+
 void HandleParseTokenList(
     base::FilePath absolute_install_dir,
     const std::string& filename,
@@ -93,11 +115,32 @@ void HandleParseTokenList(
       base::BindOnce(&OnSanitizedTokenList, coin_type, std::move(callback)));
 }
 
+void HandleParseChainList(
+    base::FilePath absolute_install_dir,
+    const std::string& filename,
+    base::OnceCallback<void(ChainList* chains)> callback) {
+  const base::FilePath chain_list_json_path =
+      absolute_install_dir.AppendASCII(filename);
+  std::string chain_list_json;
+  if (!base::ReadFileToString(chain_list_json_path, &chain_list_json)) {
+    LOG(ERROR) << "Can't read chain list file: " << filename;
+    return;
+  }
+
+  data_decoder::JsonSanitizer::Sanitize(
+      std::move(chain_list_json),
+      base::BindOnce(&OnSanitizedChainList, std::move(callback)));
+}
+
 void UpdateTokenRegistry(TokenListMap* lists) {
   for (auto& list_pair : *lists) {
     BlockchainRegistry::GetInstance()->UpdateTokenList(
         list_pair.first, std::move(list_pair.second));
   }
+}
+
+void UpdateChainListRegistry(ChainList* chains) {
+  BlockchainRegistry::GetInstance()->UpdateChainList(std::move(*chains));
 }
 
 void ParseTokenListAndUpdateRegistry(const base::FilePath& install_dir) {
@@ -122,24 +165,7 @@ void ParseTokenListAndUpdateRegistry(const base::FilePath& install_dir) {
                        base::BindOnce(&UpdateTokenRegistry));
 }
 
-void HandleParseChainList(base::FilePath absolute_install_dir,
-                          const std::string& filename,
-                          ChainList* chain_list) {
-  const base::FilePath chain_list_json_path =
-      absolute_install_dir.AppendASCII(filename);
-  std::string chain_list_json;
-  if (!base::ReadFileToString(chain_list_json_path, &chain_list_json)) {
-    LOG(ERROR) << "Can't read chain list file: " << filename;
-    return;
-  }
-
-  if (!ParseChainList(chain_list_json, chain_list)) {
-    LOG(ERROR) << "Can't parse chain list: " << filename;
-  }
-}
-
-ChainList ChainListReady(const base::FilePath& install_dir) {
-  ChainList chains;
+void ParseChainListAndUpdateRegistry(const base::FilePath& install_dir) {
   // On some platforms (e.g. Mac) we use symlinks for paths. Convert paths to
   // absolute paths to avoid unexpected failure. base::MakeAbsoluteFilePath()
   // requires IO so it can only be done in this function.
@@ -148,16 +174,10 @@ ChainList ChainListReady(const base::FilePath& install_dir) {
 
   if (absolute_install_dir.empty()) {
     LOG(ERROR) << "Failed to get absolute install path.";
-    return chains;
   }
 
-  HandleParseChainList(absolute_install_dir, "chainlist.json", &chains);
-
-  return chains;
-}
-
-void UpdateChainListRegistry(ChainList chains) {
-  BlockchainRegistry::GetInstance()->UpdateChainList(std::move(chains));
+  HandleParseChainList(absolute_install_dir, "chainlist.json",
+                       base::BindOnce(&UpdateChainListRegistry));
 }
 
 }  // namespace
@@ -223,13 +243,11 @@ void WalletDataFilesInstallerPolicy::ComponentReady(
     const base::FilePath& path,
     base::Value manifest) {
   last_installed_wallet_version = version;
-  sequenced_task_runner_->PostTask(FROM_HERE,
-                                   base::BindOnce(&ParseTokenListAndUpdateRegistry, path));
+  sequenced_task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(&ParseTokenListAndUpdateRegistry, path));
 
-  base::ThreadPool::PostTaskAndReplyWithResult(
-      FROM_HERE, {base::MayBlock(), base::TaskPriority::BEST_EFFORT},
-      base::BindOnce(ChainListReady, path),
-      base::BindOnce(UpdateChainListRegistry));
+  sequenced_task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(&ParseChainListAndUpdateRegistry, path));
 }
 
 bool WalletDataFilesInstallerPolicy::VerifyInstallation(
