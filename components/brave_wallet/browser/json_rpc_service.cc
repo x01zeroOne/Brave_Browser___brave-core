@@ -2133,6 +2133,17 @@ void JsonRpcService::DiscoverAssetsInternal(
     return;
   }
 
+  // Asset discovery only supported when using Infura proxy
+  GURL infura_url = GetInfuraURLForKnownChainId(chain_id);
+  GURL active_url = GetNetworkURL(prefs_, chain_id, coin);
+  if (infura_url.host() != active_url.host()) {
+    std::move(callback).Run(
+        std::vector<mojom::BlockchainTokenPtr>(),
+        mojom::ProviderError::kMethodNotSupported,
+        l10n_util::GetStringUTF8(IDS_WALLET_METHOD_NOT_SUPPORTED_ERROR));
+    return;
+  }
+
   std::vector<mojom::BlockchainTokenPtr> user_assets =
       BraveWalletService::GetUserAssets(chain_id, mojom::CoinType::ETH, prefs_);
   if (account_addresses.empty()) {

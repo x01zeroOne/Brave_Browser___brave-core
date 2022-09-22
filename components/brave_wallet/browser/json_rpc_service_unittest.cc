@@ -3513,6 +3513,17 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
                              {"0x6B175474E89094C44Da98b954EedeAC495271d0F",
                               "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"},
                              mojom::ProviderError::kSuccess, "");
+
+  // Discover assets should not run unless using Infura proxy
+  std::vector<base::Value::Dict> values;
+  mojom::NetworkInfo chain = GetTestNetworkInfo1("0x1");
+  values.push_back(brave_wallet::NetworkInfoToValue(chain));
+  UpdateCustomNetworks(prefs(), &values);
+  TestDiscoverAssetsInternal(
+      mojom::kMainnetChainId, mojom::CoinType::ETH,
+      {"0xB4B2802129071b2B9eBb8cBB01EA1E4D14B34961"}, {},
+      mojom::ProviderError::kMethodNotSupported,
+      l10n_util::GetStringUTF8(IDS_WALLET_METHOD_NOT_SUPPORTED_ERROR));
 }
 
 TEST_F(JsonRpcServiceUnitTest, Reset) {
