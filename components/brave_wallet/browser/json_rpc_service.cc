@@ -15,6 +15,7 @@
 #include "base/json/json_writer.h"
 #include "base/no_destructor.h"
 #include "base/notreached.h"
+#include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
 #include "brave/components/brave_wallet/browser/blockchain_registry.h"
 #include "brave/components/brave_wallet/browser/brave_wallet_prefs.h"
@@ -2192,7 +2193,7 @@ void JsonRpcService::OnGetAllTokensDiscoverAssets(
   }
 
   // Create a list of contract addresses to search by removing
-  // all erc20s and assets the user has already added,
+  // all erc20s and assets the user has already added
   base::Value::List contract_addresses_to_search;
   // Also create a map for addresses to blockchain tokens for easy lookup
   // for blockchain tokens in OnGetTransferLogs
@@ -2201,9 +2202,12 @@ void JsonRpcService::OnGetAllTokensDiscoverAssets(
     if (registry_token->is_erc20 && !registry_token->contract_address.empty() &&
         !user_asset_contract_addresses.contains(
             registry_token->contract_address)) {
-      contract_addresses_to_search.Append(registry_token->contract_address);
-      tokens_to_search[registry_token->contract_address] =
-          std::move(registry_token);
+      // Use lowercase representation of hex address for comparisons
+      // because providers may return all lowercase addresses
+      const std::string lower_case_contract_address =
+          base::ToLowerASCII(registry_token->contract_address);
+      contract_addresses_to_search.Append(lower_case_contract_address);
+      tokens_to_search[lower_case_contract_address] = std::move(registry_token);
     }
   }
 
@@ -2251,11 +2255,13 @@ void JsonRpcService::OnGetTransferLogs(
   std::vector<mojom::BlockchainTokenPtr> discovered_assets;
 
   for (auto& contract_address : matching_contract_addresses) {
-    if (!tokens_to_search.contains(contract_address)) {
+    const std::string contract_address_lower =
+        base::ToLowerASCII(contract_address);
+    if (!tokens_to_search.contains(contract_address_lower)) {
       continue;
     }
     mojom::BlockchainTokenPtr token =
-        std::move(tokens_to_search.at(contract_address));
+        std::move(tokens_to_search.at(contract_address_lower));
 
     if (!BraveWalletService::AddUserAsset(token.Clone(), prefs_)) {
       continue;
