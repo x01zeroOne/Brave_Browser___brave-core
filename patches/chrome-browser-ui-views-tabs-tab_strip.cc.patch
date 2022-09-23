@@ -1,8 +1,20 @@
 diff --git a/chrome/browser/ui/views/tabs/tab_strip.cc b/chrome/browser/ui/views/tabs/tab_strip.cc
-index f1aee4a1a1b61391eae6f100f1cf9276d045c448..98983ed62c8628daa2aea0434d29e8db14fae90e 100644
+index eb6452cb92c932140a43c5d265bd577d1cfa8026..2ab3a6f1a1ba0f0f36c3bd52bbab7263499ed7d7 100644
 --- a/chrome/browser/ui/views/tabs/tab_strip.cc
 +++ b/chrome/browser/ui/views/tabs/tab_strip.cc
-@@ -475,6 +475,7 @@ class TabStrip::TabDragContextImpl : public TabDragContext,
+@@ -134,11 +134,6 @@ std::unique_ptr<TabContainer> MakeTabContainer(
+     TabStrip* tab_strip,
+     TabHoverCardController* hover_card_controller,
+     TabDragContext* drag_context) {
+-  if (base::FeatureList::IsEnabled(features::kSplitTabStrip)) {
+-    return std::make_unique<CompoundTabContainer>(
+-        raw_ref<TabContainerController>(*tab_strip), hover_card_controller,
+-        drag_context, *tab_strip, tab_strip);
+-  }
+   return std::make_unique<TabContainerImpl>(
+       *tab_strip, hover_card_controller, drag_context, *tab_strip, tab_strip);
+ }
+@@ -489,6 +484,7 @@ class TabStrip::TabDragContextImpl : public TabDragContext,
  
    std::vector<gfx::Rect> CalculateBoundsForDraggedViews(
        const std::vector<TabSlotView*>& views) override {
@@ -10,7 +22,7 @@ index f1aee4a1a1b61391eae6f100f1cf9276d045c448..98983ed62c8628daa2aea0434d29e8db
      DCHECK(!views.empty());
  
      std::vector<gfx::Rect> bounds;
-@@ -718,6 +719,7 @@ class TabStrip::TabDragContextImpl : public TabDragContext,
+@@ -732,6 +728,7 @@ class TabStrip::TabDragContextImpl : public TabDragContext,
          continue;
        }
  
@@ -18,3 +30,12 @@ index f1aee4a1a1b61391eae6f100f1cf9276d045c448..98983ed62c8628daa2aea0434d29e8db
        // If there's a group header here, and we're dragging a group, we might
        // end up on either side of that header. Check both cases to find the
        // best option.
+@@ -885,7 +882,7 @@ END_METADATA
+ 
+ TabStrip::TabStrip(std::unique_ptr<TabStripController> controller)
+     : controller_(std::move(controller)),
+-      hover_card_controller_(std::make_unique<TabHoverCardController>(this)),
++      hover_card_controller_(std::make_unique<BraveTabHoverCardController>(this)),
+       drag_context_(*AddChildView(std::make_unique<TabDragContextImpl>(this))),
+       tab_container_(
+           *AddChildViewAt(MakeTabContainer(this,

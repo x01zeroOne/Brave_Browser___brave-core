@@ -18,7 +18,7 @@
 
 #define AddTab(TAB, MODEL_INDEX, PINNED) \
   AddTab(std::make_unique<BraveTab>(this), MODEL_INDEX, PINNED)
-#define TabHoverCardController BraveTabHoverCardController
+#define TabContainer BraveTabContainer
 #define TabContainerImpl BraveTabContainer
 #define BRAVE_CALCULATE_INSERTION_INDEX                                       \
   if (tabs::features::ShouldShowVerticalTabs()) {                             \
@@ -52,5 +52,5 @@
 #undef BRAVE_CALCULATE_BOUNDS_FOR_DRAGGED_VIEWS
 #undef BRAVE_CALCULATE_INSERTION_INDEX
 #undef TabContainer
-#undef TabHoverCardController
+#undef TabContainerImpl
 #undef AddTab
