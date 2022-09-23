@@ -2204,7 +2204,7 @@ void JsonRpcService::OnGetAllTokensDiscoverAssets(
   }
 
   // Create a list of contract addresses to search by removing
-  // all erc20s and assets the user has already added
+  // all erc20s and assets the user has already added.
   base::Value::List contract_addresses_to_search;
   // Also create a map for addresses to blockchain tokens for easy lookup
   // for blockchain tokens in OnGetTransferLogs
@@ -2214,7 +2214,7 @@ void JsonRpcService::OnGetAllTokensDiscoverAssets(
         !user_asset_contract_addresses.contains(
             registry_token->contract_address)) {
       // Use lowercase representation of hex address for comparisons
-      // because providers may return all lowercase addresses
+      // because providers may return all lowercase addresses.
       const std::string lower_case_contract_address =
           base::ToLowerASCII(registry_token->contract_address);
       contract_addresses_to_search.Append(lower_case_contract_address);

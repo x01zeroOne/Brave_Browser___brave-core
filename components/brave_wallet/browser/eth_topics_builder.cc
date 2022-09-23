@@ -16,7 +16,7 @@ namespace brave_wallet {
 bool MakeAssetDiscoveryTopics(
     const std::vector<std::string>& to_account_addresses,
     base::Value::List* topics) {
-  // First topic matches erc20::Transfer function hash
+  // First topic matches full keccak hash of the erc20::Transfer event signature
   topics->Append(brave_wallet::KeccakHash("Transfer(address,address,uint256)"));
 
   // Second topic matches everything (any from_address)

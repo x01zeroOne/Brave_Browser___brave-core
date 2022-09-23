@@ -3406,11 +3406,11 @@ TEST_F(JsonRpcServiceUnitTest, DiscoverAssets) {
       mojom::ProviderError::kParsingError,
       l10n_util::GetStringUTF8(IDS_WALLET_PARSING_ERROR));
 
-  // Valid registry token DAI is discovered and added
+  // Valid registry token DAI is discovered and added.
   // Valid registry token WETH is discovered and added (tests insensitivity to
-  // lower case addresses in provider logs response) Valid BAT is not added
-  // because it is a already a user asset Invalid LilNoun is not added because
-  // it is an ERC721
+  // lower case addresses in provider logs response).
+  // Valid BAT is not added because it is already a user asset.
+  // Invalid LilNoun is not added because it is an ERC721.
   token_list_json = R"(
      {
       "0x0d8775f648430679a709e98d2b0cb6250d2887ef": {
