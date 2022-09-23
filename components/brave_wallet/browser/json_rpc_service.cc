@@ -2199,7 +2199,7 @@ void JsonRpcService::OnGetAllTokensDiscoverAssets(
 
   // Create set of contract addresses the user already has for easy lookups
   base::flat_set<std::string> user_asset_contract_addresses;
-  for (auto& user_asset : user_assets) {
+  for (const auto& user_asset : user_assets) {
     user_asset_contract_addresses.insert(user_asset->contract_address);
   }
 
@@ -2265,7 +2265,7 @@ void JsonRpcService::OnGetTransferLogs(
   }
   std::vector<mojom::BlockchainTokenPtr> discovered_assets;
 
-  for (auto& contract_address : matching_contract_addresses) {
+  for (const auto& contract_address : matching_contract_addresses) {
     const std::string contract_address_lower =
         base::ToLowerASCII(contract_address);
     if (!tokens_to_search.contains(contract_address_lower)) {
