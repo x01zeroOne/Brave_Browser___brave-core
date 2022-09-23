@@ -2144,8 +2144,6 @@ void JsonRpcService::DiscoverAssetsInternal(
     return;
   }
 
-  std::vector<mojom::BlockchainTokenPtr> user_assets =
-      BraveWalletService::GetUserAssets(chain_id, mojom::CoinType::ETH, prefs_);
   if (account_addresses.empty()) {
     std::move(callback).Run(
         std::vector<mojom::BlockchainTokenPtr>(),
@@ -2164,6 +2162,8 @@ void JsonRpcService::DiscoverAssetsInternal(
     }
   }
 
+  std::vector<mojom::BlockchainTokenPtr> user_assets =
+      BraveWalletService::GetUserAssets(chain_id, mojom::CoinType::ETH, prefs_);
   auto internal_callback = base::BindOnce(
       &JsonRpcService::OnGetAllTokensDiscoverAssets,
       weak_ptr_factory_.GetWeakPtr(), chain_id, account_addresses,
