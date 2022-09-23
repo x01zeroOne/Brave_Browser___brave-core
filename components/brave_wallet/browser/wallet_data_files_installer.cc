@@ -216,7 +216,7 @@ class WalletDataFilesInstallerPolicy
 WalletDataFilesInstallerPolicy::WalletDataFilesInstallerPolicy() {
   sequenced_task_runner_ = base::ThreadPool::CreateSequencedTaskRunner(
       {base::MayBlock(), base::TaskPriority::BEST_EFFORT,
-       base::TaskShutdownBehavior::BLOCK_SHUTDOWN});
+       base::TaskShutdownBehavior::SKIP_ON_SHUTDOWN});
 }
 
 bool WalletDataFilesInstallerPolicy::
