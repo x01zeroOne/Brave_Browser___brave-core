@@ -51,86 +51,6 @@ static_assert(std::size(kWalletDataFilesSha2Hash) == crypto::kSHA256Length,
               "Wrong hash length");
 
 absl::optional<base::Version> last_installed_wallet_version;
-void OnSanitizedTokenList(
-    mojom::CoinType coin,
-    base::OnceCallback<void(TokenListMap* lists)> callback,
-    data_decoder::JsonSanitizer::Result result) {
-  TokenListMap lists;
-  if (result.error) {
-    VLOG(1) << "TokenList JSON validation error:" << *result.error;
-    std::move(callback).Run(&lists);
-    return;
-  }
-
-  std::string json;
-  if (result.value.has_value()) {
-    json = result.value.value();
-  }
-  if (!ParseTokenList(json, &lists, coin)) {
-    VLOG(1) << "Can't parse token list.";
-    std::move(callback).Run(&lists);
-    return;
-  }
-
-  std::move(callback).Run(&lists);
-}
-
-void OnSanitizedChainList(base::OnceCallback<void(ChainList* chains)> callback,
-                          data_decoder::JsonSanitizer::Result result) {
-  ChainList chains;
-  if (result.error) {
-    VLOG(1) << "TokenList JSON validation error:" << *result.error;
-    std::move(callback).Run(&chains);
-    return;
-  }
-
-  std::string json;
-  if (result.value.has_value()) {
-    json = result.value.value();
-  }
-  if (!ParseChainList(json, &chains)) {
-    VLOG(1) << "Can't parse chain list.";
-    std::move(callback).Run(&chains);
-    return;
-  }
-
-  std::move(callback).Run(&chains);
-}
-
-void HandleParseTokenList(
-    base::FilePath absolute_install_dir,
-    const std::string& filename,
-    mojom::CoinType coin_type,
-    base::OnceCallback<void(TokenListMap* lists)> callback) {
-  const base::FilePath token_list_json_path =
-      absolute_install_dir.AppendASCII(filename);
-  std::string token_list_json;
-  if (!base::ReadFileToString(token_list_json_path, &token_list_json)) {
-    VLOG(1) << "Can't read token list file: " << filename;
-    return;
-  }
-
-  data_decoder::JsonSanitizer::Sanitize(
-      std::move(token_list_json),
-      base::BindOnce(&OnSanitizedTokenList, coin_type, std::move(callback)));
-}
-
-void HandleParseChainList(
-    base::FilePath absolute_install_dir,
-    const std::string& filename,
-    base::OnceCallback<void(ChainList* chains)> callback) {
-  const base::FilePath chain_list_json_path =
-      absolute_install_dir.AppendASCII(filename);
-  std::string chain_list_json;
-  if (!base::ReadFileToString(chain_list_json_path, &chain_list_json)) {
-    LOG(ERROR) << "Can't read chain list file: " << filename;
-    return;
-  }
-
-  data_decoder::JsonSanitizer::Sanitize(
-      std::move(chain_list_json),
-      base::BindOnce(&OnSanitizedChainList, std::move(callback)));
-}
 
 void UpdateTokenRegistry(TokenListMap* lists) {
   for (auto& list_pair : *lists) {
@@ -141,6 +61,75 @@ void UpdateTokenRegistry(TokenListMap* lists) {
 
 void UpdateChainListRegistry(ChainList* chains) {
   BlockchainRegistry::GetInstance()->UpdateChainList(std::move(*chains));
+}
+
+void OnSanitizedTokenList(mojom::CoinType coin,
+                          data_decoder::JsonSanitizer::Result result) {
+  TokenListMap lists;
+  if (result.error) {
+    VLOG(1) << "TokenList JSON validation error:" << *result.error;
+    return;
+  }
+
+  std::string json;
+  if (result.value.has_value()) {
+    json = result.value.value();
+  }
+  if (!ParseTokenList(json, &lists, coin)) {
+    VLOG(1) << "Can't parse token list.";
+    return;
+  }
+
+  UpdateTokenRegistry(&lists);
+}
+
+void OnSanitizedChainList(data_decoder::JsonSanitizer::Result result) {
+  ChainList chains;
+  if (result.error) {
+    VLOG(1) << "TokenList JSON validation error:" << *result.error;
+    return;
+  }
+
+  std::string json;
+  if (result.value.has_value()) {
+    json = result.value.value();
+  }
+  if (!ParseChainList(json, &chains)) {
+    VLOG(1) << "Can't parse chain list.";
+    return;
+  }
+
+  UpdateChainListRegistry(&chains);
+}
+
+void HandleParseTokenList(base::FilePath absolute_install_dir,
+                          const std::string& filename,
+                          mojom::CoinType coin_type) {
+  const base::FilePath token_list_json_path =
+      absolute_install_dir.AppendASCII(filename);
+  std::string token_list_json;
+  if (!base::ReadFileToString(token_list_json_path, &token_list_json)) {
+    VLOG(1) << "Can't read token list file: " << filename;
+    return;
+  }
+
+  data_decoder::JsonSanitizer::Sanitize(
+      std::move(token_list_json),
+      base::BindOnce(&OnSanitizedTokenList, coin_type));
+}
+
+void HandleParseChainList(base::FilePath absolute_install_dir,
+                          const std::string& filename) {
+  const base::FilePath chain_list_json_path =
+      absolute_install_dir.AppendASCII(filename);
+  std::string chain_list_json;
+  if (!base::ReadFileToString(chain_list_json_path, &chain_list_json)) {
+    LOG(ERROR) << "Can't read chain list file: " << filename;
+    return;
+  }
+
+  data_decoder::JsonSanitizer::Sanitize(std::move(chain_list_json),
+                                        base::BindOnce(&OnSanitizedChainList));
 }
 
 void ParseTokenListAndUpdateRegistry(const base::FilePath& install_dir) {
@@ -155,14 +144,11 @@ void ParseTokenListAndUpdateRegistry(const base::FilePath& install_dir) {
   }
 
   HandleParseTokenList(absolute_install_dir, "contract-map.json",
-                       mojom::CoinType::ETH,
-                       base::BindOnce(&UpdateTokenRegistry));
+                       mojom::CoinType::ETH);
   HandleParseTokenList(absolute_install_dir, "evm-contract-map.json",
-                       mojom::CoinType::ETH,
-                       base::BindOnce(&UpdateTokenRegistry));
+                       mojom::CoinType::ETH);
   HandleParseTokenList(absolute_install_dir, "solana-contract-map.json",
-                       mojom::CoinType::SOL,
-                       base::BindOnce(&UpdateTokenRegistry));
+                       mojom::CoinType::SOL);
 }
 
 void ParseChainListAndUpdateRegistry(const base::FilePath& install_dir) {
@@ -176,8 +162,7 @@ void ParseChainListAndUpdateRegistry(const base::FilePath& install_dir) {
     LOG(ERROR) << "Failed to get absolute install path.";
   }
 
-  HandleParseChainList(absolute_install_dir, "chainlist.json",
-                       base::BindOnce(&UpdateChainListRegistry));
+  HandleParseChainList(absolute_install_dir, "chainlist.json");
 }
 
 }  // namespace
