@@ -2261,18 +2261,16 @@ void JsonRpcService::OnGetTransferLogs(
   // Create unique list of addresses that matched eth_getLogs query
   base::flat_set<std::string> matching_contract_addresses;
   for (const auto& log : logs) {
-    matching_contract_addresses.insert(log.address);
+    matching_contract_addresses.insert(base::ToLowerASCII(log.address));
   }
   std::vector<mojom::BlockchainTokenPtr> discovered_assets;
 
   for (const auto& contract_address : matching_contract_addresses) {
-    const std::string contract_address_lower =
-        base::ToLowerASCII(contract_address);
-    if (!tokens_to_search.contains(contract_address_lower)) {
+    if (!tokens_to_search.contains(contract_address)) {
       continue;
     }
     mojom::BlockchainTokenPtr token =
-        std::move(tokens_to_search.at(contract_address_lower));
+        std::move(tokens_to_search.at(contract_address));
 
     if (!BraveWalletService::AddUserAsset(token.Clone(), prefs_)) {
       continue;
