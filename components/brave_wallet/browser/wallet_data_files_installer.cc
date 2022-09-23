@@ -213,7 +213,6 @@ class WalletDataFilesInstallerPolicy
       const WalletDataFilesInstallerPolicy&) = delete;
 };
 
-// WalletDataFilesInstallerPolicy::WalletDataFilesInstallerPolicy() = default;
 WalletDataFilesInstallerPolicy::WalletDataFilesInstallerPolicy() {
   sequenced_task_runner_ = base::ThreadPool::CreateSequencedTaskRunner(
       {base::MayBlock(), base::TaskPriority::BEST_EFFORT,
