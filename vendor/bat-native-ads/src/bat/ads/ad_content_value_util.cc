@@ -108,7 +108,8 @@ AdContentInfo AdContentFromValue(const base::Value::Dict& root) {
 
   if (const auto* advertiser_id_value = root.FindString(kAdvertiserId)) {
     ad_content.advertiser_id = *advertiser_id_value;
-  } else if (const auto* legacy_advertiser_id_value = root.FindString(kLegacyAdvertiserId)) {
+  } else if (const auto* legacy_advertiser_id_value =
+                 root.FindString(kLegacyAdvertiserId)) {
     ad_content.advertiser_id = *legacy_advertiser_id_value;
   }
 
