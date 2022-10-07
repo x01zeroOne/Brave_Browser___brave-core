@@ -26,6 +26,7 @@ class BraveTabContainer : public TabContainerImpl {
   void UpdateClosingModeOnRemovedTab(int model_index, bool was_active) override;
   gfx::Rect GetTargetBoundsForClosingTab(Tab* tab,
                                          int former_model_index) const override;
+  void StartInsertTabAnimation(int model_index) override;
 };
 
 #endif  // BRAVE_BROWSER_UI_VIEWS_TABS_BRAVE_TAB_CONTAINER_H_

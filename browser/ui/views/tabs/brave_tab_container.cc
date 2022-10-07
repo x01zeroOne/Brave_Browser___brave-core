@@ -60,5 +60,26 @@ gfx::Rect BraveTabContainer::GetTargetBoundsForClosingTab(
   return target_bounds;
 }
 
+void BraveTabContainer::StartInsertTabAnimation(int model_index) {
+  if (!tabs::features::ShouldShowVerticalTabs()) {
+    TabContainerImpl::StartInsertTabAnimation(model_index);
+    return;
+  }
+
+  ExitTabClosingMode();
+
+  gfx::Rect bounds = GetTabAtModelIndex(model_index)->bounds();
+  bounds.set_height(GetLayoutConstant(TAB_HEIGHT));
+  bounds.set_width(TabStyle::GetStandardWidth());
+  bounds.set_x(-TabStyle::GetStandardWidth());
+  bounds.set_y((model_index > 0)
+                   ? tabs_view_model_.ideal_bounds(model_index - 1).bottom()
+                   : 0);
+  GetTabAtModelIndex(model_index)->SetBoundsRect(bounds);
+
+  // Animate in to the full width.
+  StartBasicAnimation();
+}
+
 BEGIN_METADATA(BraveTabContainer, TabContainerImpl)
 END_METADATA
