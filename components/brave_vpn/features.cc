@@ -14,7 +14,7 @@ namespace features {
 
 const base::Feature kBraveVPN {
   "BraveVPN",
-#if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_IOS)
+#if BUILDFLAG(ENABLE_BRAVE_VPN)
       base::FEATURE_ENABLED_BY_DEFAULT
 #else
       base::FEATURE_DISABLED_BY_DEFAULT
