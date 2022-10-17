@@ -3,11 +3,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "base/feature_list.h"
 #include "base/strings/strcat.h"
 #include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
-#include "base/test/scoped_feature_list.h"
 #include "chrome/browser/ui/browser.h"
 #include "chrome/browser/ui/tabs/tab_strip_model.h"
 #include "chrome/test/base/in_process_browser_test.h"
@@ -16,17 +14,12 @@
 #include "components/web_package/web_bundle_builder.h"
 #include "content/public/browser/render_frame_host.h"
 #include "content/public/browser/web_contents.h"
-#include "content/public/common/content_features.h"
 #include "content/public/test/browser_test.h"
 #include "content/public/test/browser_test_utils.h"
 #include "content/public/test/url_loader_interceptor.h"
-#include "third_party/blink/public/common/features.h"
 #include "url/gurl.h"
 
 namespace {
-
-constexpr char kOriginTrialTestPublicKey[] =
-    "dRCs+TocuKkocNKa0AtZ4awrt9XKH2SQCI6o4FY6BNA=";
 
 constexpr char kOriginTrialTestHostname[] = "https://localhost";
 
@@ -143,25 +136,6 @@ class SubresourceWebBundlesBrowserTest
   SubresourceWebBundlesBrowserTest() = default;
   ~SubresourceWebBundlesBrowserTest() override = default;
 
-  bool IsSubresourceWebBundlesEnabled() { return GetParam(); }
-
-  void SetUp() override {
-    if (IsSubresourceWebBundlesEnabled()) {
-      scoped_feature_list_.InitAndEnableFeature(
-          features::kSubresourceWebBundles);
-    }
-    InProcessBrowserTest::SetUp();
-  }
-
-  void SetUpDefaultCommandLine(base::CommandLine* command_line) override {
-    InProcessBrowserTest::SetUpDefaultCommandLine(command_line);
-    if (!IsSubresourceWebBundlesEnabled()) {
-      // With feature initially disabled, use origin trial.
-      command_line->AppendSwitchASCII(embedder_support::kOriginTrialPublicKey,
-                                      kOriginTrialTestPublicKey);
-    }
-  }
-
   void SetUpOnMainThread() override {
     InProcessBrowserTest::SetUpOnMainThread();
 
@@ -190,24 +164,11 @@ class SubresourceWebBundlesBrowserTest
   std::unique_ptr<content::URLLoaderInterceptor> url_loader_interceptor_;
 };
 
-IN_PROC_BROWSER_TEST_P(SubresourceWebBundlesBrowserTest,
-                       DISABLED_SubresourceWebBundles) {
-  EXPECT_EQ(IsSubresourceWebBundlesEnabled(),
-            base::FeatureList::IsEnabled(features::kSubresourceWebBundles));
+IN_PROC_BROWSER_TEST_F(SubresourceWebBundlesBrowserTest,
+                       SubresourceWebBundles) {
   ASSERT_TRUE(ui_test_utils::NavigateToURL(
       browser(), GURL(base::JoinString(
                      {kOriginTrialTestHostname, kOriginTrialPage}, "/"))));
 
-  if (IsSubresourceWebBundlesEnabled()) {
-    std::u16string expected_title(u"script loaded");
-    content::TitleWatcher title_watcher(web_contents(), expected_title);
-    EXPECT_EQ(true, content::EvalJs(primary_main_frame(), kLoadPassJs));
-    EXPECT_EQ(expected_title, title_watcher.WaitAndGetTitle());
-  } else {
-    EXPECT_EQ(false, content::EvalJs(primary_main_frame(), kLoadPassJs));
-  }
+  EXPECT_EQ(false, content::EvalJs(primary_main_frame(), kLoadPassJs));
 }
-
-INSTANTIATE_TEST_SUITE_P(SubresourceWebBundlesBrowserTest,
-                         SubresourceWebBundlesBrowserTest,
-                         ::testing::Bool());

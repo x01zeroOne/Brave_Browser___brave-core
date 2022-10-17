@@ -13,6 +13,11 @@
     }                                                                \
   })
 
+#define BRAVE_SCRIPT_LOADER_PREPARE_SCRIPT_WEB_BUNDLE \
+  script_type_ = ScriptTypeAtPrepare::kInvalid;       \
+  return nullptr;
+
 #include "src/third_party/blink/renderer/core/script/script_loader.cc"
 
 #undef BRAVE_SCRIPT_LOADER_PREPARE_SCRIPT
+#undef BRAVE_SCRIPT_LOADER_PREPARE_SCRIPT_WEB_BUNDLE
