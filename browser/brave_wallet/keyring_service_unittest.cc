@@ -1487,7 +1487,7 @@ TEST_F(KeyringServiceUnitTest, CreateAndRestoreWallet) {
   base::FieldTrialParams parameters;
   parameters[features::kCreateDefaultSolanaAccount.name] = "false";
 
-  std::vector<base::test::ScopedFeatureList::FeatureAndParams> enabled_features;
+  std::vector<base::test::FeatureRefAndParams> enabled_features;
   enabled_features.emplace_back(
       brave_wallet::features::kBraveWalletSolanaFeature, parameters);
 
@@ -1919,7 +1919,7 @@ TEST_F(KeyringServiceUnitTest, GetPrivateKeyForKeyringAccount) {
   base::FieldTrialParams parameters;
   parameters[features::kCreateDefaultSolanaAccount.name] = "false";
 
-  std::vector<base::test::ScopedFeatureList::FeatureAndParams> enabled_features;
+  std::vector<base::test::FeatureRefAndParams> enabled_features;
   enabled_features.emplace_back(
       brave_wallet::features::kBraveWalletSolanaFeature, parameters);
 
@@ -2536,7 +2536,7 @@ TEST_F(KeyringServiceUnitTest, SelectAddedAccount) {
   base::FieldTrialParams parameters;
   parameters[features::kCreateDefaultSolanaAccount.name] = "false";
 
-  std::vector<base::test::ScopedFeatureList::FeatureAndParams> enabled_features;
+  std::vector<base::test::FeatureRefAndParams> enabled_features;
   enabled_features.emplace_back(
       brave_wallet::features::kBraveWalletSolanaFeature, parameters);
 
@@ -3513,7 +3513,7 @@ TEST_F(KeyringServiceUnitTest, PreCreateEncryptors) {
   base::FieldTrialParams parameters;
   parameters[features::kCreateDefaultSolanaAccount.name] = "false";
 
-  std::vector<base::test::ScopedFeatureList::FeatureAndParams> enabled_features;
+  std::vector<base::test::FeatureRefAndParams> enabled_features;
   enabled_features.emplace_back(
       brave_wallet::features::kBraveWalletSolanaFeature, parameters);
 
@@ -3593,8 +3593,7 @@ TEST_F(KeyringServiceUnitTest, PreCreateEncryptors) {
     base::FieldTrialParams local_parameters;
     local_parameters[features::kCreateDefaultSolanaAccount.name] = "false";
 
-    std::vector<base::test::ScopedFeatureList::FeatureAndParams>
-        local_enabled_features;
+    std::vector<base::test::FeatureRefAndParams> local_enabled_features;
     local_enabled_features.emplace_back(
         brave_wallet::features::kBraveWalletSolanaFeature, local_parameters);
     local_enabled_features.emplace_back(
@@ -3627,7 +3626,7 @@ TEST_F(KeyringServiceUnitTest, SolanaKeyring) {
   base::FieldTrialParams parameters;
   parameters[features::kCreateDefaultSolanaAccount.name] = "false";
 
-  std::vector<base::test::ScopedFeatureList::FeatureAndParams> enabled_features;
+  std::vector<base::test::FeatureRefAndParams> enabled_features;
   enabled_features.emplace_back(
       brave_wallet::features::kBraveWalletSolanaFeature, parameters);
 
@@ -3803,7 +3802,7 @@ TEST_F(KeyringServiceUnitTest, SignMessage) {
   base::FieldTrialParams parameters;
   parameters[features::kCreateDefaultSolanaAccount.name] = "false";
 
-  std::vector<base::test::ScopedFeatureList::FeatureAndParams> enabled_features;
+  std::vector<base::test::FeatureRefAndParams> enabled_features;
   enabled_features.emplace_back(
       brave_wallet::features::kBraveWalletSolanaFeature, parameters);
 
