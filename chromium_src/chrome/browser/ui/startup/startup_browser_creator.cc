@@ -25,7 +25,7 @@ class BraveStartupBrowserCreatorImpl final : public StartupBrowserCreatorImpl {
 
   void Launch(Profile* profile,
               chrome::startup::IsProcessStartup process_startup,
-              std::unique_ptr<LaunchModeRecorder> launch_mode_recorder);
+              std::unique_ptr<OldLaunchModeRecorder> launch_mode_recorder);
 };
 
 BraveStartupBrowserCreatorImpl::BraveStartupBrowserCreatorImpl(
@@ -52,7 +52,7 @@ BraveStartupBrowserCreatorImpl::BraveStartupBrowserCreatorImpl(
 void BraveStartupBrowserCreatorImpl::Launch(
     Profile* profile,
     chrome::startup::IsProcessStartup process_startup,
-    std::unique_ptr<LaunchModeRecorder> launch_mode_recorder) {
+    std::unique_ptr<OldLaunchModeRecorder> launch_mode_recorder) {
 #if BUILDFLAG(ENABLE_TOR)
   if (StartupBrowserCreatorImpl::command_line_.HasSwitch(switches::kTor)) {
     LOG(INFO) << "Switching to Tor profile and starting Tor service.";
