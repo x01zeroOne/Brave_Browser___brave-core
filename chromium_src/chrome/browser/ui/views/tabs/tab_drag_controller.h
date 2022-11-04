@@ -15,10 +15,10 @@ using TabDragControllerBrave = TabDragController;
   Unused_GetAttachedDragPoint() { return {}; } \
   virtual gfx::Point GetAttachedDragPoint
 
-#define MoveAttached             \
+#define InitDragData             \
   Unused_MoveUattached() {}      \
   friend TabDragControllerBrave; \
-  virtual void MoveAttached
+  virtual void InitDragData
 #define GetTabGroupForTargetIndex virtual GetTabGroupForTargetIndex
 #define GetAttachedBrowserWidget                   \
   GetAttachedBrowserWidget_Unused() { return {}; } \
@@ -31,7 +31,7 @@ using TabDragControllerBrave = TabDragController;
 #undef GetAttachedBrowserWidget
 #undef GetTabGroupForTargetIndex
 #undef TabDragController
-#undef MoveAttached
+#undef InitDragData
 #undef GetAttachedDragPoint
 
 class TabDragController : public TabDragControllerChromium {
