@@ -1,0 +1,12 @@
+diff --git a/chrome/browser/first_party_sets/BUILD.gn b/chrome/browser/first_party_sets/BUILD.gn
+index 1ae551010af0bb6f899ad1a428b33006e875f48b..8a99fb9970191bd2afdc4867e3e2438ee26e3f95 100644
+--- a/chrome/browser/first_party_sets/BUILD.gn
++++ b/chrome/browser/first_party_sets/BUILD.gn
+@@ -11,6 +11,7 @@ source_set("first_party_sets") {
+     "//chrome/browser:*",
+     "//chrome/browser/*",
+     "//chrome/test:*",
++    "//brave/chromium_src/chrome/browser/privacy_sandbox:unit_tests",
+   ]
+   sources = [
+     "first_party_sets_navigation_throttle.cc",
