@@ -45,6 +45,7 @@ source_set("brave_wallet") {
     "//brave/ios/browser/brave_wallet",
     "//ios/chrome/browser/browser_state",
     "//ios/chrome/browser/content_settings",
+    "//ios/chrome/browser/paths:paths",
     "//net",
     "//ui/base",
   ]
