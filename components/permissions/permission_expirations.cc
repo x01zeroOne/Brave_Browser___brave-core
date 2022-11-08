@@ -10,7 +10,6 @@
 #include <utility>
 
 #include "base/stl_util.h"
-#include "base/strings/string_util.h"
 #include "brave/components/permissions/permission_lifetime_pref_names.h"
 #include "components/content_settings/core/browser/content_settings_registry.h"
 #include "components/content_settings/core/browser/content_settings_utils.h"
@@ -220,13 +219,12 @@ void PermissionExpirations::UpdateExpirationsPref(
       base::Value::Dict* content_type_expirations =
           key_expirations->FindDict(content_type_name);
       if (content_type_expirations) {
-        content_type_expirations->RemoveByDottedPath(key);
+        content_type_expirations->Remove(key);
       }
     } else {
       // Update a key element if it's not empty in a runtime container.
-      key_expirations->SetByDottedPath(
-          base::JoinString({content_type_name, key}, "."),
-          ExpiringPermissionsToList(key_expirations_it->second));
+      key_expirations->EnsureDict(content_type_name)
+          ->Set(key, ExpiringPermissionsToList(key_expirations_it->second));
     }
   }
 }
