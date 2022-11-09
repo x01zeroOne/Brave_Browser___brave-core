@@ -324,6 +324,10 @@ Config.prototype.buildArgs = function () {
     ...this.extraGnArgs,
   }
 
+  if (!this.isOfficialBuild()) {
+    args.branding_path_product += "-development"
+  }
+
   if (!this.isBraveReleaseBuild()) {
     args.chrome_pgo_phase = 0
 
