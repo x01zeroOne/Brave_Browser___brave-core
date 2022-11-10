@@ -121,7 +121,7 @@ void BlobURLStoreImpl::ResolveForNavigation(
 }
 
 GURL BlobURLStoreImpl::GetPartitionedOrOriginalUrl(const GURL& url) const {
-  url::Origin storage_key_origin = storage_key_.origin();
+  const url::Origin& storage_key_origin = storage_key_.origin();
   if (!CanUseOriginForPartitioning(storage_key_origin)) {
     return url;
   }
