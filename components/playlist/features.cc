@@ -9,6 +9,10 @@
 
 namespace playlist::features {
 
+#ifndef NDEBUG
 const base::Feature kPlaylist{"Playlist", base::FEATURE_DISABLED_BY_DEFAULT};
+#else
+const base::Feature kPlaylist{"Playlist", base::FEATURE_ENABLED_BY_DEFAULT};
+#endif // NDEBUG
 
 }  // namespace playlist::features

@@ -13,12 +13,11 @@
 
 #include "base/files/file_path.h"
 #include "base/memory/weak_ptr.h"
+#include "base/scoped_observation.h"
 #include "base/values.h"
 #include "brave/components/playlist/playlist_types.h"
-
-namespace api_request_helper {
-class APIRequestHelper;
-}  // namespace api_request_helper
+#include "components/download/public/common/download_item.h"
+#include "components/download/public/common/simple_download_manager.h"
 
 namespace base {
 class FilePath;
@@ -39,10 +38,19 @@ class GURL;
 namespace playlist {
 
 // Handle one Playlist at once.
-class PlaylistMediaFileDownloader {
+class PlaylistMediaFileDownloader
+    : public download::SimpleDownloadManager::Observer,
+      public download::DownloadItem::Observer {
  public:
   class Delegate {
    public:
+    virtual void OnMediaFileDownloadProgressed(
+        const std::string& id,
+        int64_t total_bytes,
+        int64_t received_bytes,
+        int percent_complete,
+        base::TimeDelta time_remaining) = 0;
+
     // Called when target media file generation succeed.
     virtual void OnMediaFileReady(const std::string& id,
                                   const std::string& media_file_path) = 0;
@@ -56,7 +64,7 @@ class PlaylistMediaFileDownloader {
   PlaylistMediaFileDownloader(Delegate* delegate,
                               content::BrowserContext* context,
                               base::FilePath::StringType media_file_name);
-  virtual ~PlaylistMediaFileDownloader();
+  ~PlaylistMediaFileDownloader() override;
 
   PlaylistMediaFileDownloader(const PlaylistMediaFileDownloader&) = delete;
   PlaylistMediaFileDownloader& operator=(const PlaylistMediaFileDownloader&) =
@@ -70,13 +78,16 @@ class PlaylistMediaFileDownloader {
   bool in_progress() const { return in_progress_; }
   const std::string& current_playlist_id() const { return current_item_->id; }
 
+  // download::SimpleDownloadManager::Observer:
+  void OnDownloadCreated(download::DownloadItem* item) override;
+
+  // download::DownloadItemObserver:
+  void OnDownloadUpdated(download::DownloadItem* item) override;
+
  private:
   void ResetDownloadStatus();
-  void DownloadMediaFile(const GURL& url, int index);
-  void OnMediaFileDownloaded(
-      int index,
-      base::FilePath path,
-      base::flat_map<std::string, std::string> response_headers);
+  void DownloadMediaFile(const GURL& url);
+  void OnMediaFileDownloaded(base::FilePath path);
 
   void NotifyFail(const std::string& id);
   void NotifySucceed(const std::string& id, const std::string& media_file_path);
@@ -84,9 +95,20 @@ class PlaylistMediaFileDownloader {
   base::SequencedTaskRunner* task_runner();
 
   raw_ptr<Delegate> delegate_ = nullptr;
+  raw_ptr<content::BrowserContext> context_ = nullptr;
 
   scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory_;
-  std::unique_ptr<api_request_helper::APIRequestHelper> request_helper_;
+#if BUILDFLAG(IS_ANDROID)
+  std::unique_ptr<download::SimpleDownloadManager> download_manager_;
+#else
+  raw_ptr<download::SimpleDownloadManager> download_manager_ = nullptr;
+#endif
+  base::ScopedObservation<download::SimpleDownloadManager,
+                          download::SimpleDownloadManager::Observer>
+      download_manager_observation_{this};
+  base::ScopedObservation<download::DownloadItem,
+                          download::DownloadItem::Observer>
+      download_item_observation_{this};
 
   const base::FilePath::StringType media_file_name_;
 
