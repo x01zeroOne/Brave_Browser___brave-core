@@ -47,9 +47,9 @@ void PermissionContextBase::PermissionDecided(
     const PermissionRequestID& id,
     const GURL& requesting_origin,
     const GURL& embedding_origin,
-    BrowserPermissionCallback callback,
     ContentSetting content_setting,
-    bool is_one_time) {
+    bool is_one_time,
+    bool is_final_decision) {
   if (permission_lifetime_manager_factory_) {
     const auto request_it = pending_requests_.find(id.ToString());
     if (request_it != pending_requests_.end()) {
