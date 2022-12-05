@@ -1,0 +1,13 @@
+diff --git a/components/crash/core/browser/resources/crashes.ts b/components/crash/core/browser/resources/crashes.ts
+index 4c7d88670a8c00552b126e3a4cc6c28b26d002c7..8a882c542af26ae686c9b06b84a4968e1887fc7d 100644
+--- a/components/crash/core/browser/resources/crashes.ts
++++ b/components/crash/core/browser/resources/crashes.ts
+@@ -141,7 +141,7 @@ function updateCrashList({
+         crashLink.href = `https://goto.google.com/crash/${crash.id}`;
+         crashLink.target = '_blank';
+         crashLink.textContent = crash.id;
+-        uploadIdValue.appendChild(crashLink);
++        // uploadIdValue.appendChild(crashLink);
+       } else {
+         uploadIdValue.textContent = crash.id;
+       }
