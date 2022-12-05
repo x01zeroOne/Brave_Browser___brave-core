@@ -154,20 +154,25 @@ bool CookieSettingsBase::IsEphemeralCookieAccessAllowed(
 
 bool CookieSettingsBase::IsFullCookieAccessAllowed(
     const GURL& url,
+    const net::SiteForCookies& site_for_cookies,
+    const absl::optional<url::Origin>& top_frame_origin,
+    net::CookieSettingOverrides overrides,
+    QueryReason query_reason) const {
+  ContentSetting setting = GetCookieSettingInternal(
+      url,
+      GetFirstPartyURL(site_for_cookies, base::OptionalToPtr(top_frame_origin)),
+      IsThirdPartyRequest(url, site_for_cookies), overrides, nullptr,
+      query_reason);
+  return IsAllowed(setting);
+}
+
+bool CookieSettingsBase::IsFullCookieAccessAllowed(
+    const GURL& url,
     const GURL& first_party_url,
     CookieSettingsBase::QueryReason query_reason) const {
   return IsFullCookieAccessAllowed(
       url, net::SiteForCookies::FromUrl(first_party_url), absl::nullopt,
       query_reason);
-}
-
-bool CookieSettingsBase::IsFullCookieAccessAllowed(
-    const GURL& url,
-    const net::SiteForCookies& site_for_cookies,
-    const absl::optional<url::Origin>& top_frame_origin,
-    CookieSettingsBase::QueryReason query_reason) const {
-  return IsCookieAccessAllowedImpl(url, site_for_cookies, top_frame_origin,
-                                   query_reason);
 }
 
 bool CookieSettingsBase::IsCookieAccessAllowedImpl(
@@ -176,7 +181,8 @@ bool CookieSettingsBase::IsCookieAccessAllowedImpl(
     const absl::optional<url::Origin>& top_frame_origin,
     CookieSettingsBase::QueryReason query_reason) const {
   bool allow = IsChromiumFullCookieAccessAllowed(
-      url, site_for_cookies, top_frame_origin, query_reason);
+      url, site_for_cookies, top_frame_origin, net::CookieSettingOverrides(),
+      query_reason);
 
   const bool is_1p_ephemeral_feature_enabled = base::FeatureList::IsEnabled(
       net::features::kBraveFirstPartyEphemeralStorage);
