@@ -5,6 +5,8 @@
 
 #include "src/components/update_client/update_checker.cc"
 
+#include "base/threading/thread_task_runner_handle.h"
+
 namespace update_client {
 
 SequentialUpdateChecker::SequentialUpdateChecker(
