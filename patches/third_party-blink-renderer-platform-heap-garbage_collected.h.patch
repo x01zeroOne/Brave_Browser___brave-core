@@ -1,0 +1,19 @@
+diff --git a/third_party/blink/renderer/platform/heap/garbage_collected.h b/third_party/blink/renderer/platform/heap/garbage_collected.h
+index 647cb17710b95f98e9163de028e1d711aaf5f63f..92dc669a4f48e484d8279c2ca746c4a4f064495d 100644
+--- a/third_party/blink/renderer/platform/heap/garbage_collected.h
++++ b/third_party/blink/renderer/platform/heap/garbage_collected.h
+@@ -55,6 +55,7 @@ T* MakeGarbageCollected(AdditionalBytes additional_bytes, Args&&... args) {
+ 
+ }  // namespace blink
+ 
++#if 0
+ namespace base::internal {
+ 
+ // Do not copy this code. Chromium code should just use DISALLOW_UNRETAINED()
+@@ -68,5 +69,6 @@ struct TypeSupportsUnretained<
+ };
+ 
+ }  // namespace base::internal
++#endif  // #if 0
+ 
+ #endif  // THIRD_PARTY_BLINK_RENDERER_PLATFORM_HEAP_GARBAGE_COLLECTED_H_
