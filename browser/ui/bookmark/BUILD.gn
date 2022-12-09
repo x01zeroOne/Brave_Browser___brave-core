@@ -1,3 +1,8 @@
+# Copyright (c) 2022 The Brave Authors. All rights reserved.
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this file,
+# You can obtain one at https://mozilla.org/MPL/2.0/.
+
 source_set("bookmark") {
   # Remove when https://github.com/brave/brave-browser/issues/10654 is resolved.
   check_includes = false
@@ -28,7 +33,7 @@ source_set("bookmark") {
     "//chrome/browser/new_tab_page/modules/drive:mojo_bindings",
     "//chrome/browser/new_tab_page/modules/recipes:mojo_bindings",
     "//chrome/browser/ui/webui/new_tab_page:mojo_bindings",
-    "//chrome/browser/ui/webui/realbox:mojo_bindings",
+    "//components/omnibox/browser:mojo_bindings",
     "//ui/webui/resources/js/browser_command:mojo_bindings",
   ]
 }
