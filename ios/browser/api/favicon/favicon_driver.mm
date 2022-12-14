@@ -71,7 +71,7 @@
   const GURL message_request_url = message.request_url().value();
 
   std::vector<web::FaviconURL> urls;
-  if (!ExtractFaviconURL(message.body()->GetListDeprecated(),
+  if (!ExtractFaviconURL(message.body()->GetList(),
                          message_request_url, &urls)) {
     return;
   }

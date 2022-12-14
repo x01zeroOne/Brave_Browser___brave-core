@@ -12,10 +12,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 typedef NSInteger SyncDeviceFormFactor NS_TYPED_ENUM;
 
-OBJC_EXPORT SyncDeviceFormFactor const SyncDeviceTypeUnknown;
-OBJC_EXPORT SyncDeviceFormFactor const SyncDeviceTypeDesktop;
-OBJC_EXPORT SyncDeviceFormFactor const SyncDeviceTypePhone;
-OBJC_EXPORT SyncDeviceFormFactor const SyncDeviceTypeTablet;
+OBJC_EXPORT SyncDeviceFormFactor const SyncDeviceFormFactorUnknown;
+OBJC_EXPORT SyncDeviceFormFactor const SyncDeviceFormFactorDesktop;
+OBJC_EXPORT SyncDeviceFormFactor const SyncDeviceFormFactorPhone;
+OBJC_EXPORT SyncDeviceFormFactor const SyncDeviceFormFactorTablet;
 
 @protocol OpenTabsSessionStateObserver;
 @protocol OpenTabsSessionStateListener;

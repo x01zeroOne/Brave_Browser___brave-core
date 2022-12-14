@@ -40,8 +40,8 @@ BraveSpoofCheckerLookalikeURLMatchType const
     BraveSpoofCheckerLookalikeURLMatchTypeNone =
         static_cast<NSInteger>(LookalikeUrlMatchType::kNone);
 BraveSpoofCheckerLookalikeURLMatchType const
-    BraveSpoofCheckerLookalikeURLMatchTypeSiteEngagement =
-        static_cast<NSInteger>(LookalikeUrlMatchType::kSiteEngagement);
+    BraveSpoofCheckerLookalikeURLMatchTypeSkeletonMatchSiteEngagement =
+        static_cast<NSInteger>(LookalikeUrlMatchType::kSkeletonMatchSiteEngagement);
 BraveSpoofCheckerLookalikeURLMatchType const
     BraveSpoofCheckerLookalikeURLMatchTypeEditDistance =
         static_cast<NSInteger>(LookalikeUrlMatchType::kEditDistance);
