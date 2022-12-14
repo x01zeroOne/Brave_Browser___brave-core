@@ -6,6 +6,8 @@
 #ifndef BRAVE_COMPONENTS_PLAYLIST_PLAYLIST_SERVICE_OBSERVER_H_
 #define BRAVE_COMPONENTS_PLAYLIST_PLAYLIST_SERVICE_OBSERVER_H_
 
+#include <string>
+
 #include "base/observer_list_types.h"
 
 namespace playlist {

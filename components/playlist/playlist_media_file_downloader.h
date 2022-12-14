@@ -13,6 +13,7 @@
 
 #include "base/files/file_path.h"
 #include "base/memory/weak_ptr.h"
+#include "base/scoped_multi_source_observation.h"
 #include "base/scoped_observation.h"
 #include "base/values.h"
 #include "brave/components/playlist/playlist_types.h"
@@ -27,6 +28,11 @@ class SequencedTaskRunner;
 namespace content {
 class BrowserContext;
 }  // namespace content
+
+namespace download {
+class InProgressDownloadManager;
+class DownloadItemImpl;
+}  // namespace download
 
 namespace network {
 class SharedURLLoaderFactory;
@@ -83,6 +89,7 @@ class PlaylistMediaFileDownloader
 
   // download::DownloadItemObserver:
   void OnDownloadUpdated(download::DownloadItem* item) override;
+  void OnDownloadRemoved(download::DownloadItem* item) override;
 
  private:
   void ResetDownloadStatus();
@@ -92,23 +99,24 @@ class PlaylistMediaFileDownloader
   void NotifyFail(const std::string& id);
   void NotifySucceed(const std::string& id, const std::string& media_file_path);
 
+  void ScheduleToDetachCachedFile(download::DownloadItem* item);
+  void DetachCachedFile(download::DownloadItem* item);
+
   base::SequencedTaskRunner* task_runner();
 
   raw_ptr<Delegate> delegate_ = nullptr;
   raw_ptr<content::BrowserContext> context_ = nullptr;
 
   scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory_;
-#if BUILDFLAG(IS_ANDROID)
-  std::unique_ptr<download::SimpleDownloadManager> download_manager_;
-#else
-  raw_ptr<download::SimpleDownloadManager> download_manager_ = nullptr;
-#endif
+  std::unique_ptr<download::InProgressDownloadManager> download_manager_;
   base::ScopedObservation<download::SimpleDownloadManager,
                           download::SimpleDownloadManager::Observer>
       download_manager_observation_{this};
-  base::ScopedObservation<download::DownloadItem,
-                          download::DownloadItem::Observer>
+  base::ScopedMultiSourceObservation<download::DownloadItem,
+                                     download::DownloadItem::Observer>
       download_item_observation_{this};
+  std::vector<std::unique_ptr<download::DownloadItemImpl>>
+      download_items_to_be_detached_;
 
   const base::FilePath::StringType media_file_name_;
 

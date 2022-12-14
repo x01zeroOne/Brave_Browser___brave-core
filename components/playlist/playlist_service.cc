@@ -633,7 +633,7 @@ void PlaylistService::OnMediaFileDownloadProgressed(
     int64_t received_bytes,
     int percent_complete,
     base::TimeDelta time_remaining) {
-  VLOG(2) << __FUNCTION__ << " " << total_bytes << " " << received_bytes << " "
+  VLOG(2) << __func__ << " " << total_bytes << " " << received_bytes << " "
           << percent_complete << " " << time_remaining;
 
   for (auto& observer : observers_) {

@@ -186,6 +186,7 @@ void PlaylistDownloadRequestManager::DidFinishLoad(
 }
 
 void PlaylistDownloadRequestManager::GetMedia(content::WebContents* contents) {
+  DVLOG(2) << __func__;
   DCHECK(contents && contents->GetPrimaryMainFrame());
   LOG(ERROR) << "BravePlaylist"
              << "GetMedia 1";
@@ -212,6 +213,7 @@ void PlaylistDownloadRequestManager::OnGetMedia(
     base::Value value) {
   LOG(ERROR) << "BravePlaylist"
              << "OnGetMedia 1";
+  DVLOG(2) << __func__;
   ProcessFoundMedia(contents, std::move(value));
   LOG(ERROR) << "BravePlaylist"
              << "OnGetMedia 2";
@@ -251,7 +253,7 @@ void PlaylistDownloadRequestManager::ProcessFoundMedia(
   Observe(nullptr);
 
   if (value.is_dict() && value.GetDict().empty()) {
-    VLOG(2) << "No media was detected";
+    DVLOG(2) << "No media was detected";
     return;
   }
 
