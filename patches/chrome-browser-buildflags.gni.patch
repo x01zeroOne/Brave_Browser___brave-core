@@ -1,0 +1,16 @@
+diff --git a/chrome/browser/buildflags.gni b/chrome/browser/buildflags.gni
+index 653d675e736d55330ef86a62436f1d0c16406e60..fb014f4ea6882759cb2f78e11ece27fd01c60cf9 100644
+--- a/chrome/browser/buildflags.gni
++++ b/chrome/browser/buildflags.gni
+@@ -6,9 +6,9 @@ import("//build/config/chrome_build.gni")
+ 
+ declare_args() {
+   # By default, only branded builds integrate with automatic updates.
+-  enable_updater = is_chrome_branded
++  enable_updater = is_chrome_branded || is_official_build
+ 
+   # Detect updates and notify the user for Google Chrome across all platforms.
+   # Chromium does not use an auto-updater.
+-  enable_update_notifications = is_chrome_branded
++  enable_update_notifications = is_chrome_branded || is_official_build
+ }
