@@ -1,4 +1,4 @@
-/* Copyright 2021 The Brave Authors. All rights reserved.
+/* Copyright (c) 2021 The Brave Authors. All rights reserved.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at https://mozilla.org/MPL/2.0/. */
@@ -13,9 +13,7 @@
 
 #if !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_IOS)
 
-#define BRAVE_ENABLE_STATIC_PINS \
-  enable_static_pins_ = true;    \
-  enable_static_expect_ct_ = true;
+#define BRAVE_ENABLE_STATIC_PINS enable_static_pins_ = true;
 
 #else
 
