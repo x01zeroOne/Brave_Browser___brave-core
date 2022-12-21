@@ -95,6 +95,12 @@ void DetectChromeProfiles(std::vector<importer::SourceProfile>* profiles) {
           base::FilePath::StringType(FILE_PATH_LITERAL("Local State")))),
       GetOperaUserDataFolder(), "Opera ", importer::TYPE_OPERA);
 
+  AddChromeToProfiles(
+      profiles,
+      GetChromeSourceProfiles(GetYandexUserDataFolder().Append(
+          base::FilePath::StringType(FILE_PATH_LITERAL("Local State")))),
+      GetYandexUserDataFolder(), "Yandex ", importer::TYPE_OPERA);
+
 #if BUILDFLAG(IS_LINUX)
   // Installed via snap Opera has different profile path.
   AddChromeToProfiles(

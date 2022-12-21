@@ -49,3 +49,8 @@ base::FilePath GetOperaUserDataFolder() {
   base::FilePath result = base::mac::GetUserLibraryPath();
   return result.Append("Application Support/com.operasoftware.Opera");
 }
+
+base::FilePath GetYandexUserDataFolder() {
+  base::FilePath result = base::mac::GetUserLibraryPath();
+  return result.Append("Application Support/Yandex/YandexBrowser");
+}
