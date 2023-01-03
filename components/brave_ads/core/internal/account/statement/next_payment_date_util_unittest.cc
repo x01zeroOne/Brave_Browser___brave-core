@@ -26,17 +26,17 @@ TEST_F(BraveAdsNextPaymentDateUtilTest,
   scoped_feature_list.InitAndEnableFeatureWithParameters(kAccountFeature,
                                                          params);
 
-  AdvanceClockTo(TimeFromString("1 January 2020", /*is_local*/ false));
+  AdvanceClockTo(TimeFromString("1 January 2020", /*is_local*/ true));
 
   TransactionList transactions;
   const TransactionInfo transaction =
       BuildTransaction(/*value*/ 0.01, ConfirmationType::kViewed, Now());
   transactions.push_back(transaction);
 
-  AdvanceClockTo(TimeFromString("1 February 2020", /*is_local*/ false));
+  AdvanceClockTo(TimeFromString("1 February 2020", /*is_local*/ true));
 
   const base::Time next_token_redemption_at =
-      TimeFromString("5 February 2020", /*is_local*/ false);
+      TimeFromString("5 February 2020", /*is_local*/ true);
 
   // Act
   const base::Time next_payment_date =
@@ -44,7 +44,7 @@ TEST_F(BraveAdsNextPaymentDateUtilTest,
 
   // Assert
   const base::Time expected_next_payment_date =
-      TimeFromString("5 February 2020 23:59:59.999", /*is_local*/ false);
+      TimeFromString("5 February 2020 23:59:59.999", /*is_local*/ true);
   EXPECT_EQ(expected_next_payment_date, next_payment_date);
 }
 
@@ -57,12 +57,12 @@ TEST_F(BraveAdsNextPaymentDateUtilTest,
   scoped_feature_list.InitAndEnableFeatureWithParameters(kAccountFeature,
                                                          params);
 
-  AdvanceClockTo(TimeFromString("1 February 2020", /*is_local*/ false));
+  AdvanceClockTo(TimeFromString("1 February 2020", /*is_local*/ true));
 
   const TransactionList transactions;
 
   const base::Time next_token_redemption_at =
-      TimeFromString("5 February 2020", /*is_local*/ false);
+      TimeFromString("5 February 2020", /*is_local*/ true);
 
   // Act
   const base::Time next_payment_date =
@@ -70,7 +70,7 @@ TEST_F(BraveAdsNextPaymentDateUtilTest,
 
   // Assert
   const base::Time expected_next_payment_date =
-      TimeFromString("5 March 2020 23:59:59.999", /*is_local*/ false);
+      TimeFromString("5 March 2020 23:59:59.999", /*is_local*/ true);
   EXPECT_EQ(expected_next_payment_date, next_payment_date);
 }
 
@@ -83,7 +83,7 @@ TEST_F(BraveAdsNextPaymentDateUtilTest,
   scoped_feature_list.InitAndEnableFeatureWithParameters(kAccountFeature,
                                                          params);
 
-  AdvanceClockTo(TimeFromString("31 January 2020", /*is_local*/ false));
+  AdvanceClockTo(TimeFromString("31 January 2020", /*is_local*/ true));
 
   TransactionList transactions;
   const TransactionInfo transaction =
@@ -91,7 +91,7 @@ TEST_F(BraveAdsNextPaymentDateUtilTest,
   transactions.push_back(transaction);
 
   const base::Time next_token_redemption_at =
-      TimeFromString("5 February 2020", /*is_local*/ false);
+      TimeFromString("5 February 2020", /*is_local*/ true);
 
   // Act
   const base::Time next_payment_date =
@@ -99,7 +99,7 @@ TEST_F(BraveAdsNextPaymentDateUtilTest,
 
   // Assert
   const base::Time expected_next_payment_date =
-      TimeFromString("5 February 2020 23:59:59.999", /*is_local*/ false);
+      TimeFromString("5 February 2020 23:59:59.999", /*is_local*/ true);
   EXPECT_EQ(expected_next_payment_date, next_payment_date);
 }
 
@@ -113,12 +113,12 @@ TEST_F(
   scoped_feature_list.InitAndEnableFeatureWithParameters(kAccountFeature,
                                                          params);
 
-  AdvanceClockTo(TimeFromString("11 January 2020", /*is_local*/ false));
+  AdvanceClockTo(TimeFromString("11 January 2020", /*is_local*/ true));
 
   const TransactionList transactions;
 
   const base::Time next_token_redemption_at =
-      TimeFromString("31 January 2020", /*is_local*/ false);
+      TimeFromString("31 January 2020", /*is_local*/ true);
 
   // Act
   const base::Time next_payment_date =
@@ -126,7 +126,7 @@ TEST_F(
 
   // Assert
   const base::Time expected_next_payment_date =
-      TimeFromString("5 February 2020 23:59:59.999", /*is_local*/ false);
+      TimeFromString("5 February 2020 23:59:59.999", /*is_local*/ true);
   EXPECT_EQ(expected_next_payment_date, next_payment_date);
 }
 
@@ -140,12 +140,12 @@ TEST_F(
   scoped_feature_list.InitAndEnableFeatureWithParameters(kAccountFeature,
                                                          params);
 
-  AdvanceClockTo(TimeFromString("31 January 2020", /*is_local*/ false));
+  AdvanceClockTo(TimeFromString("31 January 2020", /*is_local*/ true));
 
   const TransactionList transactions;
 
   const base::Time next_token_redemption_at =
-      TimeFromString("5 February 2020", /*is_local*/ false);
+      TimeFromString("5 February 2020", /*is_local*/ true);
 
   // Act
   const base::Time next_payment_date =
@@ -153,7 +153,7 @@ TEST_F(
 
   // Assert
   const base::Time expected_next_payment_date =
-      TimeFromString("5 March 2020 23:59:59.999", /*is_local*/ false);
+      TimeFromString("5 March 2020 23:59:59.999", /*is_local*/ true);
   EXPECT_EQ(expected_next_payment_date, next_payment_date);
 }
 
