@@ -31,14 +31,16 @@ BASE_FEATURE(kBraveVerticalTabs,
              base::FEATURE_DISABLED_BY_DEFAULT);
 
 bool SupportsVerticalTabs(const Browser* browser) {
+  DCHECK(base::FeatureList::IsEnabled(tabs::features::kBraveVerticalTabs))
+      << "Don't call this before checking the feature flag.";
+
   if (!browser) {
     // During unit tests, |browser| can be null.
     CHECK_IS_TEST();
     return false;
   }
 
-  return base::FeatureList::IsEnabled(features::kBraveVerticalTabs) &&
-         browser->is_type_normal();
+  return browser->is_type_normal();
 }
 
 bool ShouldShowVerticalTabs(const Browser* browser) {

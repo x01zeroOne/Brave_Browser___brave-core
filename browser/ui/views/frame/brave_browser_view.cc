@@ -172,6 +172,7 @@ BraveBrowserView::BraveBrowserView(std::unique_ptr<Browser> browser)
 #endif
 
   const bool supports_vertical_tabs =
+      base::FeatureList::IsEnabled(tabs::features::kBraveVerticalTabs) &&
       tabs::features::SupportsVerticalTabs(browser_.get());
   if (supports_vertical_tabs) {
     vertical_tab_strip_host_view_ =
@@ -301,6 +302,9 @@ gfx::Rect BraveBrowserView::GetShieldsBubbleRect() {
 }
 
 bool BraveBrowserView::GetTabStripVisible() const {
+  if (!base::FeatureList::IsEnabled(tabs::features::kBraveVerticalTabs))
+    return BrowserView::GetTabStripVisible();
+
   if (tabs::features::ShouldShowVerticalTabs(browser()))
     return false;
 
@@ -309,6 +313,9 @@ bool BraveBrowserView::GetTabStripVisible() const {
 
 #if BUILDFLAG(IS_WIN)
 bool BraveBrowserView::GetSupportsTitle() const {
+  if (!base::FeatureList::IsEnabled(tabs::features::kBraveVerticalTabs))
+    return BrowserView::GetSupportsTitle();
+
   if (tabs::features::SupportsVerticalTabs(browser()))
     return true;
 
@@ -489,6 +496,9 @@ void BraveBrowserView::MaybeShowReadingListInSidePanelIPH() {
 bool BraveBrowserView::ShouldShowWindowTitle() const {
   if (BrowserView::ShouldShowWindowTitle())
     return true;
+
+  if (!base::FeatureList::IsEnabled(tabs::features::kBraveVerticalTabs))
+    return false;
 
   if (tabs::features::ShouldShowWindowTitleForVerticalTabs(browser()))
     return true;

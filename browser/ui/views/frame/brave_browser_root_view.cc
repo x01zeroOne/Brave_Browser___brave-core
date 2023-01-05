@@ -15,6 +15,9 @@ BraveBrowserRootView::BraveBrowserRootView(BrowserView* browser_view,
 BraveBrowserRootView::~BraveBrowserRootView() = default;
 
 bool BraveBrowserRootView::OnMouseWheel(const ui::MouseWheelEvent& event) {
+  if (!base::FeatureList::IsEnabled(tabs::features::kBraveVerticalTabs))
+    return BrowserRootView::OnMouseWheel(event);
+
   // Bypass BrowserRootView::OnMouseWheel() to avoid tab cycling feature.
   // As vertical tabs are always in a scroll view, we should prefer scrolling
   // to tab cycling.

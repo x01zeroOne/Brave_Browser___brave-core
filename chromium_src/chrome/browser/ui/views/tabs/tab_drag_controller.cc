@@ -16,13 +16,14 @@
 #define TabDragController TabDragControllerChromium
 
 // Remove drag threshold when it's vertical tab strip
-#define GetHorizontalDragThreshold()                          \
-  GetHorizontalDragThreshold() -                              \
-      (tabs::features::ShouldShowVerticalTabs(                \
-           BrowserView::GetBrowserViewForNativeWindow(        \
-               GetAttachedBrowserWidget()->GetNativeWindow()) \
-               ->browser())                                   \
-           ? attached_context_->GetHorizontalDragThreshold()  \
+#define GetHorizontalDragThreshold()                                  \
+  GetHorizontalDragThreshold() -                                      \
+      (base::FeatureList::IsEnabled(tabs::features::kBraveVerticalTabs) &&  \
+               tabs::features::ShouldShowVerticalTabs(                \
+                   BrowserView::GetBrowserViewForNativeWindow(        \
+                       GetAttachedBrowserWidget()->GetNativeWindow()) \
+                       ->browser())                                   \
+           ? attached_context_->GetHorizontalDragThreshold()          \
            : 0)
 
 #include "src/chrome/browser/ui/views/tabs/tab_drag_controller.cc"
@@ -47,6 +48,9 @@ void TabDragController::Init(TabDragContext* source_context,
   TabDragControllerChromium::Init(source_context, source_view, dragging_views,
                                   mouse_offset, source_view_offset,
                                   initial_selection_model, event_source);
+  if (!base::FeatureList::IsEnabled(tabs::features::kBraveVerticalTabs))
+    return;
+
   auto* widget = source_view->GetWidget();
   DCHECK(widget);
   const auto* browser =
