@@ -5,7 +5,7 @@
 
 package org.chromium.chrome.browser.crypto_wallet.util;
 
-import org.chromium.base.Predicate;
+import java.util.function.Predicate;
 
 import java.util.ArrayList;
 import java.util.Collections;
