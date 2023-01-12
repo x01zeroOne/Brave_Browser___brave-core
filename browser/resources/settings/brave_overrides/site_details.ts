@@ -104,7 +104,8 @@ RegisterPolymerTemplateModifications({
             </div>
           </div>
         `)
-      const shieldsHeader = templateContent.querySelector('div#shieldsHeader h2')
+      const shieldsHeader =
+        templateContent.querySelector('div#shieldsHeader h2')
       if (!shieldsHeader) {
         console.error(
           '[Brave Settings Overrides] Couldn\'t find Shields header')
