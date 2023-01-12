@@ -26,12 +26,14 @@ bool IsBravePanel(content::WebContents* content) {
 }
 
 void OnWindowClosing(views::Widget* anchor_widget) {
-  if (!anchor_widget)
+  if (!anchor_widget) {
     return;
+  }
   Browser* browser =
       chrome::FindBrowserWithWindow(anchor_widget->GetNativeWindow());
-  if (!browser || !browser->tab_strip_model())
+  if (!browser || !browser->tab_strip_model()) {
     return;
+  }
   content::WebContents* active =
       browser->tab_strip_model()->GetActiveWebContents();
   if (!active) {
@@ -39,8 +41,9 @@ void OnWindowClosing(views::Widget* anchor_widget) {
   }
   auto* tab_helper =
       brave_wallet::BraveWalletTabHelper::FromWebContents(active);
-  if (tab_helper)
+  if (tab_helper) {
     tab_helper->SetCloseOnDeactivate(true);
+  }
 }
 
 }  // namespace
