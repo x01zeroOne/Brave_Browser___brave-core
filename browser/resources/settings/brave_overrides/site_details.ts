@@ -47,6 +47,27 @@ RegisterPolymerTemplateModifications({
         autoplaySettings.setAttribute(
           'label', I18nBehavior.i18n('siteSettingsAutoplay'))
       }
+      const isGoogleSignInFeatureEnabled =
+        loadTimeData.getBoolean('isGoogleSignInFeatureEnabled')
+      if (isGoogleSignInFeatureEnabled) {
+        firstPermissionItem.insertAdjacentHTML(
+          'beforebegin',
+          getTrustedHTML`
+            <site-details-permission
+              category="[[contentSettingsTypesEnum_.GOOGLE_SIGN_IN]]"
+              icon="cr:person">
+            </site-details-permission>
+          `)
+      }
+      const googleSignInSettings = templateContent.
+        querySelector('div.list-frame > site-details-permission:nth-child(2)')
+      if (!googleSignInSettings) {
+        console.error(
+          '[Brave Settings Overrides] Couldn\'t find Google signin settings')
+      } else {
+        googleSignInSettings.setAttribute(
+          'label', I18nBehavior.i18n('siteSettingsGoogleSignIn'))
+      }
       const isNativeBraveWalletEnabled = loadTimeData.getBoolean('isNativeBraveWalletFeatureEnabled')
       if (isNativeBraveWalletEnabled) {
         firstPermissionItem.insertAdjacentHTML(
@@ -58,7 +79,7 @@ RegisterPolymerTemplateModifications({
             </site-details-permission>
           `)
         const ethereumSettings = templateContent.
-          querySelector('div.list-frame > site-details-permission:nth-child(2)')
+          querySelector('div.list-frame > site-details-permission:nth-child(3)')
         if (!ethereumSettings) {
           console.error(
             '[Brave Settings Overrides] Couldn\'t find Ethereum settings')
@@ -75,7 +96,7 @@ RegisterPolymerTemplateModifications({
             </site-details-permission>
           `)
         const solanaSettings = templateContent.
-          querySelector('div.list-frame > site-details-permission:nth-child(3)')
+          querySelector('div.list-frame > site-details-permission:nth-child(4)')
         if (!solanaSettings) {
           console.error(
             '[Brave Settings Overrides] Couldn\'t find Solana settings')
