@@ -28,6 +28,8 @@ class SequencedTaskRunner;
 
 namespace content {
 class BrowserContext;
+class DownloadManager;
+class SiteInstance;
 }  // namespace content
 
 namespace download {
@@ -108,11 +110,15 @@ class PlaylistMediaFileDownloader
 
   raw_ptr<Delegate> delegate_ = nullptr;
 
+  raw_ptr<content::BrowserContext> context_;
+
   scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory_;
   std::unique_ptr<download::InProgressDownloadManager>
       in_progress_download_manager_;
   std::vector<std::unique_ptr<download::DownloadItemImpl>>
       download_items_to_be_detached_;
+
+  raw_ptr<content::DownloadManager> content_download_manager_ = nullptr;
 
   base::ScopedObservation<download::SimpleDownloadManager,
                           download::SimpleDownloadManager::Observer>
@@ -131,6 +137,9 @@ class PlaylistMediaFileDownloader
   bool in_progress_ = false;
 
   scoped_refptr<base::SequencedTaskRunner> task_runner_;
+
+  scoped_refptr<content::SiteInstance> site_instance_;
+  scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory_;
 
   base::WeakPtrFactory<PlaylistMediaFileDownloader> weak_factory_{this};
 };

@@ -11,6 +11,7 @@
 #include "base/bind.h"
 #include "base/files/file.h"
 #include "base/files/file_util.h"
+#include "base/guid.h"
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
 #include "base/strings/string_number_conversions.h"
@@ -22,12 +23,18 @@
 #include "components/download/public/common/download_item_impl.h"
 #include "components/download/public/common/download_task_runner.h"
 #include "components/download/public/common/in_progress_download_manager.h"
+#include "content/browser/blob_storage/chrome_blob_storage_context.h"
 #include "content/public/browser/browser_context.h"
+#include "content/public/browser/download_manager.h"
 #include "content/public/browser/download_request_utils.h"
+#include "content/public/browser/site_instance.h"
 #include "content/public/browser/storage_partition.h"
 #include "services/network/public/cpp/resource_request.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 #include "url/gurl.h"
+
+#undef DVLOG
+#define DVLOG(V) LOG(ERROR)
 
 namespace playlist {
 namespace {
@@ -56,6 +63,7 @@ PlaylistMediaFileDownloader::PlaylistMediaFileDownloader(
     content::BrowserContext* context,
     base::FilePath::StringType media_file_name)
     : delegate_(delegate),
+      context_(context),
       url_loader_factory_(
           context->content::BrowserContext::GetDefaultStoragePartition()
               ->GetURLLoaderFactoryForBrowserProcess()),
@@ -166,12 +174,23 @@ void PlaylistMediaFileDownloader::DownloadMediaFileForPlaylistItem(
   in_progress_ = true;
   current_item_ = item->Clone();
 
-  CreateInProgressDownloadManagerIfNeeded();
-
-  DCHECK(download::GetIOTaskRunner()) << "This should be set by embedder";
-
   if (GURL media_url(current_item_->media_source); media_url.is_valid()) {
     playlist_dir_path_ = base_dir.AppendASCII(current_item_->id);
+
+    if (media_url.SchemeIsBlob()) {
+      if (!content_download_manager_) {
+        content_download_manager_ = context_->GetDownloadManager();
+        static_cast<download::SimpleDownloadManager*>(content_download_manager_)
+            ->AddObserver(this);
+      }
+
+      DCHECK(content_download_manager_);
+    } else {
+      CreateInProgressDownloadManagerIfNeeded();
+    }
+
+    DCHECK(download::GetIOTaskRunner()) << "This should be set by embedder";
+
     DownloadMediaFile(media_url);
   } else {
     DVLOG(2) << __func__ << ": media file is empty";
@@ -182,9 +201,10 @@ void PlaylistMediaFileDownloader::DownloadMediaFileForPlaylistItem(
 void PlaylistMediaFileDownloader::OnDownloadCreated(
     download::DownloadItem* item) {
   DVLOG(2) << __func__;
-  DCHECK(current_item_) << "This shouldn't happen as we unobserve the manager "
-                           "when a process for an item is done";
-  DCHECK_EQ(item->GetGuid(), current_item_->id);
+  // DCHECK(current_item_) << "This shouldn't happen as we unobserve the manager
+  // "
+  //  "when a process for an item is done";
+  // DCHECK_EQ(item->GetGuid(), current_item_->id);
 
   DCHECK(!download_item_observation_.IsObservingSource(item));
   download_item_observation_.AddObservation(item);
@@ -202,8 +222,9 @@ void PlaylistMediaFileDownloader::OnDownloadUpdated(
     LOG(ERROR) << __func__ << ": Download interrupted - reason: "
                << download::DownloadInterruptReasonToString(
                       item->GetLastReason());
-    ScheduleToDetachCachedFile(item);
-    OnMediaFileDownloaded({});
+    DVLOG(2) << base::debug::StackTrace(20);
+    // ScheduleToDetachCachedFile(item);
+    // OnMediaFileDownloaded({});
     return;
   }
 
@@ -233,11 +254,27 @@ void PlaylistMediaFileDownloader::DownloadMediaFile(const GURL& url) {
   auto params = std::make_unique<download::DownloadUrlParameters>(
       url, GetNetworkTrafficAnnotationTagForURLLoad());
   params->set_file_path(file_path);
-  params->set_guid(current_item_->id);
+  std::string guid = base::GUID::GenerateRandomV4().AsLowercaseString();
+  DCHECK(base::IsValidGUID(guid));
+  params->set_guid(guid);
   params->set_transient(true);
   params->set_require_safety_checks(false);
-  DCHECK(in_progress_download_manager_->CanDownload(params.get()));
-  in_progress_download_manager_->DownloadUrl(std::move(params));
+  params->set_download_source(download::DownloadSource::FROM_RENDERER);
+
+  if (url.SchemeIsBlob()) {
+    if (!site_instance_) {
+      site_instance_ = content::SiteInstance::Create(context_);
+    }
+    LOG(ERROR) << __FUNCTION__;
+    blob_url_loader_factory_ =
+        content::ChromeBlobStorageContext::URLLoaderFactoryForUrl(
+            context_->GetStoragePartition(site_instance_.get()), url);
+    content_download_manager_->DownloadUrl(std::move(params),
+                                           blob_url_loader_factory_);
+  } else {
+    DCHECK(in_progress_download_manager_->CanDownload(params.get()));
+    in_progress_download_manager_->DownloadUrl(std::move(params));
+  }
 }
 
 void PlaylistMediaFileDownloader::OnMediaFileDownloaded(base::FilePath path) {
