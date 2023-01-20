@@ -64,8 +64,9 @@ PlaylistMediaFileDownloader::PlaylistMediaFileDownloader(
 PlaylistMediaFileDownloader::~PlaylistMediaFileDownloader() {
   ResetDownloadStatus();
 
-  if (download_manager_) {
-    for (auto& download : download_manager_->TakeInProgressDownloads()) {
+  if (in_progress_download_manager_) {
+    for (auto& download :
+         in_progress_download_manager_->TakeInProgressDownloads()) {
       DCHECK(download_item_observation_.IsObservingSource(download.get()));
       download_items_to_be_detached_.push_back(std::move(download));
     }
@@ -74,7 +75,7 @@ PlaylistMediaFileDownloader::~PlaylistMediaFileDownloader() {
       DetachCachedFile(download_items_to_be_detached_.front().get());
     }
 
-    download_manager_->ShutDown();
+    in_progress_download_manager_->ShutDown();
   }
 }
 
@@ -95,7 +96,8 @@ void PlaylistMediaFileDownloader::NotifySucceed(
 
 void PlaylistMediaFileDownloader::ScheduleToDetachCachedFile(
     download::DownloadItem* item) {
-  for (auto& download : download_manager_->TakeInProgressDownloads()) {
+  for (auto& download :
+       in_progress_download_manager_->TakeInProgressDownloads()) {
     DCHECK(download_item_observation_.IsObservingSource(download.get()));
     download_items_to_be_detached_.push_back(std::move(download));
   }
@@ -130,6 +132,24 @@ void PlaylistMediaFileDownloader::DetachCachedFile(
   }
 }
 
+void PlaylistMediaFileDownloader::CreateInProgressDownloadManagerIfNeeded() {
+  if (!in_progress_download_manager_) {
+    // Creates our own manager. The arguments below are what's used by
+    // AwBrowserContext::RetrieveInProgressDownloadManager().
+    auto manager = std::make_unique<download::InProgressDownloadManager>(
+        nullptr, base::FilePath(), nullptr,
+        /* is_origin_secure_cb, */ base::BindRepeating([](const GURL& origin) {
+          return true;
+        }),
+        base::BindRepeating(&content::DownloadRequestUtils::IsURLSafe),
+        /*wake_lock_provider_binder*/ base::NullCallback());
+    manager->set_url_loader_factory(url_loader_factory_);
+    DCHECK(url_loader_factory_);
+    in_progress_download_manager_ = std::move(manager);
+    download_manager_observation_.Observe(in_progress_download_manager_.get());
+  }
+}
+
 void PlaylistMediaFileDownloader::DownloadMediaFileForPlaylistItem(
     const mojom::PlaylistItemPtr& item,
     const base::FilePath& base_dir) {
@@ -145,21 +165,8 @@ void PlaylistMediaFileDownloader::DownloadMediaFileForPlaylistItem(
 
   in_progress_ = true;
   current_item_ = item->Clone();
-  if (!download_manager_) {
-    // Creates our own manager. The arguments below are what's used by
-    // AwBrowserContext::RetrieveInProgressDownloadManager().
-    auto manager = std::make_unique<download::InProgressDownloadManager>(
-        nullptr, base::FilePath(), nullptr,
-        /* is_origin_secure_cb, */ base::BindRepeating([](const GURL& origin) {
-          return true;
-        }),
-        base::BindRepeating(&content::DownloadRequestUtils::IsURLSafe),
-        /*wake_lock_provider_binder*/ base::NullCallback());
-    manager->set_url_loader_factory(url_loader_factory_);
-    DCHECK(url_loader_factory_);
-    download_manager_ = std::move(manager);
-    download_manager_observation_.Observe(download_manager_.get());
-  }
+
+  CreateInProgressDownloadManagerIfNeeded();
 
   DCHECK(download::GetIOTaskRunner()) << "This should be set by embedder";
 
@@ -229,8 +236,8 @@ void PlaylistMediaFileDownloader::DownloadMediaFile(const GURL& url) {
   params->set_guid(current_item_->id);
   params->set_transient(true);
   params->set_require_safety_checks(false);
-  DCHECK(download_manager_->CanDownload(params.get()));
-  download_manager_->DownloadUrl(std::move(params));
+  DCHECK(in_progress_download_manager_->CanDownload(params.get()));
+  in_progress_download_manager_->DownloadUrl(std::move(params));
 }
 
 void PlaylistMediaFileDownloader::OnMediaFileDownloaded(base::FilePath path) {

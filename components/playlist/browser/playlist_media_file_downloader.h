@@ -102,12 +102,15 @@ class PlaylistMediaFileDownloader
   void ScheduleToDetachCachedFile(download::DownloadItem* item);
   void DetachCachedFile(download::DownloadItem* item);
 
+  void CreateInProgressDownloadManagerIfNeeded();
+
   base::SequencedTaskRunner* task_runner();
 
   raw_ptr<Delegate> delegate_ = nullptr;
 
   scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory_;
-  std::unique_ptr<download::InProgressDownloadManager> download_manager_;
+  std::unique_ptr<download::InProgressDownloadManager>
+      in_progress_download_manager_;
   std::vector<std::unique_ptr<download::DownloadItemImpl>>
       download_items_to_be_detached_;
 
