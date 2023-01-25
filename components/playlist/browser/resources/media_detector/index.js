@@ -84,6 +84,35 @@
           }
         }
       })
+
+      document.querySelectorAll('track').forEach(function (node) {
+        if (node.src !== '') {
+          if (node.closest('video') === target) {
+            sources.push({
+              'name': name,
+              'src': fixUpRelativeUrl(node.src),
+              'pageSrc': window.location.href,
+              'pageTitle': document.title,
+              'mimeType': mimeType,
+              'duration': getMediaDurationInSeconds(target),
+              'detected': true
+            })
+          }
+
+          if (node.closest('audio') === target) {
+            sources.push({
+              'name': name,
+              'src': fixUpRelativeUrl(node.src),
+              'pageSrc': window.location.href,
+              'pageTitle': document.title,
+              'mimeType': mimeType,
+              'duration': getMediaDurationInSeconds(target),
+              'detected': true
+            })
+          }
+        }
+      })
+
       return sources
     }
   }

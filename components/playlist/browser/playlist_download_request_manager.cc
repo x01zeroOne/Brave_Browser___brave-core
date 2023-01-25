@@ -181,6 +181,7 @@ void PlaylistDownloadRequestManager::OnGetMedia(
 void PlaylistDownloadRequestManager::ProcessFoundMedia(
     base::WeakPtr<content::WebContents> contents,
     base::Value value) {
+  LOG(ERROR) << __FUNCTION__;
   if (!contents)
     return;
 
@@ -210,6 +211,7 @@ void PlaylistDownloadRequestManager::ProcessFoundMedia(
 
   if (value.is_dict() && value.GetDict().empty()) {
     DVLOG(2) << "No media was detected";
+    LOG(ERROR) << __FUNCTION__ << " ?????";
     return;
   }
 
@@ -219,6 +221,7 @@ void PlaylistDownloadRequestManager::ProcessFoundMedia(
     return;
   }
 
+  LOG(ERROR) << value.GetList().size();
   std::vector<mojom::PlaylistItemPtr> items;
   for (const auto& media : value.GetList()) {
     if (!media.is_dict()) {
@@ -274,6 +277,7 @@ void PlaylistDownloadRequestManager::ProcessFoundMedia(
     if (author)
       item->author = *author;
 
+    LOG(ERROR) << item->name;
     items.push_back(std::move(item));
   }
 

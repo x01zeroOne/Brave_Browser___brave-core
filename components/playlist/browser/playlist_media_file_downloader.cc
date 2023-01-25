@@ -260,7 +260,7 @@ void PlaylistMediaFileDownloader::OnDownloadUpdated(
     return;
   }
 
-  DVLOG(2) << __func__ << " Download progressing";
+  DVLOG(2) << __func__ << " Download progressing " << item->GetReceivedBytes() << " / " << item->GetTotalBytes();
   base::TimeDelta time_remaining;
   item->TimeRemaining(&time_remaining);
   delegate_->OnMediaFileDownloadProgressed(
@@ -325,7 +325,7 @@ void PlaylistMediaFileDownloader::OnDataComplete() {
   // if (blob_length_)
   //   Succeeded();
   if (blob_length_)
-    LOG(ERROR) << *blob_data_;
+    LOG(ERROR) << *blob_data_ << " " << *blob_length_;
 }
 
 void PlaylistMediaFileDownloader::DownloadMediaFile(const GURL& url) {
@@ -343,6 +343,7 @@ void PlaylistMediaFileDownloader::DownloadMediaFile(const GURL& url) {
   params->set_download_source(download::DownloadSource::FROM_RENDERER);
 
   if (url.SchemeIsBlob()) {
+#if 0
     if (!site_instance_) {
       site_instance_ = content::SiteInstance::Create(context_);
     }
@@ -474,6 +475,9 @@ void PlaylistMediaFileDownloader::DownloadMediaFile(const GURL& url) {
 
     content_download_manager_->DownloadUrl(std::move(params),
                                            blob_url_loader_factory_);
+    // in_progress_download_manager_->set_url_loader_factory(
+        // blob_url_loader_factory_);
+
   } else {
     DCHECK(in_progress_download_manager_->CanDownload(params.get()));
     in_progress_download_manager_->DownloadUrl(std::move(params));

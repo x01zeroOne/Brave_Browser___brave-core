@@ -75,6 +75,7 @@ MediaDetectorComponentManager::MediaDetectorComponentManager(
     : component_update_service_(component_update_service) {
   // TODO(sko) This list should be dynamically updated from the playlist.
   // Once it's done, remove this line.
+  SetUseLocalScriptForTesting();
   SetUseLocalListToHideMediaSrcAPI();
 }
 
@@ -152,6 +153,7 @@ bool MediaDetectorComponentManager::ShouldHideMediaSrcAPI(
                               [&schemeful_site](const auto& site_to_hide) {
                                 return site_to_hide == schemeful_site;
                               });
+  // return true;
 }
 
 std::string MediaDetectorComponentManager::GetMediaDetectorScript(
