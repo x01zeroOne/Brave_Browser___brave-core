@@ -20,6 +20,10 @@
 #include "brave/components/playlist/common/mojom/playlist.mojom.h"
 #include "components/download/public/common/download_item.h"
 #include "components/download/public/common/simple_download_manager.h"
+#include "content/public/browser/download_manager.h"
+#include "storage/browser/blob/blob_impl.h"
+#include "storage/browser/blob/blob_url_store_impl.h"
+#include "third_party/blink/public/mojom/blob/blob_url_store.mojom.h"
 
 namespace base {
 class FilePath;
@@ -28,7 +32,6 @@ class SequencedTaskRunner;
 
 namespace content {
 class BrowserContext;
-class DownloadManager;
 class SiteInstance;
 }  // namespace content
 
@@ -36,6 +39,10 @@ namespace download {
 class InProgressDownloadManager;
 class DownloadItemImpl;
 }  // namespace download
+
+namespace storage {
+class BlobURLStoreImpl;
+}  // namespace storage
 
 namespace network {
 class SharedURLLoaderFactory;
@@ -48,7 +55,8 @@ namespace playlist {
 // Handle one Playlist at once.
 class PlaylistMediaFileDownloader
     : public download::SimpleDownloadManager::Observer,
-      public download::DownloadItem::Observer {
+      public download::DownloadItem::Observer,
+      public content::DownloadManager::Observer {
  public:
   class Delegate {
    public:
@@ -88,6 +96,12 @@ class PlaylistMediaFileDownloader
 
   // download::SimpleDownloadManager::Observer:
   void OnDownloadCreated(download::DownloadItem* item) override;
+
+  // content::DownloadManager::Observer:
+  void OnDownloadCreated(content::DownloadManager* manager,
+
+                         download::DownloadItem* item) override;
+  void OnDownloadDropped(content::DownloadManager* manager) override;
 
   // download::DownloadItemObserver:
   void OnDownloadUpdated(download::DownloadItem* item) override;
@@ -132,6 +146,7 @@ class PlaylistMediaFileDownloader
   // All below variables are only for playlist creation.
   base::FilePath playlist_dir_path_;
   mojom::PlaylistItemPtr current_item_;
+  std::string download_item_guid_;
 
   // true when this class is working for playlist now.
   bool in_progress_ = false;
@@ -140,6 +155,7 @@ class PlaylistMediaFileDownloader
 
   scoped_refptr<content::SiteInstance> site_instance_;
   scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory_;
+  std::unique_ptr<storage::BlobURLStoreImpl> blob_store_;
 
   base::WeakPtrFactory<PlaylistMediaFileDownloader> weak_factory_{this};
 };

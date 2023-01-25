@@ -9,8 +9,8 @@
 #include <utility>
 
 #include "base/bind.h"
-#include "base/files/file.h"
 #include "base/files/file_util.h"
+#include "base/files/file.h"
 #include "base/guid.h"
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
@@ -23,14 +23,20 @@
 #include "components/download/public/common/download_item_impl.h"
 #include "components/download/public/common/download_task_runner.h"
 #include "components/download/public/common/in_progress_download_manager.h"
+#include "content/browser/blob_storage/blob_registry_wrapper.h"
 #include "content/browser/blob_storage/chrome_blob_storage_context.h"
+#include "content/browser/storage_partition_impl.h"
 #include "content/public/browser/browser_context.h"
-#include "content/public/browser/download_manager.h"
 #include "content/public/browser/download_request_utils.h"
 #include "content/public/browser/site_instance.h"
 #include "content/public/browser/storage_partition.h"
 #include "services/network/public/cpp/resource_request.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
+#include "storage/browser/blob/blob_registry_impl.h"
+#include "storage/browser/blob/blob_storage_context.h"
+#include "storage/browser/blob/blob_url_store_impl.h"
+#include "third_party/blink/public/mojom/blob/blob_url_store.mojom.h"
+#include "third_party/blink/public/mojom/blob/data_element.mojom.h"
 #include "url/gurl.h"
 
 #undef DVLOG
@@ -104,13 +110,21 @@ void PlaylistMediaFileDownloader::NotifySucceed(
 
 void PlaylistMediaFileDownloader::ScheduleToDetachCachedFile(
     download::DownloadItem* item) {
-  for (auto& download :
-       in_progress_download_manager_->TakeInProgressDownloads()) {
-    DCHECK(download_item_observation_.IsObservingSource(download.get()));
-    download_items_to_be_detached_.push_back(std::move(download));
+  if (item->media_source.SchemeIsBlob()) {
+   // TODO(sko):
+  } else {
+    for (auto& download :
+        in_progress_download_manager_->TakeInProgressDownloads()) {
+      DCHECK(download_item_observation_.IsObservingSource(download.get()));
+      download_items_to_be_detached_.push_back(std::move(download));
+    }
   }
+<<<<<<< HEAD
 
   base::SequencedTaskRunner::GetCurrentDefault()->PostTask(
+=======
+  base::SequencedTaskRunnerHandle::Get()->PostTask(
+>>>>>>> 2a659dd1b7 (WIP)
       FROM_HERE, base::BindOnce(&PlaylistMediaFileDownloader::DetachCachedFile,
                                 weak_factory_.GetWeakPtr(), item));
 }
@@ -180,8 +194,7 @@ void PlaylistMediaFileDownloader::DownloadMediaFileForPlaylistItem(
     if (media_url.SchemeIsBlob()) {
       if (!content_download_manager_) {
         content_download_manager_ = context_->GetDownloadManager();
-        static_cast<download::SimpleDownloadManager*>(content_download_manager_)
-            ->AddObserver(this);
+        content_download_manager_->AddObserver(this);
       }
 
       DCHECK(content_download_manager_);
@@ -200,14 +213,33 @@ void PlaylistMediaFileDownloader::DownloadMediaFileForPlaylistItem(
 
 void PlaylistMediaFileDownloader::OnDownloadCreated(
     download::DownloadItem* item) {
+  // if (item->GetGuid() != download_item_guid_)
+  //   return;
+
   DVLOG(2) << __func__;
-  // DCHECK(current_item_) << "This shouldn't happen as we unobserve the manager
-  // "
-  //  "when a process for an item is done";
-  // DCHECK_EQ(item->GetGuid(), current_item_->id);
+  DCHECK(current_item_) << "This shouldn't happen as we unobserve the manager"
+                           "when a process for an item is done";
 
   DCHECK(!download_item_observation_.IsObservingSource(item));
   download_item_observation_.AddObservation(item);
+}
+
+void PlaylistMediaFileDownloader::OnDownloadCreated(
+    content::DownloadManager* manager,
+    download::DownloadItem* item) {
+  DVLOG(2) << __func__ << " " << item->GetURL() << " " << item->GetState()
+           << " " << item->CanResume();
+  OnDownloadCreated(item);
+
+  if (item->GetState() == download::DownloadItem::INTERRUPTED) {
+    LOG(ERROR) << " Download was interrupted as soon as it's been created";
+    OnDownloadUpdated(item);
+  }
+}
+
+void PlaylistMediaFileDownloader::OnDownloadDropped(
+    content::DownloadManager* manager) {
+  NOTREACHED();
 }
 
 void PlaylistMediaFileDownloader::OnDownloadUpdated(
@@ -223,11 +255,12 @@ void PlaylistMediaFileDownloader::OnDownloadUpdated(
                << download::DownloadInterruptReasonToString(
                       item->GetLastReason());
     DVLOG(2) << base::debug::StackTrace(20);
-    // ScheduleToDetachCachedFile(item);
-    // OnMediaFileDownloaded({});
+    ScheduleToDetachCachedFile(item);
+    OnMediaFileDownloaded({});
     return;
   }
 
+  DVLOG(2) << __func__ << " Download progressing";
   base::TimeDelta time_remaining;
   item->TimeRemaining(&time_remaining);
   delegate_->OnMediaFileDownloadProgressed(
@@ -235,6 +268,7 @@ void PlaylistMediaFileDownloader::OnDownloadUpdated(
       item->PercentComplete(), time_remaining);
 
   if (item->IsDone()) {
+    DVLOG(2) << __func__ << " Download Done";
     ScheduleToDetachCachedFile(item);
     OnMediaFileDownloaded(playlist_dir_path_.Append(media_file_name_));
     return;
@@ -254,9 +288,9 @@ void PlaylistMediaFileDownloader::DownloadMediaFile(const GURL& url) {
   auto params = std::make_unique<download::DownloadUrlParameters>(
       url, GetNetworkTrafficAnnotationTagForURLLoad());
   params->set_file_path(file_path);
-  std::string guid = base::GUID::GenerateRandomV4().AsLowercaseString();
-  DCHECK(base::IsValidGUID(guid));
-  params->set_guid(guid);
+  download_item_guid_ = base::GUID::GenerateRandomV4().AsLowercaseString();
+  DCHECK(base::IsValidGUID(download_item_guid_));
+  params->set_guid(download_item_guid_);
   params->set_transient(true);
   params->set_require_safety_checks(false);
   params->set_download_source(download::DownloadSource::FROM_RENDERER);
@@ -265,10 +299,130 @@ void PlaylistMediaFileDownloader::DownloadMediaFile(const GURL& url) {
     if (!site_instance_) {
       site_instance_ = content::SiteInstance::Create(context_);
     }
-    LOG(ERROR) << __FUNCTION__;
+#if token_version || 0
+    mojo::PendingRemote<blink::mojom::BlobURLToken> blob_url_token;
+    blob_url_token_receiver_ = blob_url_token.InitWithNewPipeAndPassReceiver();
+
+    // blob_url_loader_factory_ =
+    //     content::ChromeBlobStorageContext::URLLoaderFactoryForUrl(
+    //         context_->GetStoragePartition(site_instance_.get()), url);
+
+    // blob_url_registry->AddReceiver(storage_key, blob_url_store_impl_);
+
+    // blob_url_store_impl_-> void ResolveAsURLLoaderFactory(
+    //   const GURL& url,
+    //   mojo::PendingReceiver<network::mojom::URLLoaderFactory> receiver,
+    //   ResolveAsURLLoaderFactoryCallback callback) override;
+#else
+    /*
+      BlobRegistry
+      Blob
+
+      BlobUrlRegistry
+      BlobURLStore
+
+      BlobStorageContext
+      ChromeBlobStorageContext
+
+    */
+
+    // mojo::PendingRemote<blink::mojom::Blob> blob;
+    // TODO(sko) Should i create BlobImpl here?
+    // blob_receiver_ = blob.InitWithNewPipeAndPassReceiver();
+
+    auto* storage_partition = static_cast<content::StoragePartitionImpl*>(
+        context_->GetStoragePartition(site_instance_.get()));
+    auto* blob_url_registry = storage_partition->GetBlobUrlRegistry();
+
+    auto storage_key = blink::StorageKey::CreateWithOptionalNonce(
+        url::Origin::Create(url), net::SchemefulSite(url), &blob_nonce_,
+        blink::mojom::AncestorChainBit::kSameSite);
+    blob_store_ = std::make_unique<storage::BlobURLStoreImpl>(
+        storage_key, blob_url_registry->AsWeakPtr());
+
+    // auto blob_uuid = base::GenerateGUID();
+
+    // mojo::PendingRemote<blink::mojom::Blob> blob =
+    // content::ChromeBlobStorageContext::GetBlobRemote(context_, blob_uuid);
+    // storage::BlobImpl::Create(
+    //     std::make_unique<storage::BlobDataHandle>(*GetHandleFromBuilder()),
+    //     blob_remote.InitWithNewPipeAndPassReceiver());
+
+    auto blob_uuid = base::GenerateGUID();
+    mojo::PendingRemote<blink::mojom::Blob> blob;
+#if 0
+    auto* blob_storage = content::ChromeBlobStorageContext::GetFor(context_);
+    content::GetIOThreadTaskRunner({})->PostTask(
+        FROM_HERE,
+        base::BindOnce(
+            [blob_uuid](scoped_refptr<content::ChromeBlobStorageContext>
+                              chrome_blob_storage_context) {
+              // scoped_refptr<content::ChromeBlobStorageContext>
+              // chrome_blob_storage_context,
+              // mojo::PendingReceiver<blink::mojom::Blob> blob_receiver) {
+
+              auto future_blob =
+                  chrome_blob_storage_context->context()->AddFutureBlob(
+                      blob_uuid, {}, {}, base::DoNothing());
+
+              // storage::BlobImpl::Create(
+              //     std::move(future_blob),
+              //     std::move(blob_receiver));
+              // }, base::WrapRefCounted(blob_storage),
+              // blob.InitWithNewPipeAndPassReceiver()));
+            },
+            base::WrapRefCounted(blob_storage)));
+#endif
+    mojo::PendingRemote<blink::mojom::BlobRegistry> remote_registry;
+    auto init_blob_registry_on_io_thread = base::BindOnce(
+        [](scoped_refptr<content::BlobRegistryWrapper> registry,
+           mojo::PendingReceiver<blink::mojom::BlobRegistry>
+               registry_receiver) {
+          registry->Bind(/* browser_process_id */ 0,
+                         std::move(registry_receiver));
+          return true;
+        },
+        base::WrapRefCounted(storage_partition->GetBlobRegistry()),
+        remote_registry.InitWithNewPipeAndPassReceiver());
+
+    auto register_blob_registry_on_ui_thread = base::BindOnce(
+        [](std::string blob_uuid,
+           mojo::PendingRemote<blink::mojom::BlobRegistry> remote_registry, 
+           mojo::PendingReceiver<blink::mojom::Blob> blob_receiver,
+           bool) {
+          mojo::Remote<blink::mojom::BlobRegistry>(std::move(remote_registry)).get()->Register(
+              std::move(blob_receiver), blob_uuid, {}, {}, {},
+              base::BindOnce([]() { LOG(ERROR) << "Registered"; }));
+        },
+        blob_uuid, std::move(remote_registry), blob.InitWithNewPipeAndPassReceiver());
+
+    content::GetIOThreadTaskRunner({})->PostTaskAndReplyWithResult(
+        FROM_HERE, std::move(init_blob_registry_on_io_thread),
+        std::move(register_blob_registry_on_ui_thread));
+
+    // Calling register will call AddUrlMapping below()
+    blob_store_->Register(std::move(blob), url, {}, {},
+                          base::BindOnce([]() { LOG(ERROR) << "Registered"; }));
+    // blob_url_registry->AddUrlMapping(url, std::move(blob), storage_key,
+    //                                  blob_nonce_, {});
+
+    // Wrong guess: this is for PartitionedBlobUrl
+    // mojo::PendingRemote<blink::mojom::BlobURLStore> storage_remote;
+    // blob_url_registry->AddReceiver(storage_key,
+    // storage_remote.InitWithNewPipeAndPassReceiver());
+
+    // Can't call this on browser thread. only for IO thread
+    // storage::BlobImpl::Create(content::ChromeBlobStorageContext::GetFor(context_)->context()->GetBlobDataFromUUID(blob_nonce_.ToString()),
+    // std::move(blob_receiver_));
+
+    // TODO(sko) Should i create BlobImpl here?
+    // blob_receiver_ = blob.InitWithNewPipeAndPassReceiver();
+
     blob_url_loader_factory_ =
         content::ChromeBlobStorageContext::URLLoaderFactoryForUrl(
             context_->GetStoragePartition(site_instance_.get()), url);
+#endif
+
     content_download_manager_->DownloadUrl(std::move(params),
                                            blob_url_loader_factory_);
   } else {
