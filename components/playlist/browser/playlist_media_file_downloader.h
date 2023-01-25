@@ -21,9 +21,11 @@
 #include "components/download/public/common/download_item.h"
 #include "components/download/public/common/simple_download_manager.h"
 #include "content/public/browser/download_manager.h"
+#include "mojo/public/cpp/system/data_pipe_drainer.h"
 #include "storage/browser/blob/blob_impl.h"
 #include "storage/browser/blob/blob_url_store_impl.h"
 #include "third_party/blink/public/mojom/blob/blob_url_store.mojom.h"
+#include "third_party/blink/public/mojom/blob/blob.mojom.h"
 
 namespace base {
 class FilePath;
@@ -56,7 +58,12 @@ namespace playlist {
 class PlaylistMediaFileDownloader
     : public download::SimpleDownloadManager::Observer,
       public download::DownloadItem::Observer,
+<<<<<<< HEAD
       public content::DownloadManager::Observer {
+=======
+        public blink::mojom::BlobReaderClient,
+        public mojo::DataPipeDrainer::Client {
+>>>>>>> 11352707f6 (wip)
  public:
   class Delegate {
    public:
@@ -107,6 +114,15 @@ class PlaylistMediaFileDownloader
   void OnDownloadUpdated(download::DownloadItem* item) override;
   void OnDownloadRemoved(download::DownloadItem* item) override;
 
+  // blink::mojom::BlobReaderClient:
+  void OnCalculatedSize(uint64_t total_size,
+                        uint64_t expected_content_size) override;
+  void OnComplete(int32_t status, uint64_t data_length) override {}
+
+  // mojo::DataPipeDrainer:
+  void OnDataAvailable(const void* data, size_t num_bytes) override;
+  void OnDataComplete() override;
+
  private:
   void ResetDownloadStatus();
   void DownloadMediaFile(const GURL& url);
@@ -156,6 +172,13 @@ class PlaylistMediaFileDownloader
   scoped_refptr<content::SiteInstance> site_instance_;
   scoped_refptr<network::SharedURLLoaderFactory> blob_url_loader_factory_;
   std::unique_ptr<storage::BlobURLStoreImpl> blob_store_;
+
+  mojo::Receiver<blink::mojom::BlobReaderClient> blob_reader_client_receiver_{this};
+  std::unique_ptr<mojo::DataPipeDrainer> data_pipe_drainer_;
+
+  absl::optional<uint64_t> blob_length_;
+  std::unique_ptr<std::string> blob_data_;
+  bool data_complete_ = false;
 
   base::WeakPtrFactory<PlaylistMediaFileDownloader> weak_factory_{this};
 };

@@ -269,6 +269,28 @@ void PlaylistMediaFileDownloader::OnDownloadUpdated(
 
   if (item->IsDone()) {
     DVLOG(2) << __func__ << " Download Done";
+<<<<<<< HEAD
+=======
+    if (current_item_->media_source.SchemeIsBlob()) {
+      auto blob_remote = content::ChromeBlobStorageContext::GetBlobRemote(
+          context_, blob_uuid_);
+      DCHECK(blob_remote);
+
+      mojo::ScopedDataPipeProducerHandle producer_handle;
+      mojo::ScopedDataPipeConsumerHandle consumer_handle;
+      MojoResult result = CreateDataPipe(nullptr, producer_handle, consumer_handle);
+      if (result != MOJO_RESULT_OK) {
+        LOG(ERROR) << "Failed to create data pipe for blob.";
+        return;
+      }
+      mojo::Remote<blink::mojom::Blob>(std::move(blob_remote))->ReadAll(std::move(producer_handle),
+                    blob_reader_client_receiver_.BindNewPipeAndPassRemote());
+      data_pipe_drainer_ =
+          std::make_unique<mojo::DataPipeDrainer>(this, std::move(consumer_handle));
+      return;
+    }
+
+>>>>>>> 11352707f6 (wip)
     ScheduleToDetachCachedFile(item);
     OnMediaFileDownloaded(playlist_dir_path_.Append(media_file_name_));
     return;
@@ -279,6 +301,31 @@ void PlaylistMediaFileDownloader::OnDownloadRemoved(
     download::DownloadItem* item) {
   NOTREACHED()
       << "`item` was removed out of this class. This could cause flaky tests";
+}
+
+void PlaylistMediaFileDownloader::OnCalculatedSize(uint64_t total_size,
+                                  uint64_t expected_content_size) {
+  blob_length_ = total_size;
+  // if (data_complete_)
+  //   Succeeded();
+  if (data_complete_)
+    LOG(ERROR) << *blob_data_;
+}
+
+void PlaylistMediaFileDownloader::OnDataAvailable(const void* data, size_t num_bytes) {
+  if (!blob_data_)
+    blob_data_ = std::make_unique<std::string>();
+  blob_data_->append(static_cast<const char*>(data), num_bytes);
+}
+
+void PlaylistMediaFileDownloader::OnDataComplete() {
+  data_complete_ = true;
+  if (!blob_data_)
+    blob_data_ = std::make_unique<std::string>();
+  // if (blob_length_)
+  //   Succeeded();
+  if (blob_length_)
+    LOG(ERROR) << *blob_data_;
 }
 
 void PlaylistMediaFileDownloader::DownloadMediaFile(const GURL& url) {
@@ -333,6 +380,9 @@ void PlaylistMediaFileDownloader::DownloadMediaFile(const GURL& url) {
     auto* storage_partition = static_cast<content::StoragePartitionImpl*>(
         context_->GetStoragePartition(site_instance_.get()));
     auto* blob_url_registry = storage_partition->GetBlobUrlRegistry();
+    blob_store_ = std::make_unique<storage::BlobURLStoreImpl>(
+        blink::StorageKey(url::Origin::Create(url)),
+        storage_partition->GetBlobUrlRegistry()->AsWeakPtr());
 
     auto storage_key = blink::StorageKey::CreateWithOptionalNonce(
         url::Origin::Create(url), net::SchemefulSite(url), &blob_nonce_,
@@ -387,12 +437,11 @@ void PlaylistMediaFileDownloader::DownloadMediaFile(const GURL& url) {
 
     auto register_blob_registry_on_ui_thread = base::BindOnce(
         [](std::string blob_uuid,
-           mojo::PendingRemote<blink::mojom::BlobRegistry> remote_registry, 
-           mojo::PendingReceiver<blink::mojom::Blob> blob_receiver,
-           bool) {
-          mojo::Remote<blink::mojom::BlobRegistry>(std::move(remote_registry)).get()->Register(
-              std::move(blob_receiver), blob_uuid, {}, {}, {},
-              base::BindOnce([]() { LOG(ERROR) << "Registered"; }));
+           mojo::PendingRemote<blink::mojom::BlobRegistry> remote_registry,
+           mojo::PendingReceiver<blink::mojom::Blob> blob_receiver, bool) {
+          mojo::Remote<blink::mojom::BlobRegistry>(std::move(remote_registry))
+              ->Register(std::move(blob_receiver), blob_uuid, {}, {}, {},
+                         base::BindOnce([]() { LOG(ERROR) << "Registered"; }));
         },
         blob_uuid, std::move(remote_registry), blob.InitWithNewPipeAndPassReceiver());
 
