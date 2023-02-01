@@ -3,7 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import * as mojom from '../../shared/lib/mojom'
+import * as mojom from 'gen/brave/components/brave_rewards/common/brave_rewards.mojom.m'
 
 export type UserType = 'unconnected' | 'connected' | 'legacy-unconnected'
 
