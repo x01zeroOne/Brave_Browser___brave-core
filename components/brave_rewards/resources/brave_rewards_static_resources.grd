@@ -26,6 +26,7 @@
         <!-- WebUI Brave Rewards Tip resources -->
         <include name="IDR_BRAVE_REWARDS_TIP_HTML" file="tip/index.html" type="BINDATA" />
         <include name="IDR_BRAVE_REWARDS_PANEL_HTML" file="rewards_panel/index.html" type="BINDATA" />
+        <include name="IDR_TIP_PANEL_HTML" file="tip_panel/index.html" type="BINDATA" />
       </if>
     </includes>
   </release>

@@ -36,6 +36,7 @@
 #if !BUILDFLAG(IS_ANDROID)
 #include "brave/browser/brave_wallet/brave_wallet_context_utils.h"
 #include "brave/browser/ui/webui/brave_rewards/rewards_panel_ui.h"
+#include "brave/browser/ui/webui/brave_rewards/tip_panel_ui.h"
 #include "brave/browser/ui/webui/brave_settings_ui.h"
 #include "brave/browser/ui/webui/brave_shields/cookie_list_opt_in_ui.h"
 #include "brave/browser/ui/webui/brave_shields/shields_panel_ui.h"
@@ -135,7 +136,10 @@ WebUIController* NewWebUI(WebUI* web_ui, const GURL& url) {
     return new BraveTipUI(web_ui, url.host());
   } else if (host == kBraveRewardsPanelHost &&
              brave_rewards::IsSupportedForProfile(profile)) {
-    return new RewardsPanelUI(web_ui);
+    return new brave_rewards::RewardsPanelUI(web_ui);
+  } else if (host == kBraveTipPanelHost &&
+             brave_rewards::IsSupportedForProfile(profile)) {
+    return new brave_rewards::TipPanelUI(web_ui);
 #endif  // !BUILDFLAG(IS_ANDROID)
 #if !BUILDFLAG(IS_ANDROID)
   } else if (host == kWelcomeHost) {
@@ -196,6 +200,7 @@ WebUIFactoryFunction GetWebUIFactoryFunction(WebUI* web_ui, const GURL& url) {
 #if !BUILDFLAG(IS_ANDROID)
       url.host_piece() == kTipHost ||
       url.host_piece() == kBraveRewardsPanelHost ||
+      url.host_piece() == kBraveTipPanelHost ||
       url.host_piece() == kSpeedreaderPanelHost ||
 #endif
 #if BUILDFLAG(ENABLE_TOR)
@@ -221,6 +226,7 @@ bool ShouldBlockRewardsWebUI(content::BrowserContext* browser_context,
 #if !BUILDFLAG(IS_ANDROID)
       url.host_piece() != kTipHost &&
       url.host_piece() != kBraveRewardsPanelHost &&
+      url.host_piece() != kBraveTipPanelHost &&
 #endif  // !BUILDFLAG(IS_ANDROID)
       url.host_piece() != kRewardsInternalsHost) {
     return false;

@@ -184,6 +184,7 @@ using extensions::ChromeContentBrowserClientExtensionsPart;
 #include "brave/browser/ui/webui/brave_federated/federated_internals.mojom.h"
 #include "brave/browser/ui/webui/brave_federated/federated_internals_ui.h"
 #include "brave/browser/ui/webui/brave_rewards/rewards_panel_ui.h"
+#include "brave/browser/ui/webui/brave_rewards/tip_panel_ui.h"
 #include "brave/browser/ui/webui/brave_shields/cookie_list_opt_in_ui.h"
 #include "brave/browser/ui/webui/brave_shields/shields_panel_ui.h"
 #include "brave/browser/ui/webui/brave_wallet/wallet_page_ui.h"
@@ -193,6 +194,7 @@ using extensions::ChromeContentBrowserClientExtensionsPart;
 #include "brave/components/brave_new_tab_ui/brave_new_tab_page.mojom.h"
 #include "brave/components/brave_private_new_tab_ui/common/brave_private_new_tab.mojom.h"
 #include "brave/components/brave_rewards/common/brave_rewards_panel.mojom.h"
+#include "brave/components/brave_rewards/common/brave_rewards_tip_panel.mojom.h"
 #include "brave/components/brave_rewards/common/features.h"
 #include "brave/components/brave_shields/common/brave_shields_panel.mojom.h"
 #include "brave/components/brave_shields/common/cookie_list_opt_in.mojom.h"
@@ -597,7 +599,11 @@ void BraveContentBrowserClient::RegisterBrowserInterfaceBindersForFrame(
         CookieListOptInUI>(map);
   }
   content::RegisterWebUIControllerInterfaceBinder<
-      brave_rewards::mojom::PanelHandlerFactory, RewardsPanelUI>(map);
+      brave_rewards::mojom::PanelHandlerFactory, brave_rewards::RewardsPanelUI>(
+      map);
+  content::RegisterWebUIControllerInterfaceBinder<
+      brave_rewards::mojom::TipPanelHandlerFactory, brave_rewards::TipPanelUI>(
+      map);
   if (base::FeatureList::IsEnabled(
           brave_federated::features::kFederatedLearning)) {
     content::RegisterWebUIControllerInterfaceBinder<

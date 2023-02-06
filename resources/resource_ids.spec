@@ -205,5 +205,10 @@
   "<(SHARED_INTERMEDIATE_DIR)/brave/web-ui-brave_adblock_internals/brave_adblock_internals.grd": {
     "META": {"sizes": {"includes": [50]}},
     "includes": [59840],
+  },
+  # This file is generated during the build.
+  "<(SHARED_INTERMEDIATE_DIR)/brave/web-ui-tip_panel/tip_panel.grd": {
+    "META": {"sizes": {"includes": [100]}},
+    "includes": [59890],
   }
 }

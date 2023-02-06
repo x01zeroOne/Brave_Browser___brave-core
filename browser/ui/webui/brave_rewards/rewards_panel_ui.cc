@@ -28,6 +28,8 @@
 #include "content/public/browser/web_ui.h"
 #include "services/network/public/mojom/content_security_policy.mojom.h"
 
+namespace brave_rewards {
+
 namespace {
 
 static constexpr webui::LocalizedString kStrings[] = {
@@ -207,8 +209,7 @@ RewardsPanelUI::RewardsPanelUI(content::WebUI* web_ui)
     : MojoBubbleWebUIController(web_ui, true) {
   auto* profile = Profile::FromWebUI(web_ui);
   if (auto* browser = chrome::FindLastActiveWithProfile(profile)) {
-    panel_coordinator_ =
-        brave_rewards::RewardsPanelCoordinator::FromBrowser(browser);
+    panel_coordinator_ = RewardsPanelCoordinator::FromBrowser(browser);
   }
 
   auto plural_string_handler = std::make_unique<PluralStringHandler>();
@@ -255,14 +256,16 @@ void RewardsPanelUI::BindInterface(
 }
 
 void RewardsPanelUI::CreatePanelHandler(
-    mojo::PendingRemote<brave_rewards::mojom::Panel> panel,
-    mojo::PendingReceiver<brave_rewards::mojom::PanelHandler> receiver) {
+    mojo::PendingRemote<mojom::Panel> panel,
+    mojo::PendingReceiver<mojom::PanelHandler> receiver) {
   DCHECK(panel);
 
   auto* profile = Profile::FromWebUI(web_ui());
-  auto* rewards = brave_rewards::RewardsServiceFactory::GetForProfile(profile);
+  auto* rewards = RewardsServiceFactory::GetForProfile(profile);
 
   panel_handler_ = std::make_unique<RewardsPanelHandler>(
       std::move(panel), std::move(receiver), embedder(), rewards,
       panel_coordinator_);
 }
+
+}  // namespace brave_rewards
