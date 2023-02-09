@@ -8,32 +8,34 @@ import * as S from './style'
 import DataContext from '../../state/context'
 import { getLocale } from '../../../../../common/locale'
 import TreeNode from './tree-node'
-import { ViewType } from '../../state/component_types'
-import { Url } from 'gen/url/mojom/url.mojom.m.js'
+import { ViewType, ResourceInfo, ResourceType, ResourceState } from '../../state/component_types'
 import Button from '$web-components/button'
+import getPanelBrowserAPI from '../../api/panel_browser_api'
 
 interface Props {
-  data: Url[]
+  blockedList: ResourceInfo[]
+  allowedList?: ResourceInfo[]
+  type: ResourceType
   totalBlockedCount: number
   blockedCountTitle: string
 }
 
-function groupByOrigin (data: Url[]) {
-  const map: Map<string, string[]> = new Map()
+function groupByOrigin (data: ResourceInfo[]) {
+  const map: Map<string, ResourceInfo[]> = new Map()
 
   const includesDupeOrigin = (searchOrigin: string) => {
-    const results = data.map(entry => new URL(entry.url).origin)
+    const results = data.map(entry => new URL(entry.url.url).origin)
       .filter(entry => entry.includes(searchOrigin))
     return results.length > 1
   }
 
   data.forEach(entry => {
-    const url = new URL(entry.url)
+    const url = new URL(entry.url.url)
     const origin = url.origin
     const items = map.get(origin)
 
     if (items) {
-      items.push(url.pathname + url.search)
+      items.push(entry)
       return // continue
     }
 
@@ -44,10 +46,28 @@ function groupByOrigin (data: Url[]) {
   return map
 }
 
+function getScriptsOriginsWithState (data: ResourceInfo[], state: ResourceState): string[] {
+  const list: string[] = []
+
+  data.forEach(entry => {
+    const url = new URL(entry.url.url)
+    if (list.includes(url.origin) || entry.state !== state) {
+      return // continue
+    }
+
+    list.push(url.origin)
+  })
+
+  return list
+}
+
 function TreeList (props: Props) {
   const { siteBlockInfo, setViewType } = React.useContext(DataContext)
-  const mappedData = React.useMemo(() => groupByOrigin(props.data), [props.data])
-
+  const mappedBlockedScripts = React.useMemo(() => groupByOrigin(props.blockedList), [props.blockedList])
+  const allowAllScripts = () => {
+    const origins: string[] = getScriptsOriginsWithState(props.blockedList, ResourceState.Blocked)
+    getPanelBrowserAPI().dataHandler.allowScriptsOnce(origins)
+  }
   return (
     <S.Box>
       <S.HeaderBox>
@@ -60,15 +80,20 @@ function TreeList (props: Props) {
         <S.Grid>
           <span>{props.totalBlockedCount}</span>
           <span>{props.blockedCountTitle}</span>
+          <span>{<a href="#" onClick={() => allowAllScripts()}>
+              {getLocale('braveShieldsAllowScriptsAll')}
+            </a>
+          }</span>
         </S.Grid>
       </S.HeaderBox>
       <S.TreeBox>
         <div>
-          {[...mappedData.keys()].map((origin, idx) => {
+          {[...mappedBlockedScripts.keys()].map((origin, idx) => {
             return (<TreeNode
               key={idx}
               host={origin}
-              resourceList={mappedData.get(origin) ?? []}
+              type={props.type}
+              resourceList={mappedBlockedScripts.get(origin) ?? []}
             />)
           })}
         </div>

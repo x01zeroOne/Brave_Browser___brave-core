@@ -96,7 +96,9 @@ constexpr webui::LocalizedString kLocalizedStrings[] = {
     {"braveShieldsBlockedScriptsLabel",
      IDS_BRAVE_SHIELDS_BLOCKED_SCRIPTS_LABEL},
     {"braveShieldsManaged", IDS_BRAVE_SHIELDS_MANAGED},
-};
+    {"braveShieldsAllowScriptOnce", IDS_BRAVE_SHIELDS_ALLOW_SCRIPT_ONCE},
+    {"braveShieldsScriptAllowedOnce", IDS_BRAVE_SHIELDS_SCRIPT_ALLOWED_ONCE},
+    {"braveShieldsAllowScriptsAll", IDS_BRAVE_SHIELDS_ALLOW_SCRIPTS_ALL}};
 
 const char kCookieListEnabledHistogram[] = "Brave.Shields.CookieListEnabled";
 const char kCookieListPromptHistogram[] = "Brave.Shields.CookieListPrompt";

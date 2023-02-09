@@ -6,7 +6,7 @@ import * as React from 'react'
 
 import MainPanel from './components/main-panel'
 import TreeList from './components/tree-list'
-import { ViewType } from './state/component_types'
+import { MakeResourceInfoList, ResourceState, ResourceType, ViewType } from './state/component_types'
 import DataContext from './state/context'
 import styled from 'styled-components'
 import { getLocale } from '../../../common/locale'
@@ -22,7 +22,8 @@ function Container () {
   const renderDetailView = () => {
     if (viewType === ViewType.AdsList && detailView) {
       return (<TreeList
-        data={siteBlockInfo?.adsList}
+        blockedList={MakeResourceInfoList(siteBlockInfo?.adsList, ResourceType.Ad, ResourceState.Blocked)}
+        type={ResourceType.Ad}
         totalBlockedCount={siteBlockInfo?.adsList.length}
         blockedCountTitle={getLocale('braveShieldsTrackersAndAds')}
       />)
@@ -30,7 +31,8 @@ function Container () {
 
     if (viewType === ViewType.HttpsList && detailView) {
       return (<TreeList
-        data={siteBlockInfo?.httpRedirectsList}
+        type={ResourceType.Http}
+        blockedList={MakeResourceInfoList(siteBlockInfo?.httpRedirectsList, ResourceType.Http, ResourceState.Blocked)}
         totalBlockedCount={siteBlockInfo?.httpRedirectsList.length}
         blockedCountTitle={getLocale('braveShieldsConnectionsUpgraded')}
       />)
@@ -38,8 +40,10 @@ function Container () {
 
     if (viewType === ViewType.ScriptsList && detailView) {
       return (<TreeList
-        data={siteBlockInfo?.jsList}
-        totalBlockedCount={siteBlockInfo?.jsList.length}
+        blockedList={MakeResourceInfoList(siteBlockInfo?.blockedJsList, ResourceType.Script, ResourceState.Blocked)}
+        allowedList={MakeResourceInfoList(siteBlockInfo?.allowedJsList, ResourceType.Script, ResourceState.AllowedOnce)}
+        type={ResourceType.Script}
+        totalBlockedCount={siteBlockInfo?.blockedJsList.length}
         blockedCountTitle={getLocale('braveShieldsBlockedScriptsLabel')}
       />)
     }

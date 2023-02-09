@@ -46,6 +46,7 @@ interface DataHandler {
   SetBraveShieldsEnabled(bool is_enabled);
   OpenWebCompatWindow();
   UpdateFavicon();
+  AllowScriptsOnce(array<string> origins);
 };
 
 struct SiteBlockInfo {
@@ -56,7 +57,8 @@ struct SiteBlockInfo {
   url.mojom.Url favicon_url;
   array<url.mojom.Url> ads_list;
   array<url.mojom.Url> http_redirects_list;
-  array<url.mojom.Url> js_list;
+  array<url.mojom.Url> blocked_js_list;
+  array<url.mojom.Url> allowed_js_list;
   array<url.mojom.Url> fingerprints_list;
 };
 

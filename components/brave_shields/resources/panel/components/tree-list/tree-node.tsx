@@ -5,6 +5,9 @@
 import * as React from 'react'
 import styled from 'styled-components'
 import UrlElement from './url-element'
+import { ResourceInfo, ResourceState, ResourceType } from '../../state/component_types'
+import getPanelBrowserAPI from '../../api/panel_browser_api'
+import { getLocale } from '../../../../../common/locale'
 
 const Tree = styled.div`
   display: grid;
@@ -62,9 +65,15 @@ const TreeContents = styled.div`
   overflow: hidden; /* to wrap contents */
 `
 
+const AllowedOnceText = styled.div`
+  overflow: hidden; /* to wrap contents */
+  color: gray
+`
+
 interface TreeNodeProps {
   host: string
-  resourceList: string[]
+  type: ResourceType
+  resourceList: ResourceInfo[]
 }
 
 function rectToQuad (rect: DOMRect) {
@@ -85,6 +94,20 @@ function getRelativeBoundingRect (from: DOMRect, to: Element) {
     toQuad.p1.x - fromQuad.p1.x,
     toQuad.p2.y - fromQuad.p2.y
   )
+}
+
+const getResourcesState = (resourceList: ResourceInfo[]): ResourceState | undefined => {
+  if (!resourceList.length) { return undefined }
+  let state: ResourceState | undefined = resourceList[0].state
+  resourceList.forEach(entry => {
+    if (state !== entry.state) {
+      state = undefined
+      return undefined
+    }
+    return entry.state
+  })
+
+  return state
 }
 
 function TreeNode (props: TreeNodeProps) {
@@ -184,6 +207,9 @@ function TreeNode (props: TreeNodeProps) {
     measure()
   }, [props.resourceList, isExpanded])
 
+  const handleActionClick = () => {
+      getPanelBrowserAPI().dataHandler.allowScriptsOnce([props.host])
+  }
   return (
     <Tree>
       <TreeControlBox>
@@ -191,21 +217,45 @@ function TreeNode (props: TreeNodeProps) {
         {hasResources && isExpanded ? renderLeftAxis() : null}
       </TreeControlBox>
       <TreeContents>
+      <span>
+        <span>
         <UrlElement name={props.host} isHost={true} />
+            {getResourcesState(props.resourceList) === ResourceState.AllowedOnce && (
+          <AllowedOnceText>
+            {getLocale('braveShieldsScriptAllowedOnce')}
+          </AllowedOnceText>
+        )}
+        </span>
+      </span>
         {hasResources && isExpanded ? (
           <div ref={treeChildrenBoxRef}>
             {
-              props.resourceList.map((resourceUrl: string, idx) => {
+              props.resourceList.map((resource: ResourceInfo, idx) => {
                 return (
-                  <UrlElement
-                    key={idx}
-                    isHost={false}
-                    name={resourceUrl}
-                    onExpand={() => measure()}
-                  />
+                  <span>
+                    <UrlElement
+                      key={idx}
+                      isHost={false}
+                      name={resource.url.url}
+                      onExpand={() => measure()}
+                    />
+
+                  {props.type === ResourceType.Script && resource.state === ResourceState.Blocked && (
+                      <a href='#' onClick={() => handleActionClick()}>
+                          {getLocale('braveShieldsAllowScriptOnce')}
+                      </a>
+                    )}
+                  {props.type === ResourceType.Script && resource.state === ResourceState.AllowedOnce && (
+                      <AllowedOnceText>
+                          {getLocale('braveShieldsScriptAllowedOnce')}
+                      </AllowedOnceText>
+                    )}
+
+                  </span>
                 )
               })
             }
+
           </div>
         ) : null}
       </TreeContents>

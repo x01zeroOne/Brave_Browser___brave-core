@@ -29,6 +29,7 @@
 #include "extensions/buildflags/buildflags.h"
 #include "mojo/public/cpp/bindings/associated_remote.h"
 #include "third_party/blink/public/common/associated_interfaces/associated_interface_provider.h"
+#include "url/origin.h"
 
 #if !BUILDFLAG(IS_ANDROID)
 #include "brave/browser/ui/brave_shields_data_controller.h"
@@ -172,15 +173,44 @@ void BraveShieldsWebContentsObserver::DispatchBlockedEventForWebContents(
     return;
   shields_data_ctrlr->HandleItemBlocked(block_type, subresource);
 }
+// static
+void BraveShieldsWebContentsObserver::DispatchAllowedOnceEventForWebContents(
+    const std::string& block_type,
+    const std::string& subresource,
+    WebContents* web_contents) {
+  if (!web_contents) {
+    return;
+  }
+  auto* shields_data_ctrlr =
+      brave_shields::BraveShieldsDataController::FromWebContents(web_contents);
+  // |shields_data_ctrlr| can be null if the |web_contents| is generated in
+  // component layer - We don't attach any tab helpers in this case.
+  if (!shields_data_ctrlr) {
+    return;
+  }
+  shields_data_ctrlr->HandleItemAllowedOnce(block_type, subresource);
+}
 #endif
+
+void BraveShieldsWebContentsObserver::OnJavaScriptAllowedOnce(
+    const std::u16string& details) {
+#if !BUILDFLAG(IS_ANDROID)
+  WebContents* web_contents =
+      WebContents::FromRenderFrameHost(receivers_.GetCurrentTargetFrame());
+  if (!web_contents)
+    return;
+  DispatchAllowedOnceEventForWebContents(
+      brave_shields::kJavaScript, base::UTF16ToUTF8(details), web_contents);
+#endif
+}
 
 void BraveShieldsWebContentsObserver::OnJavaScriptBlocked(
     const std::u16string& details) {
   WebContents* web_contents =
       WebContents::FromRenderFrameHost(receivers_.GetCurrentTargetFrame());
-  if (!web_contents)
+  if (!web_contents) {
     return;
-
+  }
   DispatchBlockedEventForWebContents(brave_shields::kJavaScript,
                                      base::UTF16ToUTF8(details), web_contents);
 }
@@ -227,9 +257,9 @@ void BraveShieldsWebContentsObserver::ReadyToCommitNavigation(
 }
 
 void BraveShieldsWebContentsObserver::AllowScriptsOnce(
-    const std::vector<std::string>& origins,
-    WebContents* contents) {
-  allowed_script_origins_ = std::move(origins);
+    const std::vector<std::string>& origins) {
+  allowed_script_origins_.insert(std::end(allowed_script_origins_),
+                                 std::begin(origins), std::end(origins));
 }
 
 // static
