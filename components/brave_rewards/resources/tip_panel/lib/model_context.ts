@@ -5,11 +5,27 @@
 
 import * as React from 'react'
 
-import { Model, ModelStateListener } from './model'
+import { Model, ModelState, ModelStateListener, defaultState } from './model'
 
-export const ModelContext = React.createContext({} as Model)
+export const ModelContext = React.createContext<Model>({
+  state: defaultState(),
+  addListener: () => () => {},
+  onInitialRender: () => {}
+})
 
 // A helper hook for listening to model state changes
 export function useModelListener (model: Model, listener: ModelStateListener) {
   React.useEffect(() => model.addListener(listener), [model])
+}
+
+export function useModel<T> (map: (state: ModelState) => T): T {
+  const model = React.useContext(ModelContext)
+  const [state, setState] = React.useState(map(model.state))
+  React.useEffect(() => {
+    return model.addListener((state) => {
+      // TODO: Should we do a top-level strict-equality check before setting?
+      setState(map(state))
+    })
+  }, [model])
+  return state
 }

@@ -8,6 +8,9 @@ import * as React from 'react'
 import { Model } from '../lib/model'
 import { ModelContext } from '../lib/model_context'
 
+import { CreatorView } from './creator_view'
+import { TipForm } from './tip_form'
+
 import * as style from './app.style'
 
 interface Props {
@@ -19,7 +22,12 @@ export function App (props: Props) {
   return (
     <ModelContext.Provider value={props.model}>
       <style.root>
-        Hello World
+        <style.creator>
+          <CreatorView />
+        </style.creator>
+        <style.form>
+          <TipForm />
+        </style.form>
       </style.root>
     </ModelContext.Provider>
   )

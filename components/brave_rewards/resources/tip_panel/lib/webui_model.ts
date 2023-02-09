@@ -5,11 +5,11 @@
 
 import { createStateManager } from '../../shared/lib/state_manager'
 
-import { Model, ModelState } from './model'
+import { Model, ModelState, defaultState } from './model'
 import { TipPanelProxy } from './tip_panel_proxy'
 
 export function createModel (): Model {
-  const stateManager = createStateManager<ModelState>({})
+  const stateManager = createStateManager<ModelState>(defaultState())
   const proxy = TipPanelProxy.getInstance()
 
   return {
