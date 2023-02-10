@@ -18,10 +18,6 @@ constexpr char kDaysInMonthUsedCountHistogramName[] =
     "Brave.Today.DaysInMonthUsedCount";
 constexpr char kWeeklySessionCountHistogramName[] =
     "Brave.Today.WeeklySessionCount";
-constexpr char kWeeklyMaxCardVisitsHistogramName[] =
-    "Brave.Today.WeeklyMaxCardVisitsCount";
-constexpr char kWeeklyMaxCardViewsHistogramName[] =
-    "Brave.Today.WeeklyMaxCardViewsCount";
 constexpr char kTotalCardViewsHistogramName[] =
     "Brave.Today.WeeklyTotalCardViews";
 constexpr char kWeeklyDisplayAdsViewedHistogramName[] =
@@ -37,16 +33,14 @@ constexpr char kNewUserReturningHistogramName[] =
 void RecordAtInit(PrefService* prefs);
 void RecordAtSessionStart(PrefService* prefs);
 
-void RecordWeeklyMaxCardVisitsCount(PrefService* prefs,
-                                    uint64_t cards_visited_session_total_count);
-void RecordWeeklyMaxCardViewsCount(PrefService* prefs,
-                                   uint64_t cards_viewed_session_total_count);
 void RecordWeeklyDisplayAdsViewedCount(PrefService* prefs, bool is_add);
 void RecordWeeklyAddedDirectFeedsCount(PrefService* prefs, int change);
 void RecordDirectFeedsTotal(PrefService* prefs);
-void RecordTotalCardViews(PrefService* prefs,
-                          uint64_t cards_viewed_session_total_count);
+void RecordTotalCardViews(PrefService* prefs, uint64_t count_delta);
+
 void RegisterProfilePrefs(PrefRegistrySimple* registry);
+void RegisterProfilePrefsForMigration(PrefRegistrySimple* registry);
+void MigrateObsoleteProfilePrefs(PrefService* prefs);
 
 }  // namespace p3a
 }  // namespace brave_news
