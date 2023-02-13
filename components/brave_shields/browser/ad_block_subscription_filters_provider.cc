@@ -7,8 +7,9 @@
 
 #include <utility>
 
+#include "base/logging.h"
 #include "base/task/thread_pool.h"
-#include "brave/components/adblock_rust_ffi/src/wrapper.h"
+#include "brave/components/brave_shields/adblock/rs/src/lib.rs.h"
 #include "components/prefs/pref_service.h"
 
 namespace brave_shields {
@@ -37,9 +38,13 @@ void AdBlockSubscriptionFiltersProvider::OnDATFileDataReady(
     base::OnceCallback<void(bool deserialize, const DATFileDataBuffer& dat_buf)>
         cb,
     const DATFileDataBuffer& dat_buf) {
-  adblock::FilterListMetadata metadata = adblock::FilterListMetadata(
-      reinterpret_cast<const char*>(dat_buf.data()), dat_buf.size());
-  on_metadata_retrieved_.Run(metadata);
+  auto metadata_result = adblock::read_list_metadata(dat_buf);
+  if (metadata_result.result_kind != adblock::ResultKind::Success) {
+    LOG(ERROR)
+        << "AdBlockSubscriptionFiltersProvider::OnDATFileDataReady failed: "
+        << metadata_result.error_message.c_str();
+  }
+  on_metadata_retrieved_.Run(metadata_result.value);
   std::move(cb).Run(false, dat_buf);
 }
 

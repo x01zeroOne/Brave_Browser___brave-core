@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
-adblock-ffi = { path = "../../components/adblock_rust_ffi" }
+adblock-cxx = { path = "../../components/brave_shields/adblock/rs" }
 brave-wallet-cxx = { path = "../../components/brave_wallet/rust" }
 challenge-bypass-ristretto-ffi = { path = "../../components/challenge_bypass_ristretto" }
 speedreader-ffi = { path = "../../components/speedreader/rust/ffi" }
@@ -19,8 +19,8 @@ name = "brave_rust"
 path = "lib.rs"
 
 [features]
-ios = ["adblock-ffi/ios"]
-chromium = ["adblock-ffi/single_thread_optimizations"]
+ios = ["adblock-cxx/ios"]
+chromium = ["adblock-cxx/single_thread_optimizations"]
 
 [patch.crates-io.link-cplusplus_v1]
 path = "../../../third_party/rust/link_cplusplus/v1/crate"

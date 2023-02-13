@@ -1,4 +1,4 @@
-pub use adblock;
+pub use adblock_cxx;
 
 pub use challenge_bypass_ristretto_ffi;
 

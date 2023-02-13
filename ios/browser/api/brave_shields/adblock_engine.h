@@ -80,30 +80,13 @@ OBJC_EXPORT
 - (NSString*)cosmeticResourcesForURL:(NSString*)url
     NS_SWIFT_NAME(cosmeticResourcesForURL(_:));
 
-/// Returns a stylesheet containing all generic cosmetic rules that begin with
-/// any of the provided class and id selectors
-///
-/// The leading '.' or '#' character should not be provided
-- (NSString*)
-    stylesheetForCosmeticRulesIncludingClasses:(NSArray<NSString*>*)classes
-                                           ids:(NSArray<NSString*>*)ids
-                                    exceptions:(NSArray<NSString*>*)exceptions
-    NS_SWIFT_NAME(stylesheetForCosmeticRulesIncluding(classes:ids:exceptions:));
-
 /// Passes a callback to the adblock library, allowing it to be used for domain
 /// resolution.
 ///
 /// This is required to be able to use any adblocking functionality.
 ///
 /// Returns true on success, false if a callback was already set previously.
-+ (bool)setDomainResolver:(DomainResolverCallback)domainResolver;
-
-/// The default domain resolver.
-@property(class, readonly) DomainResolverCallback defaultDomainResolver;
-
-/// Converts ABP rules/filter sets into Content Blocker rules that can be used
-/// with ``WKWebView``
-+ (NSString*)contentBlockerRulesFromFilterSet:(NSString*)filterSet;
++ (bool)setDomainResolver;
 
 @end
 

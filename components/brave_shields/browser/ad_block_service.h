@@ -35,6 +35,7 @@ class ComponentUpdateService;
 }  // namespace component_updater
 
 namespace adblock {
+struct BlockerResult;
 struct RegexManagerDiscardPolicy;
 }
 namespace brave_shields {
@@ -92,15 +93,14 @@ class AdBlockService {
   AdBlockService& operator=(const AdBlockService&) = delete;
   ~AdBlockService();
 
-  void ShouldStartRequest(const GURL& url,
-                          blink::mojom::ResourceType resource_type,
-                          const std::string& tab_host,
-                          bool aggressive_blocking,
-                          bool* did_match_rule,
-                          bool* did_match_exception,
-                          bool* did_match_important,
-                          std::string* mock_data_url,
-                          std::string* rewritten_url);
+  absl::optional<adblock::BlockerResult> ShouldStartRequest(
+      const GURL& url,
+      blink::mojom::ResourceType resource_type,
+      const std::string& tab_host,
+      bool aggressive_blocking,
+      bool previously_matched_rule,
+      bool previously_matched_exception,
+      bool previously_matched_important);
   absl::optional<std::string> GetCspDirectives(
       const GURL& url,
       blink::mojom::ResourceType resource_type,

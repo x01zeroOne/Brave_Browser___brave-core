@@ -347,12 +347,12 @@ void AdBlockSubscriptionServiceManager::OnListMetadata(
 
   // Title can only be set once - only set it if an existing title does not
   // exist
-  if (!info->title && metadata.title) {
-    info->title = absl::make_optional(*metadata.title);
+  if (!info->title && metadata.title.has_value) {
+    info->title = absl::make_optional(std::string(metadata.title.value));
   }
 
-  if (metadata.homepage) {
-    info->homepage = absl::make_optional(*metadata.homepage);
+  if (metadata.homepage.has_value) {
+    info->homepage = absl::make_optional(std::string(metadata.homepage.value));
   } else {
     info->homepage = absl::nullopt;
   }
