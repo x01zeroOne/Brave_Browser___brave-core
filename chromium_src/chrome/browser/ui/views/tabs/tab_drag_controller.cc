@@ -207,8 +207,7 @@ void TabDragController::DetachAndAttachToNewContext(
           GetAttachedBrowserWidget()->GetNativeWindow()));
   DCHECK(browser_view);
 
-  auto* widget_delegate_view =
-      browser_view->vertical_tab_strip_widget_delegate_view();
+  auto* widget_delegate_view = browser_view->vertical_tab_strip_adapter_view();
   DCHECK(widget_delegate_view);
 
   auto* region_view = widget_delegate_view->vertical_tab_strip_region_view();
@@ -268,7 +267,7 @@ gfx::Rect TabDragController::CalculateDraggedBrowserBounds(
     DCHECK(browser_view);
 
     auto* widget_delegate_view =
-        browser_view->vertical_tab_strip_widget_delegate_view();
+        browser_view->vertical_tab_strip_adapter_view();
     DCHECK(widget_delegate_view);
 
     bounds.Offset(GetVerticalTabStripWidgetOffset());
@@ -290,7 +289,7 @@ gfx::Vector2d TabDragController::GetVerticalTabStripWidgetOffset() {
   DCHECK(browser_view);
 
   auto* tabstrip_widget =
-      browser_view->vertical_tab_strip_widget_delegate_view()->GetWidget();
+      browser_view->vertical_tab_strip_adapter_view()->GetWidget();
   DCHECK(tabstrip_widget);
   auto tabstrip_widget_bounds = tabstrip_widget->GetWindowBoundsInScreen();
 

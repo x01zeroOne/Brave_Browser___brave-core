@@ -8,6 +8,9 @@
 
 #include <memory>
 
+#include "brave/browser/ui/views/frame/vertical_tab_strip_region_view.h"
+#include "chrome/browser/ui/views/frame/browser_view.h"
+#include "ui/views/layout/fill_layout.h"
 #include "ui/views/view_observer.h"
 #include "ui/views/widget/widget_delegate.h"
 #include "ui/views/widget/widget_observer.h"
@@ -32,44 +35,68 @@ class VerticalTabStripRegionView;
 //                                                    // different based on
 //                                                    // state.
 //
-class VerticalTabStripWidgetDelegateView : public views::WidgetDelegateView,
-                                           public views::ViewObserver,
-                                           public views::WidgetObserver {
- public:
-  METADATA_HEADER(VerticalTabStripWidgetDelegateView);
 
-  static VerticalTabStripWidgetDelegateView* Create(BrowserView* browser_view,
-                                                    views::View* host_view);
-  ~VerticalTabStripWidgetDelegateView() override;
+template <class BaseView>
+class VerticalTabStripAdapterViewT : public BaseView,
+                                     public views::ViewObserver {
+ public:
+  static_assert(std::is_base_of_v<views::View, BaseView>);
+
+  ~VerticalTabStripAdapterViewT() override {
+    // Child views will be deleted after this. Marks `region_view_` nullptr
+    // so that they dont' access the `region_view_` via this view.
+    region_view_ = nullptr;
+  }
 
   VerticalTabStripRegionView* vertical_tab_strip_region_view() const {
     return region_view_;
   }
 
-  // views::WidgetDelegateView:
-  void ChildPreferredSizeChanged(views::View* child) override;
-
-  // views::ViewObserver:
-  void OnViewVisibilityChanged(views::View* observed_view,
-                               views::View* starting_view) override;
-  void OnViewBoundsChanged(views::View* observed_view) override;
-  void OnViewIsDeleting(views::View* observed_view) override;
-
-  // views::WidgetObserver:
-  void OnWidgetBoundsChanged(views::Widget* widget,
-                             const gfx::Rect& new_bounds) override;
-  void OnWidgetDestroying(views::Widget* widget) override;
-
- private:
+ protected:
   FRIEND_TEST_ALL_PREFIXES(VerticalTabStripBrowserTest, VisualState);
 
-  VerticalTabStripWidgetDelegateView(BrowserView* browser_view,
-                                     views::View* host);
-  void UpdateWidgetBounds();
+  VerticalTabStripAdapterViewT(BrowserView* browser_view, views::View* host)
+      : browser_view_(browser_view),
+        host_(host),
+        region_view_(
+            BaseView::AddChildView(std::make_unique<VerticalTabStripRegionView>(
+                browser_view_,
+                browser_view_->tab_strip_region_view()))) {
+    BaseView::SetLayoutManager(std::make_unique<views::FillLayout>());
 
-#if BUILDFLAG(IS_MAC)
-  void UpdateClip();
-#endif
+    host_view_observation_.Observe(host_);
+
+    ChildPreferredSizeChanged(region_view_);
+  }
+
+  virtual void UpdateAdapterViewBounds() = 0;
+
+  // BaseView:
+  void ChildPreferredSizeChanged(views::View* child) override {
+    if (!host_) {
+      return;
+    }
+
+    // Setting minimum size for |host_| so that we can overlay vertical tabs
+    // over the web view.
+    auto new_host_size = region_view_->GetMinimumSize();
+    if (new_host_size != host_->GetPreferredSize()) {
+      host_->SetPreferredSize(new_host_size);
+      return;
+    }
+
+    // Layout adapter view bounds manually because host won't trigger layout.
+    UpdateAdapterViewBounds();
+  }
+
+  void OnViewBoundsChanged(views::View* observed_view) override {
+    UpdateAdapterViewBounds();
+  }
+
+  void OnViewIsDeleting(views::View* observed_view) override {
+    host_view_observation_.Reset();
+    host_ = nullptr;
+  }
 
   raw_ptr<BrowserView> browser_view_ = nullptr;
   raw_ptr<views::View> host_ = nullptr;
@@ -77,9 +104,56 @@ class VerticalTabStripWidgetDelegateView : public views::WidgetDelegateView,
 
   base::ScopedObservation<views::View, views::ViewObserver>
       host_view_observation_{this};
+};
+
+#if BUILDFLAG(IS_MAC)
+class VerticalTabStripAdapterView
+    : public VerticalTabStripAdapterViewT<views::WidgetDelegateView>,
+      public views::WidgetObserver {
+ public:
+  METADATA_HEADER(VerticalTabStripAdapterView);
+
+  static constexpr bool kBackedByWidget = true;
+
+  static VerticalTabStripAdapterView* Create(BrowserView* browser_view,
+                                             views::View* host_view);
+  ~VerticalTabStripAdapterView() override;
+
+  // VerticalTabStripAdapterViewT:
+  void UpdateAdapterViewBounds() override;
+  void OnViewVisibilityChanged(views::View* observed_view,
+                               views::View* starting_view) override;
+
+  // views::WidgetObserver:
+  void OnWidgetBoundsChanged(views::Widget* widget,
+                             const gfx::Rect& new_bounds) override;
+  void OnWidgetDestroying(views::Widget* widget) override;
+
+ private:
+  VerticalTabStripAdapterView(BrowserView* browser_view, views::View* host);
+
+  void UpdateClip();
 
   base::ScopedObservation<views::Widget, views::WidgetObserver>
       widget_observation_{this};
 };
+#else
+class VerticalTabStripAdapterView : public VerticalTabStripAdapterViewT<views::View> {
+ public:
+  METADATA_HEADER(VerticalTabStripAdapterView);
+
+  static constexpr bool kBackedByWidget = false;
+
+  static VerticalTabStripAdapterView* Create(BrowserView* browser_view,
+                                             views::View* host_view);
+  ~VerticalTabStripAdapterView() override;
+
+  // VerticalTabStripAdapterViewT:
+  void UpdateAdapterViewBounds() override;
+
+ private:
+  VerticalTabStripAdapterView(BrowserView* browser_view, views::View* host);
+};
+#endif
 
 #endif  // BRAVE_BROWSER_UI_VIEWS_FRAME_VERTICAL_TAB_STRIP_WIDGET_DELEGATE_VIEW_H_

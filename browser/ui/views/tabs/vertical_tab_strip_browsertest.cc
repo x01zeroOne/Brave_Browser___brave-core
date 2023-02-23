@@ -252,7 +252,7 @@ IN_PROC_BROWSER_TEST_F(VerticalTabStripBrowserTest, VisualState) {
   using State = VerticalTabStripRegionView::State;
   ASSERT_TRUE(tabs::utils::IsFloatingVerticalTabsEnabled(browser()));
   auto* widget_delegate_view =
-      browser_view()->vertical_tab_strip_widget_delegate_view_.get();
+      browser_view()->vertical_tab_strip_adapter_view_.get();
   ASSERT_TRUE(widget_delegate_view);
 
   auto* region_view = widget_delegate_view->region_view_.get();

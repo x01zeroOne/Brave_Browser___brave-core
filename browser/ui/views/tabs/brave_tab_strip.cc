@@ -261,9 +261,8 @@ void BraveTabStrip::UpdateTabContainer() {
     auto* browser_view = static_cast<BraveBrowserView*>(
         BrowserView::GetBrowserViewForBrowser(browser));
     DCHECK(browser_view);
-    auto* vertical_region_view =
-        browser_view->vertical_tab_strip_widget_delegate_view()
-            ->vertical_tab_strip_region_view();
+    auto* vertical_region_view = browser_view->vertical_tab_strip_adapter_view()
+                                     ->vertical_tab_strip_region_view();
     // `vertical_region_view` can be null if it's in destruction.
     if (vertical_region_view) {
       SetAvailableWidthCallback(base::BindRepeating(

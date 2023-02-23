@@ -9,25 +9,25 @@
 
 #include "base/check.h"
 #include "brave/browser/ui/views/frame/brave_browser_view.h"
-#include "brave/browser/ui/views/frame/vertical_tab_strip_region_view.h"
-#include "chrome/browser/ui/views/frame/browser_view.h"
 #include "chrome/browser/ui/views/theme_copying_widget.h"
 #include "chrome/common/pref_names.h"
 #include "ui/base/metadata/metadata_impl_macros.h"
-#include "ui/views/layout/fill_layout.h"
 
 #if defined(USE_AURA)
 #include "ui/views/view_constants_aura.h"
 #endif
 
+VerticalTabStripAdapterView::~VerticalTabStripAdapterView() = default;
+
+#if BUILDFLAG(IS_MAC)
 // static
-VerticalTabStripWidgetDelegateView* VerticalTabStripWidgetDelegateView::Create(
+VerticalTabStripAdapterView* VerticalTabStripAdapterView::Create(
     BrowserView* browser_view,
     views::View* host_view) {
   DCHECK(browser_view->GetWidget());
 
   auto* delegate_view =
-      new VerticalTabStripWidgetDelegateView(browser_view, host_view);
+      new VerticalTabStripAdapterView(browser_view, host_view);
   views::Widget::InitParams params;
   params.delegate = delegate_view;
 
@@ -39,55 +39,20 @@ VerticalTabStripWidgetDelegateView* VerticalTabStripWidgetDelegateView::Create(
 
   auto widget = std::make_unique<ThemeCopyingWidget>(browser_view->GetWidget());
   widget->Init(std::move(params));
-#if defined(USE_AURA)
-  widget->GetNativeView()->SetProperty(views::kHostViewKey, host_view);
-#endif
   widget->Show();
   widget.release();
 
   return delegate_view;
 }
 
-VerticalTabStripWidgetDelegateView::~VerticalTabStripWidgetDelegateView() {
-  // Child views will be deleted after this. Marks `region_view_` nullptr
-  // so that they dont' access the `region_view_` via this view.
-  region_view_ = nullptr;
-}
-
-VerticalTabStripWidgetDelegateView::VerticalTabStripWidgetDelegateView(
+VerticalTabStripAdapterView::VerticalTabStripAdapterView(
     BrowserView* browser_view,
     views::View* host)
-    : browser_view_(browser_view),
-      host_(host),
-      region_view_(AddChildView(std::make_unique<VerticalTabStripRegionView>(
-          browser_view_,
-          browser_view_->tab_strip_region_view()))) {
-  SetLayoutManager(std::make_unique<views::FillLayout>());
-
-  host_view_observation_.Observe(host_);
-  widget_observation_.Observe(host_->GetWidget());
-
-  ChildPreferredSizeChanged(region_view_);
+    : VerticalTabStripAdapterViewT(browser_view, host) {
+    widget_observation_.Observe(host_->GetWidget());
 }
 
-void VerticalTabStripWidgetDelegateView::ChildPreferredSizeChanged(
-    views::View* child) {
-  if (!host_)
-    return;
-
-  // Setting minimum size for |host_| so that we can overlay vertical tabs over
-  // the web view.
-  auto new_host_size = region_view_->GetMinimumSize();
-  if (new_host_size != host_->GetPreferredSize()) {
-    host_->SetPreferredSize(new_host_size);
-    return;
-  }
-
-  // Layout widget manually because host won't trigger layout.
-  UpdateWidgetBounds();
-}
-
-void VerticalTabStripWidgetDelegateView::OnViewVisibilityChanged(
+void VerticalTabStripAdapterView::OnViewVisibilityChanged(
     views::View* observed_view,
     views::View* starting_view) {
   auto* widget = GetWidget();
@@ -100,18 +65,7 @@ void VerticalTabStripWidgetDelegateView::OnViewVisibilityChanged(
     widget->Hide();
 }
 
-void VerticalTabStripWidgetDelegateView::OnViewBoundsChanged(
-    views::View* observed_view) {
-  UpdateWidgetBounds();
-}
-
-void VerticalTabStripWidgetDelegateView::OnViewIsDeleting(
-    views::View* observed_view) {
-  host_view_observation_.Reset();
-  host_ = nullptr;
-}
-
-void VerticalTabStripWidgetDelegateView::OnWidgetBoundsChanged(
+void VerticalTabStripAdapterView::OnWidgetBoundsChanged(
     views::Widget* widget,
     const gfx::Rect& new_bounds) {
   // The parent widget could be resized because fullscreen status changed.
@@ -119,7 +73,7 @@ void VerticalTabStripWidgetDelegateView::OnWidgetBoundsChanged(
   ChildPreferredSizeChanged(region_view_);
 }
 
-void VerticalTabStripWidgetDelegateView::UpdateWidgetBounds() {
+void VerticalTabStripAdapterView::UpdateAdapterViewBounds() {
   if (!host_)
     return;
 
@@ -148,18 +102,14 @@ void VerticalTabStripWidgetDelegateView::UpdateWidgetBounds() {
   if (need_to_call_layout)
     Layout();
 
-#if BUILDFLAG(IS_MAC)
   UpdateClip();
-#endif
 }
 
-void VerticalTabStripWidgetDelegateView::OnWidgetDestroying(
-    views::Widget* widget) {
+void VerticalTabStripAdapterView::OnWidgetDestroying(views::Widget* widget) {
   widget_observation_.Reset();
 }
 
-#if BUILDFLAG(IS_MAC)
-void VerticalTabStripWidgetDelegateView::UpdateClip() {
+void VerticalTabStripAdapterView::UpdateClip() {
   // On mac, child window can be drawn out of parent window. We should clip
   // the border line and corner radius manually.
   // The corner radius value refers to the that of menu widget. Looks fit for
@@ -176,7 +126,44 @@ void VerticalTabStripWidgetDelegateView::UpdateClip() {
   path.close();
   SetClipPath(path);
 }
-#endif
 
-BEGIN_METADATA(VerticalTabStripWidgetDelegateView, views::View)
+BEGIN_METADATA(VerticalTabStripAdapterView, views::WidgetDelegateView)
 END_METADATA
+#else
+// static
+VerticalTabStripAdapterView* VerticalTabStripAdapterView::Create(
+    BrowserView* browser_view,
+    views::View* host_view) {
+  auto* delegate_view =
+      new VerticalTabStripAdapterView(browser_view, host_view);
+
+  DCHECK(host_view);
+  host_view->AddChildView(delegate_view);
+
+  return delegate_view;
+}
+
+VerticalTabStripAdapterView::VerticalTabStripAdapterView(
+    BrowserView* browser_view,
+    views::View* host)
+    : VerticalTabStripAdapterViewT(browser_view, host) {
+  SetPaintToLayer();
+}
+
+void VerticalTabStripAdapterView::UpdateAdapterViewBounds() {
+  if (!host_)
+    return;
+
+  gfx::Rect bounds = host_->GetLocalBounds();
+  bounds.set_width(region_view_->GetPreferredSize().width());
+  SetBoundsRect(bounds);
+
+  if (auto insets = host_->GetInsets(); GetInsets() != insets)
+    SetBorder(insets.IsEmpty() ? nullptr : views::CreateEmptyBorder(insets));
+
+  Layout();
+}
+
+BEGIN_METADATA(VerticalTabStripAdapterView, views::View)
+END_METADATA
+#endif

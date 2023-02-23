@@ -45,7 +45,7 @@ class BraveBrowser;
 class ContentsLayoutManager;
 class SidebarContainerView;
 class WalletButton;
-class VerticalTabStripWidgetDelegateView;
+class VerticalTabStripAdapterView;
 
 class BraveBrowserView : public BrowserView {
  public:
@@ -82,9 +82,8 @@ class BraveBrowserView : public BrowserView {
   views::View* sidebar_host_view() { return sidebar_host_view_; }
   bool IsSidebarVisible() const;
 
-  VerticalTabStripWidgetDelegateView*
-  vertical_tab_strip_widget_delegate_view() {
-    return vertical_tab_strip_widget_delegate_view_;
+  VerticalTabStripAdapterView* vertical_tab_strip_adapter_view() {
+    return vertical_tab_strip_adapter_view_;
   }
 
  private:
@@ -127,8 +126,8 @@ class BraveBrowserView : public BrowserView {
   raw_ptr<SidebarContainerView> sidebar_container_view_ = nullptr;
   raw_ptr<views::View> sidebar_host_view_ = nullptr;
   raw_ptr<views::View> vertical_tab_strip_host_view_ = nullptr;
-  raw_ptr<VerticalTabStripWidgetDelegateView>
-      vertical_tab_strip_widget_delegate_view_ = nullptr;
+  raw_ptr<VerticalTabStripAdapterView> vertical_tab_strip_adapter_view_ =
+      nullptr;
 
 #if BUILDFLAG(ENABLE_BRAVE_VPN)
   BraveVPNPanelController vpn_panel_controller_{this};
