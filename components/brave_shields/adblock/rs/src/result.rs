@@ -13,24 +13,24 @@ use crate::ffi::*;
 
 #[derive(Debug, Error)]
 pub(crate) enum InternalError {
-  #[error("json error: {0}")]
-  Json(#[from] serde_json::Error),
-  #[error("utf-8 encoding error: {0}")]
-  Utf8(#[from] Utf8Error),
-  #[error("{0}")]
-  Blocker(#[from] BlockerError),
-  #[error("{0}")]
-  AddResource(#[from] AddResourceError),
+    #[error("json error: {0}")]
+    Json(#[from] serde_json::Error),
+    #[error("utf-8 encoding error: {0}")]
+    Utf8(#[from] Utf8Error),
+    #[error("{0}")]
+    Blocker(#[from] BlockerError),
+    #[error("{0}")]
+    AddResource(#[from] AddResourceError),
 }
 
 impl From<&InternalError> for ResultKind {
-  fn from(error: &InternalError) -> Self {
-    match error {
-      InternalError::Json(_) => Self::JsonError,
-      InternalError::Utf8(_) => Self::Utf8Error,
-      InternalError::Blocker(_) | InternalError::AddResource(_) => Self::AdblockError,
+    fn from(error: &InternalError) -> Self {
+        match error {
+            InternalError::Json(_) => Self::JsonError,
+            InternalError::Utf8(_) => Self::Utf8Error,
+            InternalError::Blocker(_) | InternalError::AddResource(_) => Self::AdblockError,
+        }
     }
-  }
 }
 
 // This is an intermediate "result" type.
@@ -38,49 +38,39 @@ impl From<&InternalError> for ResultKind {
 // Result<T, InternalError> to PreResult<T> to
 // TResult (i.e. StringResult defined in the ffi module).
 struct PreResult<T: Default> {
-  value: T,
-  result_kind: ResultKind,
-  error_message: String,
+    value: T,
+    result_kind: ResultKind,
+    error_message: String,
 }
 
 // Implements the From<PreResult<T>> trait for a given final ffi result type.
 macro_rules! impl_result_from_trait {
-  ($result_type:ty, $value_type:ty) => {
-    impl From<Result<$value_type, InternalError>> for $result_type {
-      fn from(result: Result<$value_type, InternalError>) -> Self {
-        let PreResult {
-          value,
-          result_kind,
-          error_message,
-        } = PreResult::from(result);
-        Self {
-          value,
-          result_kind,
-          error_message,
+    ($result_type:ty, $value_type:ty) => {
+        impl From<Result<$value_type, InternalError>> for $result_type {
+            fn from(result: Result<$value_type, InternalError>) -> Self {
+                let PreResult { value, result_kind, error_message } = PreResult::from(result);
+                Self { value, result_kind, error_message }
+            }
         }
-      }
-    }
-  };
+    };
 }
 
 impl<T> From<Result<T, InternalError>> for PreResult<T>
 where
-  T: Default,
+    T: Default,
 {
-  fn from(result: Result<T, InternalError>) -> Self {
-    match result {
-      Ok(value) => Self {
-        value,
-        result_kind: ResultKind::Success,
-        error_message: String::new(),
-      },
-      Err(e) => Self {
-        value: Default::default(),
-        result_kind: (&e).into(),
-        error_message: e.to_string(),
-      },
+    fn from(result: Result<T, InternalError>) -> Self {
+        match result {
+            Ok(value) => {
+                Self { value, result_kind: ResultKind::Success, error_message: String::new() }
+            }
+            Err(e) => Self {
+                value: Default::default(),
+                result_kind: (&e).into(),
+                error_message: e.to_string(),
+            },
+        }
     }
-  }
 }
 
 impl_result_from_trait!(StringResult, String);
@@ -91,15 +81,8 @@ impl_result_from_trait!(BoxEngineResult, Box<Engine>);
 impl_result_from_trait!(FilterListMetadataResult, FilterListMetadata);
 
 impl From<Result<(), InternalError>> for EmptyTupleResult {
-  fn from(result: Result<(), InternalError>) -> Self {
-    let PreResult {
-      result_kind,
-      error_message,
-      ..
-    } = PreResult::from(result);
-    Self {
-      result_kind,
-      error_message,
+    fn from(result: Result<(), InternalError>) -> Self {
+        let PreResult { result_kind, error_message, .. } = PreResult::from(result);
+        Self { result_kind, error_message }
     }
-  }
 }
