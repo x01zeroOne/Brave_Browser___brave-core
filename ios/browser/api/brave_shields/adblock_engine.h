@@ -10,10 +10,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-typedef void (*DomainResolverCallback)(const char* _Nullable host,
-                                       uint32_t* _Nullable start,
-                                       uint32_t* _Nullable end);
-
 OBJC_EXPORT
 NS_SWIFT_NAME(AdblockEngine.MatchResult)
 @interface AdblockEngineMatchResult : NSObject

@@ -33,17 +33,24 @@ impl From<&InternalError> for ResultKind {
     }
 }
 
-// This is an intermediate "result" type.
-// The typical chain of conversion for "result" types is as follows:
-// Result<T, InternalError> to PreResult<T> to
-// TResult (i.e. StringResult defined in the ffi module).
+/// This is an intermediate "result" type.
+///
+/// The purpose of this is to streamline conversions of typical Rust results to final
+/// cxx-compatible structures that are to be consumed by callers.
+/// The PreResult is generic to make conversions from Rust results easy
+/// (via implementation of the From<Result<T, InternalError>> trait). Since cxx does not support
+/// generics, this PreResult to converted to a similar final structure that is not generic.
+///
+/// The typical chain of conversion for "result" types is as follows:
+/// Result<T, InternalError> to PreResult<T> to
+/// TResult (i.e. StringResult defined in the ffi module).
 struct PreResult<T: Default> {
     value: T,
     result_kind: ResultKind,
     error_message: String,
 }
 
-// Implements the From<PreResult<T>> trait for a given final ffi result type.
+/// Implements the From<PreResult<T>> trait for a given final ffi result type.
 macro_rules! impl_result_from_trait {
     ($result_type:ty, $value_type:ty) => {
         impl From<Result<$value_type, InternalError>> for $result_type {

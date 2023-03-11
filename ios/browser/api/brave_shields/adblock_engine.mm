@@ -8,7 +8,6 @@
 #include "base/strings/sys_string_conversions.h"
 #include "brave/base/mac/conversions.h"
 #include "brave/components/brave_shields/adblock/rs/src/lib.rs.h"
-#include "brave/components/brave_shields/common/adblock_domain_resolver.h"
 
 #if !defined(__has_feature) || !__has_feature(objc_arc)
 #error "This file requires ARC support."
