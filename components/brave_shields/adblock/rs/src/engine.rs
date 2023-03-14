@@ -13,9 +13,8 @@ use adblock::url_parser::ResolvesDomain;
 use cxx::{let_cxx_string, CxxString, CxxVector};
 
 use crate::ffi::{
-    resolve_domain_position, BlockerDebugInfo, BlockerResult, BlockerResultResult, BoolResult,
-    BoxEngineResult, EmptyTupleResult, FilterListMetadata, FilterListMetadataResult,
-    RegexManagerDiscardPolicy, StringResult, VecStringResult,
+    resolve_domain_position, BlockerDebugInfo, BlockerResult, BoxEngineResult, EmptyTupleResult,
+    FilterListMetadata, FilterListMetadataResult, RegexManagerDiscardPolicy, VecStringResult,
 };
 use crate::result::InternalError;
 
@@ -74,16 +73,16 @@ where
 }
 
 impl Engine {
-    pub fn enable_tag(&mut self, tag: &CxxString) -> EmptyTupleResult {
-        || -> Result<(), InternalError> { Ok(self.engine.enable_tags(&[tag.to_str()?])) }().into()
+    pub fn enable_tag(&mut self, tag: &CxxString) {
+        self.engine.enable_tags(&[tag.to_str().unwrap()])
     }
 
-    pub fn disable_tag(&mut self, tag: &CxxString) -> EmptyTupleResult {
-        || -> Result<(), InternalError> { Ok(self.engine.disable_tags(&[tag.to_str()?])) }().into()
+    pub fn disable_tag(&mut self, tag: &CxxString) {
+        self.engine.disable_tags(&[tag.to_str().unwrap()])
     }
 
-    pub fn tag_exists(&self, key: &CxxString) -> BoolResult {
-        || -> Result<bool, InternalError> { Ok(self.engine.tag_exists(key.to_str()?)) }().into()
+    pub fn tag_exists(&self, key: &CxxString) -> bool {
+        self.engine.tag_exists(key.to_str().unwrap())
     }
 
     pub fn matches(
@@ -95,20 +94,18 @@ impl Engine {
         third_party_request: bool,
         previously_matched_rule: bool,
         force_check_exceptions: bool,
-    ) -> BlockerResultResult {
-        || -> Result<BlockerResult, InternalError> {
-            let inner_blocker_result = self.engine.check_network_urls_with_hostnames_subset(
-                url.to_str()?,
-                hostname.to_str()?,
-                source_hostname.to_str()?,
-                request_type.to_str()?,
+    ) -> BlockerResult {
+        self.engine
+            .check_network_urls_with_hostnames_subset(
+                url.to_str().unwrap(),
+                hostname.to_str().unwrap(),
+                source_hostname.to_str().unwrap(),
+                request_type.to_str().unwrap(),
                 Some(third_party_request),
                 previously_matched_rule,
                 force_check_exceptions,
-            );
-            Ok(inner_blocker_result.into())
-        }()
-        .into()
+            )
+            .into()
     }
 
     pub fn get_csp_directives(
@@ -118,24 +115,20 @@ impl Engine {
         source_hostname: &CxxString,
         request_type: &CxxString,
         third_party_request: bool,
-    ) -> StringResult {
-        || -> Result<String, InternalError> {
-            Ok(self
-                .engine
-                .get_csp_directives(
-                    url.to_str()?,
-                    hostname.to_str()?,
-                    source_hostname.to_str()?,
-                    request_type.to_str()?,
-                    Some(third_party_request),
-                )
-                .unwrap_or_default())
-        }()
-        .into()
+    ) -> String {
+        self.engine
+            .get_csp_directives(
+                url.to_str().unwrap(),
+                hostname.to_str().unwrap(),
+                source_hostname.to_str().unwrap(),
+                request_type.to_str().unwrap(),
+                Some(third_party_request),
+            )
+            .unwrap_or_default()
     }
 
-    pub fn deserialize(&mut self, serialized: &CxxVector<u8>) -> EmptyTupleResult {
-        self.engine.deserialize(serialized.as_slice()).map_err(|e| InternalError::from(e)).into()
+    pub fn deserialize(&mut self, serialized: &CxxVector<u8>) -> bool {
+        self.engine.deserialize(serialized.as_slice()).is_ok()
     }
 
     pub fn add_resource(
@@ -146,7 +139,7 @@ impl Engine {
     ) -> EmptyTupleResult {
         || -> Result<(), InternalError> {
             let resource = Resource {
-                name: name.to_str().unwrap().to_string(),
+                name: name.to_str()?.to_string(),
                 aliases: vec![],
                 kind: ResourceType::Mime(MimeType::from(content_type.to_str()?)),
                 content: data.to_string(),
@@ -164,12 +157,9 @@ impl Engine {
         .into()
     }
 
-    pub fn url_cosmetic_resources(&self, url: &CxxString) -> StringResult {
-        || -> Result<String, InternalError> {
-            let resources = self.engine.url_cosmetic_resources(url.to_str()?);
-            Ok(serde_json::to_string(&resources)?)
-        }()
-        .into()
+    pub fn url_cosmetic_resources(&self, url: &CxxString) -> String {
+        let resources = self.engine.url_cosmetic_resources(url.to_str().unwrap());
+        serde_json::to_string(&resources).unwrap()
     }
 
     pub fn hidden_class_id_selectors(

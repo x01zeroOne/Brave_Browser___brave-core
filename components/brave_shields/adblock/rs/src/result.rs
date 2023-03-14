@@ -80,10 +80,7 @@ where
     }
 }
 
-impl_result_from_trait!(StringResult, String);
-impl_result_from_trait!(BoolResult, bool);
 impl_result_from_trait!(VecStringResult, Vec<String>);
-impl_result_from_trait!(BlockerResultResult, BlockerResult);
 impl_result_from_trait!(BoxEngineResult, Box<Engine>);
 impl_result_from_trait!(FilterListMetadataResult, FilterListMetadata);
 

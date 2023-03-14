@@ -96,7 +96,7 @@ AdBlockEngine::AdBlockEngine() : ad_block_client_(adblock::new_engine()) {
 
 AdBlockEngine::~AdBlockEngine() = default;
 
-absl::optional<adblock::BlockerResult> AdBlockEngine::ShouldStartRequest(
+adblock::BlockerResult AdBlockEngine::ShouldStartRequest(
     const GURL& url,
     blink::mojom::ResourceType resource_type,
     const std::string& tab_host,
@@ -111,7 +111,7 @@ absl::optional<adblock::BlockerResult> AdBlockEngine::ShouldStartRequest(
       url,
       url::Origin::CreateFromNormalizedTuple("https", tab_host.c_str(), 80),
       INCLUDE_PRIVATE_REGISTRIES);
-  auto result = ad_block_client_->matches(
+  return ad_block_client_->matches(
       url.spec(), url.host(), tab_host, ResourceTypeToString(resource_type),
       is_third_party,
       // Checking normal rules is skipped if a normal rule or exception rule was
@@ -119,15 +119,6 @@ absl::optional<adblock::BlockerResult> AdBlockEngine::ShouldStartRequest(
       previously_matched_rule || previously_matched_exception,
       // Always check exceptions unless one was found previously
       !previously_matched_exception);
-
-  if (result.result_kind != adblock::ResultKind::Success) {
-    LOG(ERROR) << "AdBlockEngine::ShouldStartRequest() failed, host: "
-               << tab_host << ", resource type: " << resource_type
-               << ", url.spec(): " << url.spec()
-               << ", error message: " << result.error_message.c_str();
-    return absl::nullopt;
-  }
-  return absl::make_optional(result.value);
 }
 
 absl::optional<std::string> AdBlockEngine::GetCspDirectives(
@@ -146,18 +137,10 @@ absl::optional<std::string> AdBlockEngine::GetCspDirectives(
       url.spec(), url.host(), tab_host, ResourceTypeToString(resource_type),
       is_third_party);
 
-  if (result.result_kind == adblock::ResultKind::Success) {
-    if (result.value.empty()) {
-      return absl::nullopt;
-    } else {
-      return absl::optional<std::string>(std::string(result.value));
-    }
-  } else {
-    LOG(ERROR) << "AdBlockEngine::GetCspDirectives() failed, host: " << tab_host
-               << ", resource type: " << resource_type
-               << ", url.spec(): " << url.spec()
-               << ", error message: " << result.error_message.c_str();
+  if (result.empty()) {
     return absl::nullopt;
+  } else {
+    return absl::optional<std::string>(std::string(result));
   }
 }
 
@@ -165,21 +148,11 @@ void AdBlockEngine::EnableTag(const std::string& tag, bool enabled) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   if (enabled) {
     if (tags_.find(tag) == tags_.end()) {
-      auto result = ad_block_client_->enable_tag(tag);
-      if (result.result_kind != adblock::ResultKind::Success) {
-        LOG(ERROR) << "AdBlockEngine::EnableTag: enable tag (" << tag
-                   << ") failed: " << result.error_message.c_str();
-        return;
-      }
+      ad_block_client_->enable_tag(tag);
       tags_.insert(tag);
     }
   } else {
-    auto result = ad_block_client_->disable_tag(tag);
-    if (result.result_kind != adblock::ResultKind::Success) {
-      LOG(ERROR) << "AdBlockEngine::EnableTag: disable tag (" << tag
-                 << ") failed: " << result.error_message.c_str();
-      return;
-    }
+    ad_block_client_->disable_tag(tag);
     tags_.erase(tag);
   }
 }
@@ -233,14 +206,9 @@ void AdBlockEngine::SetupDiscardPolicy(
 base::Value::Dict AdBlockEngine::UrlCosmeticResources(const std::string& url) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   auto result = ad_block_client_->url_cosmetic_resources(url);
-  if (result.result_kind != adblock::ResultKind::Success) {
-    LOG(ERROR) << "AdBlockEngine::UrlCosmeticResources failed: "
-               << result.error_message.c_str();
-    return base::Value::Dict();
-  }
 
   absl::optional<base::Value> parsed_result =
-      base::JSONReader::Read(result.value.c_str());
+      base::JSONReader::Read(result.c_str());
 
   if (!parsed_result) {
     return base::Value::Dict();
@@ -300,11 +268,7 @@ void AdBlockEngine::AddKnownTagsToAdBlockInstance() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   std::for_each(tags_.begin(), tags_.end(), [&](const std::string tag) {
     DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-    auto result = ad_block_client_->enable_tag(tag);
-    if (result.result_kind != adblock::ResultKind::Success) {
-      LOG(ERROR) << "AdBlockEngine::AddKnownTagsToAdBlockInstance failed: "
-                 << result.error_message.c_str();
-    }
+    ad_block_client_->enable_tag(tag);
   });
 }
 
@@ -327,11 +291,8 @@ void AdBlockEngine::OnDATLoaded(const DATFileDataBuffer& dat_buf,
   }
 
   auto client = adblock::new_engine();
-  auto result = client->deserialize(dat_buf);
-
-  if (result.result_kind != adblock::ResultKind::Success) {
-    LOG(ERROR) << "AdBlockEngine::OnDATLoaded failed: "
-               << result.error_message.c_str();
+  if (!client->deserialize(dat_buf)) {
+    LOG(ERROR) << "AdBlockEngine::OnDATLoaded deserialize failed";
     return;
   }
 

@@ -29,11 +29,11 @@ mod ffi {
         fn read_list_metadata(list: &CxxVector<u8>) -> FilterListMetadataResult;
 
         /// Enables a given tag for the engine.
-        fn enable_tag(&mut self, tag: &CxxString) -> EmptyTupleResult;
+        fn enable_tag(&mut self, tag: &CxxString);
         /// Disables a given tag for the engine.
-        fn disable_tag(&mut self, tag: &CxxString) -> EmptyTupleResult;
+        fn disable_tag(&mut self, tag: &CxxString);
         /// Returns true if a given tag is enabled for the engine.
-        fn tag_exists(&self, key: &CxxString) -> BoolResult;
+        fn tag_exists(&self, key: &CxxString) -> bool;
         /// Checks if a given request should be blocked and returns an evaluation result struct
         /// with information on a matching rule and actions.
         fn matches(
@@ -45,7 +45,7 @@ mod ffi {
             third_party_request: bool,
             previously_matched_rule: bool,
             force_check_exceptions: bool,
-        ) -> BlockerResultResult;
+        ) -> BlockerResult;
         /// Returns additional CSP directives to be added to a web response,
         /// if applicable to the request.
         fn get_csp_directives(
@@ -55,9 +55,9 @@ mod ffi {
             source_hostname: &CxxString,
             request_type: &CxxString,
             third_party_request: bool,
-        ) -> StringResult;
+        ) -> String;
         /// Deserializes and loads a binary-serialized Engine.
-        fn deserialize(&mut self, serialized: &CxxVector<u8>) -> EmptyTupleResult;
+        fn deserialize(&mut self, serialized: &CxxVector<u8>) -> bool;
         /// Adds a resource to the engine resource set.
         fn add_resource(
             &mut self,
@@ -68,7 +68,7 @@ mod ffi {
         /// Loads JSON-serialized resources into the engine resource set.
         fn use_resources(&mut self, resources_json: &CxxString) -> EmptyTupleResult;
         /// Returns JSON-serialized cosmetic filter resources for a given url.
-        fn url_cosmetic_resources(&self, url: &CxxString) -> StringResult;
+        fn url_cosmetic_resources(&self, url: &CxxString) -> String;
 
         /// Returns list of CSS selectors that require a generic CSS hide rule,
         /// from a given set of classes, ids and exceptions.
@@ -151,20 +151,8 @@ mod ffi {
         error_message: String,
     }
 
-    struct StringResult {
-        value: String,
-        result_kind: ResultKind,
-        error_message: String,
-    }
-
     struct VecStringResult {
         value: Vec<String>,
-        result_kind: ResultKind,
-        error_message: String,
-    }
-
-    struct BoolResult {
-        value: bool,
         result_kind: ResultKind,
         error_message: String,
     }
@@ -177,13 +165,6 @@ mod ffi {
 
     struct FilterListMetadataResult {
         value: FilterListMetadata,
-        result_kind: ResultKind,
-        error_message: String,
-    }
-
-    // TODO(djandries): Come up with a better name?
-    struct BlockerResultResult {
-        value: BlockerResult,
         result_kind: ResultKind,
         error_message: String,
     }

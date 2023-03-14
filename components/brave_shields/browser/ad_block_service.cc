@@ -109,7 +109,7 @@ void AdBlockService::SourceProviderObserver::OnResourcesLoaded(
   }
 }
 
-absl::optional<adblock::BlockerResult> AdBlockService::ShouldStartRequest(
+adblock::BlockerResult AdBlockService::ShouldStartRequest(
     const GURL& url,
     blink::mojom::ResourceType resource_type,
     const std::string& tab_host,
@@ -119,7 +119,7 @@ absl::optional<adblock::BlockerResult> AdBlockService::ShouldStartRequest(
     bool previously_matched_important) {
   DCHECK(GetTaskRunner()->RunsTasksInCurrentSequence());
 
-  absl::optional<adblock::BlockerResult> fp_result;
+  adblock::BlockerResult fp_result = {};
 
   if (aggressive_blocking ||
       base::FeatureList::IsEnabled(
@@ -130,32 +130,26 @@ absl::optional<adblock::BlockerResult> AdBlockService::ShouldStartRequest(
     fp_result = default_engine_->ShouldStartRequest(
         url, resource_type, tab_host, previously_matched_rule,
         previously_matched_exception, previously_matched_important);
-    if (fp_result.has_value() && fp_result->important) {
+    if (fp_result.important) {
       return fp_result;
     }
   }
 
-  GURL request_url = fp_result.has_value() && fp_result->rewritten_url.has_value
-                         ? GURL(std::string(fp_result->rewritten_url.value))
+  GURL request_url = fp_result.rewritten_url.has_value
+                         ? GURL(std::string(fp_result.rewritten_url.value))
                          : url;
   auto result = additional_filters_engine_->ShouldStartRequest(
       request_url, resource_type, tab_host, previously_matched_rule,
       previously_matched_exception, previously_matched_important);
 
-  if (fp_result.has_value()) {
-    if (!result.has_value()) {
-      return fp_result;
-    }
-    result->matched |= fp_result->matched;
-    result->has_exception |= fp_result->has_exception;
-    result->important |= fp_result->important;
-    if (!result->redirect.has_value && fp_result->redirect.has_value) {
-      result->redirect = fp_result->redirect;
-    }
-    if (!result->rewritten_url.has_value &&
-        fp_result->rewritten_url.has_value) {
-      result->rewritten_url = fp_result->rewritten_url;
-    }
+  result.matched |= fp_result.matched;
+  result.has_exception |= fp_result.has_exception;
+  result.important |= fp_result.important;
+  if (!result.redirect.has_value && fp_result.redirect.has_value) {
+    result.redirect = fp_result.redirect;
+  }
+  if (!result.rewritten_url.has_value && fp_result.rewritten_url.has_value) {
+    result.rewritten_url = fp_result.rewritten_url;
   }
   return result;
 }

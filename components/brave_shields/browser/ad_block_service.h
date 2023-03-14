@@ -93,7 +93,7 @@ class AdBlockService {
   AdBlockService& operator=(const AdBlockService&) = delete;
   ~AdBlockService();
 
-  absl::optional<adblock::BlockerResult> ShouldStartRequest(
+  adblock::BlockerResult ShouldStartRequest(
       const GURL& url,
       blink::mojom::ResourceType resource_type,
       const std::string& tab_host,

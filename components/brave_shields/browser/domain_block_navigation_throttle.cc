@@ -45,10 +45,9 @@ std::pair<bool, std::string> ShouldBlockDomainOnTaskRunner(
       aggressive_blocking, false, false, false);
 
   const bool should_block =
-      result.has_value() &&
-      (result->important || (result->matched && !result->has_exception));
+      result.important || (result.matched && !result.has_exception);
 
-  return std::pair(should_block, std::string(result->rewritten_url.value));
+  return std::pair(should_block, std::string(result.rewritten_url.value));
 }
 
 }  // namespace

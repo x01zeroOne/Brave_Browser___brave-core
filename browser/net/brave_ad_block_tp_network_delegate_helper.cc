@@ -198,22 +198,18 @@ EngineFlags ShouldBlockRequestOnTaskRunner(
           previous_result.did_match_rule, previous_result.did_match_exception,
           previous_result.did_match_important);
 
-  if (adblock_result.has_value()) {
-    if (adblock_result->rewritten_url.has_value &&
-        GURL(std::string(adblock_result->rewritten_url.value)).is_valid() &&
-        (ctx->method == "GET" || ctx->method == "HEAD" ||
-         ctx->method == "OPTIONS")) {
-      ctx->new_url_spec = std::string(adblock_result->rewritten_url.value);
-    }
-
-    ctx->mock_data_url = std::string(adblock_result->redirect.value);
+  if (adblock_result.rewritten_url.has_value &&
+      GURL(std::string(adblock_result.rewritten_url.value)).is_valid() &&
+      (ctx->method == "GET" || ctx->method == "HEAD" ||
+       ctx->method == "OPTIONS")) {
+    ctx->new_url_spec = std::string(adblock_result.rewritten_url.value);
   }
-  previous_result.did_match_rule =
-      adblock_result.has_value() ? adblock_result->matched : false;
-  previous_result.did_match_important =
-      adblock_result.has_value() ? adblock_result->important : false;
-  previous_result.did_match_exception =
-      adblock_result.has_value() ? adblock_result->has_exception : false;
+
+  ctx->mock_data_url = std::string(adblock_result.redirect.value);
+
+  previous_result.did_match_rule = adblock_result.matched;
+  previous_result.did_match_important = adblock_result.important;
+  previous_result.did_match_exception = adblock_result.has_exception;
 
   if (previous_result.did_match_important ||
       (previous_result.did_match_rule &&
