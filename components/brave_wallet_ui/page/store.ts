@@ -3,7 +3,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-import { configureStore } from '@reduxjs/toolkit'
+import { combineReducers, configureStore } from '@reduxjs/toolkit'
+import { setupListeners } from '@reduxjs/toolkit/query/react'
+import { persistStore } from 'redux-persist'
+
+// constants
 
 // async handlers
 import walletPageAsyncHandler from './async/wallet_page_async_handler'
@@ -11,20 +15,23 @@ import walletAsyncHandler from '../common/async/handlers'
 
 // api
 import getWalletPageApiProxy from './wallet_page_api_proxy'
-import { walletApi } from '../common/slices/api.slice'
+import { persistedWalletApiReducer, walletApi } from '../common/slices/api.slice'
 
 // reducers
-import walletReducer from '../common/slices/wallet.slice'
+import { persistedWalletReducer } from '../common/slices/wallet.slice'
 import accountsTabReducer from './reducers/accounts-tab-reducer'
-import pageReducer from './reducers/page_reducer'
+import { persistedPageReducer } from './reducers/page_reducer'
+
+const combinedReducer = combineReducers({
+  accountsTab: accountsTabReducer,
+  page: persistedPageReducer,
+  wallet: persistedWalletReducer,
+  [walletApi.reducerPath]: persistedWalletApiReducer
+})
+
 
 export const store = configureStore({
-  reducer: {
-    page: pageReducer,
-    wallet: walletReducer,
-    accountsTab: accountsTabReducer,
-    [walletApi.reducerPath]: walletApi.reducer
-  },
+  reducer: combinedReducer,
   middleware: (getDefaultMiddleware) => getDefaultMiddleware({
     serializableCheck: false
   }).concat(
@@ -34,6 +41,7 @@ export const store = configureStore({
   )
 })
 
+export type PageRootState = ReturnType<typeof combinedReducer>
 export type WalletPageRootStore = ReturnType<typeof store.getState>
 export type RootStoreState = ReturnType<typeof store.getState>
 
@@ -45,6 +53,12 @@ proxy.addBraveWalletServiceObserver(store)
 proxy.addBraveWalletPinServiceObserver(store)
 proxy.addBraveWalletAutoPinServiceObserver(store)
 
+// needs to be enabled when persisting API slices
+// otherwise, stale data will be shown when reloading the app
+setupListeners(store.dispatch)
+
 export const walletPageApiProxy = proxy
+
+export const persistor = persistStore(store)
 
 export default store

@@ -14,6 +14,10 @@ import {
 } from '../constants/action_types'
 import { PanelTitles } from '../../options/panel-titles'
 import { HardwareWalletResponseCodeType } from '../../common/hardware/types'
+import {
+  persistVersionedReducer,
+  PERSISTED_STATE_VERSION
+} from '../../utils/state-migration-utils'
 
 const defaultOriginInfo: SerializableOriginInfo = {
   origin: {
@@ -191,4 +195,14 @@ export const createPanelReducer = (initialState: PanelState) => {
 
 const reducer = createPanelReducer(defaultState)
 export const panelReducer = reducer
+export const persistedPanelReducer = persistVersionedReducer(panelReducer, {
+  key: 'panel',
+  version: PERSISTED_STATE_VERSION,
+  blacklist: [
+    'selectedPanel',
+    'lastSelectedPanel',
+    'panelTitle',
+    'connectToSiteOrigin'
+  ]
+})
 export default reducer

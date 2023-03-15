@@ -5,6 +5,7 @@
 
 import { EntityId, ThunkDispatch } from '@reduxjs/toolkit'
 import { createApi } from '@reduxjs/toolkit/query/react'
+import { REHYDRATE } from 'redux-persist'
 
 // types
 import {
@@ -124,6 +125,10 @@ import {
   TypedSolanaInstructionWithParams
 } from '../../utils/solana-instruction-utils'
 import { addLogoToToken } from '../async/lib'
+import {
+  PERSISTED_STATE_VERSION,
+  persistVersionedReducer
+} from '../../utils/state-migration-utils'
 
 export type AssetPriceById = BraveWallet.AssetPrice & {
   id: EntityId
@@ -485,6 +490,18 @@ export function createWalletApi (
     baseQuery: () => {
       return { data: apiProxyFetcher(), cache: baseQueryCache }
     },
+    extractRehydrationInfo(action, { reducerPath }) {
+      // Ensure that `setupListeners` has been called if using this
+      // so we can refetch data on page focus
+      // otherwise, stale data will be shown and not refreshed when reopening the app
+      if (action.type === REHYDRATE) {
+        return action.payload?.[reducerPath]
+      }
+    },
+    refetchOnReconnect: true,
+    refetchOnFocus: true,
+    // refresh the cache if at least 30 seconds passed since last mount/fetch
+    refetchOnMountOrArgChange: 30,
     tagTypes: [
       ...cacher.defaultTags,
       'AccountInfos',
@@ -3000,6 +3017,20 @@ export const {
   useUpdateUserAssetVisibleMutation,
   useUpdateUserTokenMutation,
 } = walletApi
+
+// reducer and initial state
+export const walletApiInitialState = walletApi.reducer(
+  undefined,
+  { type: '' }
+)
+
+export const persistedWalletApiReducer = persistVersionedReducer(
+  walletApi.reducer,
+  {
+    key: walletApi.reducerPath,
+    version: PERSISTED_STATE_VERSION
+  }
+)
 
 // Derived Data Queries
 const emptyIds: string[] = []

@@ -8,6 +8,7 @@ import { render } from 'react-dom'
 import { Provider } from 'react-redux'
 import { initLocale } from 'brave-ui'
 import { BrowserRouter } from 'react-router-dom'
+import { PersistGate } from 'redux-persist/integration/react'
 
 // assets
 import faveiconUrl from '../assets/svg-icons/brave-icon.svg'
@@ -26,7 +27,8 @@ import { ApiProxyContext } from '../common/context/api-proxy.context'
 // components
 import BraveCoreThemeProvider from '../../common/BraveCoreThemeProvider'
 import Container from './container'
-import { store, walletPageApiProxy } from './store'
+import { persistor, store, walletPageApiProxy } from './store'
+import LoadingSkeleton from '../components/shared/loading-skeleton'
 
 // style
 import walletDarkTheme from '../theme/wallet-dark'
@@ -35,6 +37,13 @@ import 'emptykit.css'
 
 import { setIconBasePath } from '@brave/leo/react/icon'
 setIconBasePath('chrome://resources/brave-icons')
+const onPageRefreshInitiated = async function (
+  event: KeyboardEvent
+): Promise<void> {
+  if ((event.ctrlKey || event.metaKey) && event.code === 'KeyR') {
+    await persistor.purge()
+  }
+}
 
 function App () {
   const [initialThemeType, setInitialThemeType] = React.useState<chrome.braveTheme.ThemeType>()
@@ -53,10 +62,20 @@ function App () {
     link.href = faveiconUrl
   }, [])
 
+  React.useEffect(() => {
+    // clear the cache on force-refresh of page
+    document.addEventListener('keydown', onPageRefreshInitiated)
+
+    // cleanup
+    return () => {
+      document.removeEventListener('keydown', onPageRefreshInitiated)
+    }
+  }, [])
+
   return (
     <Provider store={store}>
       <BrowserRouter>
-        {initialThemeType &&
+        {initialThemeType && (
           <BraveCoreThemeProvider
             initialThemeType={initialThemeType}
             dark={walletDarkTheme}
@@ -64,11 +83,16 @@ function App () {
           >
             <ApiProxyContext.Provider value={walletPageApiProxy}>
               <LibContext.Provider value={Lib}>
-                <Container />
+                <PersistGate
+                  persistor={persistor}
+                  loading={<LoadingSkeleton width={'80%'} height={'80%'} />}
+                >
+                  <Container />
+                </PersistGate>
               </LibContext.Provider>
             </ApiProxyContext.Provider>
           </BraveCoreThemeProvider>
-        }
+        )}
       </BrowserRouter>
     </Provider>
   )

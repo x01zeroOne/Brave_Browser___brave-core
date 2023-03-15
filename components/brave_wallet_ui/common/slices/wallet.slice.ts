@@ -67,6 +67,10 @@ import {
   getAccountType
 } from '../../utils/account-utils'
 import { parseJSONFromLocalStorage } from '../../utils/local-storage-utils'
+import {
+  PERSISTED_STATE_VERSION,
+  persistVersionedReducer
+} from '../../utils/state-migration-utils'
 
 // Options
 import { HighToLowAssetsFilterOption } from '../../options/asset-filter-options'
@@ -569,5 +573,18 @@ export const createWalletReducer = (initialState: WalletState) => {
 
 export const walletSlice = createWalletSlice()
 export const walletReducer = walletSlice.reducer
+export const persistedWalletReducer = persistVersionedReducer(
+  walletReducer,
+  {
+    key: 'wallet',
+    version: PERSISTED_STATE_VERSION,
+    blacklist: [
+      'activeOrigin',
+      'isWalletLocked',
+      'assetAutoDiscoveryCompleted',
+      'gasEstimates'
+    ]
+  }
+)
 export const WalletActions = { ...walletSlice.actions, ...WalletAsyncActions }
 export default walletReducer
