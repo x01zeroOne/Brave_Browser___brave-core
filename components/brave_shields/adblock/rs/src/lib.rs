@@ -26,7 +26,7 @@ mod ffi {
         fn set_domain_resolver() -> bool;
 
         /// Extracts the homepage and title from the metadata contained in a filter list.
-        fn read_list_metadata(list: &CxxVector<u8>) -> FilterListMetadataResult;
+        fn read_list_metadata(list: &CxxVector<u8>) -> FilterListMetadata;
 
         /// Enables a given tag for the engine.
         fn enable_tag(&mut self, tag: &CxxString);
@@ -66,7 +66,7 @@ mod ffi {
             data: &CxxString,
         ) -> EmptyTupleResult;
         /// Loads JSON-serialized resources into the engine resource set.
-        fn use_resources(&mut self, resources_json: &CxxString) -> EmptyTupleResult;
+        fn use_resources(&mut self, resources_json: &CxxString) -> bool;
         /// Returns JSON-serialized cosmetic filter resources for a given url.
         fn url_cosmetic_resources(&self, url: &CxxString) -> String;
 
@@ -159,12 +159,6 @@ mod ffi {
 
     struct BoxEngineResult {
         value: Box<Engine>,
-        result_kind: ResultKind,
-        error_message: String,
-    }
-
-    struct FilterListMetadataResult {
-        value: FilterListMetadata,
         result_kind: ResultKind,
         error_message: String,
     }

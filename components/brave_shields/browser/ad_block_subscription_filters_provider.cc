@@ -38,13 +38,8 @@ void AdBlockSubscriptionFiltersProvider::OnDATFileDataReady(
     base::OnceCallback<void(bool deserialize, const DATFileDataBuffer& dat_buf)>
         cb,
     const DATFileDataBuffer& dat_buf) {
-  auto metadata_result = adblock::read_list_metadata(dat_buf);
-  if (metadata_result.result_kind != adblock::ResultKind::Success) {
-    LOG(ERROR)
-        << "AdBlockSubscriptionFiltersProvider::OnDATFileDataReady failed: "
-        << metadata_result.error_message.c_str();
-  }
-  on_metadata_retrieved_.Run(metadata_result.value);
+  auto metadata = adblock::read_list_metadata(dat_buf);
+  on_metadata_retrieved_.Run(metadata);
   std::move(cb).Run(false, dat_buf);
 }
 

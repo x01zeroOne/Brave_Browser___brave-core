@@ -159,10 +159,9 @@ void AdBlockEngine::EnableTag(const std::string& tag, bool enabled) {
 
 void AdBlockEngine::UseResources(const std::string& resources) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-  auto result = ad_block_client_->use_resources(resources);
-  if (result.result_kind != adblock::ResultKind::Success) {
-    LOG(ERROR) << "AdBlockEngine::UseResources failed: "
-               << result.error_message.c_str();
+  bool result = ad_block_client_->use_resources(resources);
+  if (!result) {
+    LOG(ERROR) << "AdBlockEngine::UseResources failed";
   }
 }
 

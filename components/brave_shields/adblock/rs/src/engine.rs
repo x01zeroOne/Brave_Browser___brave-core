@@ -14,7 +14,7 @@ use cxx::{let_cxx_string, CxxString, CxxVector};
 
 use crate::ffi::{
     resolve_domain_position, BlockerDebugInfo, BlockerResult, BoxEngineResult, EmptyTupleResult,
-    FilterListMetadata, FilterListMetadataResult, RegexManagerDiscardPolicy, VecStringResult,
+    FilterListMetadata, RegexManagerDiscardPolicy, VecStringResult,
 };
 use crate::result::InternalError;
 
@@ -56,11 +56,10 @@ pub fn set_domain_resolver() -> bool {
     adblock::url_parser::set_domain_resolver(Box::new(DomainResolver)).is_ok()
 }
 
-pub fn read_list_metadata(list: &CxxVector<u8>) -> FilterListMetadataResult {
-    || -> Result<FilterListMetadata, InternalError> {
-        Ok(adblock::lists::read_list_metadata(std::str::from_utf8(list.as_slice())?).into())
-    }()
-    .into()
+pub fn read_list_metadata(list: &CxxVector<u8>) -> FilterListMetadata {
+    std::str::from_utf8(list.as_slice())
+        .map(|list| adblock::lists::read_list_metadata(list).into())
+        .unwrap_or_default()
 }
 
 fn convert_cxx_string_vector_to_string_collection<C>(
@@ -149,12 +148,16 @@ impl Engine {
         .into()
     }
 
-    pub fn use_resources(&mut self, resources_json: &CxxString) -> EmptyTupleResult {
-        || -> Result<(), InternalError> {
-            let resources: Vec<Resource> = serde_json::from_str(resources_json.to_str()?)?;
-            Ok(self.engine.use_resources(&resources))
-        }()
-        .into()
+    pub fn use_resources(&mut self, resources_json: &CxxString) -> bool {
+        resources_json
+            .to_str()
+            .ok()
+            .and_then(|resources_json| serde_json::from_str::<Vec<Resource>>(resources_json).ok())
+            .and_then(|resources| {
+                self.engine.use_resources(&resources);
+                Some(())
+            })
+            .is_some()
     }
 
     pub fn url_cosmetic_resources(&self, url: &CxxString) -> String {

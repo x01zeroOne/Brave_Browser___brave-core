@@ -82,7 +82,6 @@ where
 
 impl_result_from_trait!(VecStringResult, Vec<String>);
 impl_result_from_trait!(BoxEngineResult, Box<Engine>);
-impl_result_from_trait!(FilterListMetadataResult, FilterListMetadata);
 
 impl From<Result<(), InternalError>> for EmptyTupleResult {
     fn from(result: Result<(), InternalError>) -> Self {
