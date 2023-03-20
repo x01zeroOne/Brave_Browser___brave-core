@@ -253,7 +253,25 @@ export const persistedPageReducer = persistVersionedReducer(
   {
     key: 'page',
     version: PERSISTED_STATE_VERSION,
-    blacklist: ['mnemonic']
+    whitelist: [
+      'enablingAutoPin',
+      'isAutoPinEnabled',
+      'nftMetadata',
+      'nftMetadataError',
+      'nftsPinningStatus',
+      'pinStatusOverview',
+      'portfolioPriceHistory',
+      'selectedAsset',
+      'selectedAssetCryptoPrice',
+      'selectedAssetFiatPrice',
+      'selectedAssetPriceHistory',
+      'selectedCoinMarket',
+      'selectedTimeline',
+      'setupStillInProgress',
+      'showAddModal',
+      'showIsRestoring',
+      'walletTermsAcknowledged'
+    ]
   }
 )
 

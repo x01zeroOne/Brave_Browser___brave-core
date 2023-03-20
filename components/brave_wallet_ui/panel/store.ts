@@ -20,10 +20,10 @@ import {
   walletApi
 } from '../common/slices/api.slice'
 import { persistedWalletReducer } from '../common/slices/wallet.slice'
-import { persistedPanelReducer } from './reducers/panel_reducer'
+import { panelReducer } from './reducers/panel_reducer'
 
 const combinedReducer = combineReducers({
-  panel: persistedPanelReducer,
+  panel: panelReducer,
   wallet: persistedWalletReducer,
   [walletApi.reducerPath]: persistedWalletApiReducer
 })
@@ -47,8 +47,8 @@ proxy.addKeyringServiceObserver(store)
 proxy.addTxServiceObserver(store)
 proxy.addBraveWalletServiceObserver(store)
 
-// needs to be enabled when persisting API slices
-// otherwise, stale data will be shown when reloading the app
+// enables refetchOnMount and refetchOnReconnect behaviors
+// without this, cached data will not refresh when reloading the app
 setupListeners(store.dispatch)
 
 export const walletPanelApiProxy = proxy

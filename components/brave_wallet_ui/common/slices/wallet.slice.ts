@@ -573,18 +573,37 @@ export const createWalletReducer = (initialState: WalletState) => {
 
 export const walletSlice = createWalletSlice()
 export const walletReducer = walletSlice.reducer
-export const persistedWalletReducer = persistVersionedReducer(
-  walletReducer,
-  {
-    key: 'wallet',
-    version: PERSISTED_STATE_VERSION,
-    blacklist: [
-      'activeOrigin',
-      'isWalletLocked',
-      'assetAutoDiscoveryCompleted',
-      'gasEstimates'
-    ]
-  }
-)
+export const persistedWalletReducer = persistVersionedReducer(walletReducer, {
+  key: 'wallet',
+  version: PERSISTED_STATE_VERSION,
+  whitelist: [
+    'accounts',
+    'coinMarketData',
+    'connectedAccounts',
+    'defaultAccounts',
+    'defaultCurrencies',
+    'favoriteApps',
+    'fullTokenList',
+    'hasInitialized',
+    'isFetchingPortfolioPriceHistory',
+    'isFilecoinEnabled',
+    'isLoadingCoinMarketData',
+    'isPanelV2FeatureEnabled',
+    'isSolanaEnabled',
+    'isWalletBackedUp',
+    'isWalletCreated',
+    'knownTransactions',
+    'onRampCurrencies',
+    'portfolioPriceHistory',
+    'selectedAccountFilter',
+    'selectedAssetFilter',
+    'selectedCurrency',
+    'selectedNetworkFilter',
+    'selectedPortfolioTimeline',
+    'transactions',
+    'userVisibleTokensInfo'
+  ]
+})
+
 export const WalletActions = { ...walletSlice.actions, ...WalletAsyncActions }
 export default walletReducer

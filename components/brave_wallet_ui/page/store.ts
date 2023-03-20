@@ -41,7 +41,6 @@ export const store = configureStore({
   )
 })
 
-export type PageRootState = ReturnType<typeof combinedReducer>
 export type WalletPageRootStore = ReturnType<typeof store.getState>
 export type RootStoreState = ReturnType<typeof store.getState>
 
@@ -53,8 +52,8 @@ proxy.addBraveWalletServiceObserver(store)
 proxy.addBraveWalletPinServiceObserver(store)
 proxy.addBraveWalletAutoPinServiceObserver(store)
 
-// needs to be enabled when persisting API slices
-// otherwise, stale data will be shown when reloading the app
+// enables refetchOnMount and refetchOnReconnect behaviors
+// without this, cached data will not refresh when reloading the app
 setupListeners(store.dispatch)
 
 export const walletPageApiProxy = proxy

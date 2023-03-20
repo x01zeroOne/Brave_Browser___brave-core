@@ -22,19 +22,18 @@ export const PERSISTED_STATE_VERSION = 1
 
 /**
  * Uses the enhanced config object to persist a reducer
- * with type safe blacklist & whitelist
- * 
+ * with a type-safe whitelist
+ *
  * Clears the persisted state when the version changes
  * to prevent storing old/unused data
- * 
+ *
  * @param reducer The reducer to persist
  * @param config options for how to persist the state
  * @returns persisted reducer
  */
 export const persistVersionedReducer = <
   R extends Reducer,
-  C extends Omit<PersistConfig<ReturnType<R>>, 'storage'> & {
-    blacklist?: Array<keyof ReturnType<R>>
+  C extends Omit<PersistConfig<ReturnType<R>>, 'storage' | 'blacklist'> & {
     whitelist?: Array<keyof ReturnType<R>>
   }
 >(

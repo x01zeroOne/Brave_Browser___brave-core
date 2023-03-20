@@ -198,11 +198,6 @@ export const panelReducer = reducer
 export const persistedPanelReducer = persistVersionedReducer(panelReducer, {
   key: 'panel',
   version: PERSISTED_STATE_VERSION,
-  blacklist: [
-    'selectedPanel',
-    'lastSelectedPanel',
-    'panelTitle',
-    'connectToSiteOrigin'
-  ]
+  whitelist: []
 })
 export default reducer

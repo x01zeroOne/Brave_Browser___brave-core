@@ -491,16 +491,15 @@ export function createWalletApi (
       return { data: apiProxyFetcher(), cache: baseQueryCache }
     },
     extractRehydrationInfo(action, { reducerPath }) {
-      // Ensure that `setupListeners` has been called if using this
-      // so we can refetch data on page focus
-      // otherwise, stale data will be shown and not refreshed when reopening the app
+      // attempt to rehydrate from persisted query cache
+      // whenever the REHYDRATE action is dispatched
       if (action.type === REHYDRATE) {
         return action.payload?.[reducerPath]
       }
     },
     refetchOnReconnect: true,
     refetchOnFocus: true,
-    // refresh the cache if at least 30 seconds passed since last mount/fetch
+    // only refetch if 30 seconds elapsed
     refetchOnMountOrArgChange: 30,
     tagTypes: [
       ...cacher.defaultTags,
@@ -519,8 +518,7 @@ export function createWalletApi (
       'TokenSpotPrice',
       'TransactionsForAccount',
       'TransactionInfosForAccount',
-      'UserBlockchainTokens',
-      'WalletInfo'
+      'UserBlockchainTokens'
     ],
     endpoints: ({ mutation, query }) => ({
       //
@@ -2288,6 +2286,7 @@ export function createWalletApi (
           }
         },
         onQueryStarted: async (arg, { dispatch, queryFulfilled }) => {
+          // optimistic update of transaction's status
           const patchResult = dispatch(
             walletApi.util.updateQueryData(
               'getAllTransactionsForAddressCoinType',
@@ -3018,17 +3017,18 @@ export const {
   useUpdateUserTokenMutation,
 } = walletApi
 
-// reducer and initial state
-export const walletApiInitialState = walletApi.reducer(
-  undefined,
-  { type: '' }
-)
-
+// api initial state
 export const persistedWalletApiReducer = persistVersionedReducer(
   walletApi.reducer,
   {
     key: walletApi.reducerPath,
-    version: PERSISTED_STATE_VERSION
+    version: PERSISTED_STATE_VERSION,
+    whitelist: [
+      'config',
+      'mutations',
+      'provided',
+      'queries'
+    ]
   }
 )
 

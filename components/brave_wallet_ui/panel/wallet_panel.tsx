@@ -35,7 +35,7 @@ function App () {
   // state
   const [initialThemeType, setInitialThemeType] =
     React.useState<chrome.braveTheme.ThemeType>()
-  
+
   // effects
   React.useEffect(() => {
     chrome.braveTheme.getBraveThemeType(setInitialThemeType)
