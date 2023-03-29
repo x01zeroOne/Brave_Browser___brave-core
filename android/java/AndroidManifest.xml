@@ -12,6 +12,13 @@
     tools:ignore="LockedOrientationActivity" />
 
 <activity
+    android:name="org.chromium.chrome.browser.rewards.tipping.RewardsTippingBannerActivity"
+    android:theme="@style/TippingBraveTranslucent"
+    android:screenOrientation="sensorPortrait"
+    tools:ignore="LockedOrientationActivity"
+    android:exported="false" />
+
+<activity
     android:name="org.chromium.chrome.browser.BraveRewardsVerifyWalletActivity"
     android:theme="@style/Theme.Chromium.Activity.Fullscreen"/>
 

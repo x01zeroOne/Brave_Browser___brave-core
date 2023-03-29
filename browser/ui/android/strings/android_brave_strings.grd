@@ -142,9 +142,106 @@ This file contains all "about" strings.  It is set to NOT be translated, in tran
     <file lang="zh-TW" path="translations/android_brave_strings_zh-TW.xtb" />
   </translations>
   <release seq="1" allow_pseudo="false">
-    <messages fallback_to_english="true">
+    <messages fallback_to_english="true">    
+
       <message name="IDS_NOTIFICATIONS_ARE_DISABLED"  desc="Text for Notifications are disabled">
         Notifications are disabled
+      </message>
+      <message name="IDS_STILL_RECEIVE_CONTRIBUTIONS_FROM_WEB3" desc="Text for still send crypto contributions">
+        \n\nYou can still send crypto contributions to this creator by using your Web3 wallet.
+      </message>
+      <message name="IDS_CREATOR_UNABLE_RECEIVE_CONTRIBUTIONS" desc="Text for This creator is unable to receive contributions from CUSTODIAN">
+        This creator is unable to receive contributions from <ph name="CUSTODIAN">%1$s</ph>
+      </message>
+      <message name="IDS_NOT_ENOUGH_TOKENS" desc="Text for You don't have enough tokens">
+        You don't have enough tokens
+      </message>
+      <message name="IDS_MONTHLY_RECURRING_CONTRIBUTION_TOOLTIP" desc="Text for Make this a monthly recurring contribution. You can cancel it at any time.">
+        Make this a monthly recurring contribution. You can cancel it at any time.
+      </message>
+      <message name="IDS_NOT_ENOUGH_TOKENS_DESCRIPTION" desc="Text for You don't have enough tokens">
+        You can only send up to <ph name="AMOUNT">%1$s</ph> BAT using your Brave Rewards balance.
+      </message>
+      <message name="IDS_MONTHLY_CONTRIBUTIONS" desc="Text for Monthly Contributions">
+        Monthly Contributions
+      </message>
+      <message name="IDS_ALREADY_MONTHLY_CONTRIBUTION" desc="Text for You're already sending monthly contributions">
+        You're already sending monthly contributions to this creator
+      </message>
+      <message name="IDS_ALREADY_MONTHLY_CONTRIBUTION_DESCRIPTION" desc="Text for You're already sending monthly contributions description">
+        You can still send a one-time contribution now, and you can cancel your monthly contributions to this Creator by removing them from <ph name="MONTHLY_CONTRIBUTION">%1$s</ph>.
+      </message>
+      <message name="IDS_CONTRIBUTION_SENT" desc="Text for Contribution sent" translateable="false">
+        Contribution sent!
+      </message>
+      <message name="IDS_SHARE_YOUR_SUPPORT" desc="Text for Share your support" translateable="false">
+        Share your support
+      </message>
+      <message name="IDS_DOLLAR" desc="Text for dollar" translateable="false">
+        $
+      </message>
+      <message name="IDS_THANKS_FOR_SUPPORTING_YOUR_FAVORITE_CREATORS" desc="Text for Thanks for supporting your favorite creators">
+        Thanks for supporting your favorite creators
+      </message>
+      <message name="IDS_EMPTY_VALUE_PALCEHOLDER" desc="Text for empty value placeholder" translateable="false">
+        --
+      </message>
+      <message name="IDS_REWARDS_TIP_DEFAULT_CREATOR_DESCRIPTION" desc="Text for tipping default description">
+        Welcome! Users can support this content creator by sending them contributions. It’s a way of thanking them for making great content.
+      </message>
+      <message name="IDS_TITLE_ON_PROVIDER"  desc="Text for logged out message">
+        <ph name="TITLE">%1$s</ph> on <ph name="PROVIDER">%2$s</ph>
+      </message>
+      <message name="IDS_LOGGED_OUT_OF_CUSTODIAN"  desc="Text for logged out message">
+        Logged out of <ph name="CUSTODIAN">%1$s</ph>
+      </message>
+      <message name="IDS_LOGIN_TO_CUSTODIAN"  desc="Text for logged out message">
+        Log in to <ph name="CUSTODIAN">%1$s</ph>
+      </message>
+      <message name="IDS_LOGGED_OUT_OF_CUSTODIAN_DESCRIPTION"  desc="Text for logged out message description">
+        It looks like you're logged out of <ph name="CUSTODIAN">%1$s</ph> for Brave Rewards. Log in again to continue.
+      </message>
+      <message name="IDS_INFO_CREATOR_NOT_VERIFIED"  desc="Text for Send contribution">
+        This Creator is not yet verified with Brave Creators. You'll be able to send them contributions once they're verified. <ph name="LEARN_MORE">%1$s</ph>
+      </message>
+      <message name="IDS_SEND_CONTRIBUTION"  desc="Text for Send contribution">
+        Send Contribution
+      </message>
+      <message name="IDS_CAN_NOT_SEND_YOUR_CONTRIBUTION"  desc="Text for Can't send your contribution">
+        Can't send your contribution
+      </message>
+      <message name="IDS_USE_BRAVE_REWARDS"  desc="Text for Use Brave Rewards">
+        Use Brave Rewards
+      </message>
+      <message name="IDS_USE_WEB3_WALLET"  desc="Text for Use Web3 wallet">
+        Use Web3 wallet
+      </message>
+      <message name="IDS_BRAVE_REWARDS_BALANCE"  desc="Text for Brave Rewards balance">
+        Brave Rewards balance
+      </message>
+      <message name="IDS_SET_AS_MONTHLY_CONTRIBUTION"  desc="Text for Set as monthly contribution">
+        Set as monthly contribution
+      </message>
+      <message name="IDS__10"  desc="Text for 10">
+        10
+      </message>
+      <message name="IDS__5"  desc="Text for 5">
+        5
+      </message>
+      <message name="IDS__1"  desc="Text for 1">
+        1
+      </message>
+      <message name="IDS_CUSTOM"  desc="Text for custom">
+        Custom
+      </message>
+      <message name="IDS_THERE_WAS_A_PROBLEM_SENDING_YOUR_CONTRIBUTION"  desc="Text for There was a problem sending your contribution">
+        There was a problem sending your contribution
+      </message>
+      <message name="IDS_PLEASE_TRY_AGAIN"  desc="Text for Please try again">
+        Please try again.
+      </message>
+      <message name="IDS_TIPPING_TOOLTIP_DESCRIPTION"  desc="Text for tipping tooltip description">
+        This Creator has registered with Brave and can receive contributions from Brave Rewards users. Learn more
       </message>
       <message name="IDS_BRAVE_REWARDS_MAY_NOT_WORK_WHILE_NOTIFICATIONS_ARE_DISABLED"  desc="Text for Brave Rewards may not work while notifications are disabled.">
         Brave Rewards may not work while notifications are disabled.
@@ -340,6 +437,9 @@ This file contains all "about" strings.  It is set to NOT be translated, in tran
       </message>
       <message name="IDS_BRAVE_REWARDS_LOCAL_COMPLIMENT_TWEET" desc="Text of a tweet after tipping an verified creator.">
         I just tipped <ph name="NAME">%1$s<ex>user</ex></ph> using the Brave Browser. Check it out at https://brave.com/tips.
+      </message>
+      <message name="IDS_BRAVE_REWARDS_TIP_SUCCESS_TWEET" desc="Text of a tweet after tipping an verified creator.">
+        I just contributed <ph name="AMOUNT">%1$s<ex>ContributionAmount</ex></ph> BAT using the Brave Browser. See how you can support your favorite creators and sites too: https://brave.com/rewards
       </message>
       <message name="IDS_PROBLEM_SENDING_YOUR_TIP" desc="Text for problem sending tip">
         There was a problem sending your tip.
@@ -2812,7 +2912,7 @@ If you don't accept this request, VPN will not reconnect and your internet conne
       Estimated earnings
     </message>
     <message name="IDS_TIP" desc="Text for `Tip` button in Brave rewards panel">
-      Tip
+      Contribute
     </message>
     <message name="IDS_SEND_TIP" desc="Text for `Send Tip` button in Brave rewards panel">
       Send Tip

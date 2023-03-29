@@ -298,4 +298,33 @@
 
     <color name="playlist_warning_dialog_bg">#FFFFFF</color>
     <color name="playlist_warning_settings_color">#A0A5EB</color>
+    <color name="tipping_details_description_text_color">#6B7084</color>
+    <color name="link_icon_color">#6B7084</color>
+    <color name="rewards_background_gradient_start_color">#FDF6EB</color>
+    <color name="rewards_background_gradient_end_color">#F4F2FC</color>
+    <color name="tipping_rewards_background_color">@android:color/white</color>
+    <color name="tipping_inside_box_background_color">#FFFFFF</color>
+    <color name="tipping_points_stroke_color">#E6EBEF</color>
+    <color name="tipping_points_selected_color">#F2F1FE</color>
+    <color name="tipping_rewards_points_text_color">#6B7084</color>
+    <color name="currency_edit_text_background_color">#EFF2F5</color>
+    <color name="use_web3_wallet_button_text_color">#423EEE</color>
+    <color name="transparent_shadow_background_start_color">#FFFFFF</color>
+    <color name="transparent_shadow_background_end_color">#00FFFFFF</color>
+    <color name="custodian_name_color">#585C6D</color>
+    <color name="tipping_error_alert_message_background_color">#FDF3F5</color>
+    <color name="tipping_use_web3_button_border_color">#E2E2FC</color>
+    <color name="verification_tick_mark_background">#5F5CF1</color>
+    <color name="bottomsheet_top_bar_color">#000000</color>
+    <color name="send_contribution_button_color">#A8ADBF</color>
+    <color name="custodian_text_background_color">#F4F6F8</color>
+    <color name="tootltip_verified_creator_text">#1D1F25</color>
+    <color name="tootltip_verified_creator_text_secondary">#6B7084</color>
+    <color name="contribution_sent_text_color">#31803E</color>
+    <color name="thanks_for_supporting_text_color">#423EEE</color>
+    <color name="go_back_text_color">#666D89</color>
+    <color name="monthly_contributions_text_color">#423EEE</color>
+    <color name="terms_of_service_text_color">#1C1E26</color>
+    <color name="terms_of_service_text_color_default">#666D89</color>
+
 </resources>

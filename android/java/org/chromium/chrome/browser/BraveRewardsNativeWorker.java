@@ -738,6 +738,13 @@ public class BraveRewardsNativeWorker {
     }
 
     @CalledByNative
+    public void onSendContribution(boolean result) {
+        for (BraveRewardsObserver observer : mObservers) {
+            observer.onSendContribution(result);
+        }
+    }
+
+    @CalledByNative
     public void OnPendingContributionSaved(int result) {
         for (BraveRewardsObserver observer : mObservers) {
             observer.OnPendingContributionSaved(result);

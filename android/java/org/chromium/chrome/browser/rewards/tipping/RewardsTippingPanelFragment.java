@@ -1,0 +1,694 @@
+/**
+ * Copyright (c) 2023 The Brave Authors. All rights reserved.
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
+package org.chromium.chrome.browser.rewards.tipping;
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.Dialog;
+import android.content.res.Resources;
+import android.graphics.Typeface;
+import android.os.Bundle;
+import android.text.Editable;
+import android.text.InputType;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.TextPaint;
+import android.text.TextUtils;
+import android.text.TextWatcher;
+import android.text.method.LinkMovementMethod;
+import android.text.style.ClickableSpan;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
+import android.util.DisplayMetrics;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.content.res.ResourcesCompat;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+
+import org.json.JSONException;
+
+import org.chromium.base.Log;
+import org.chromium.brave_rewards.mojom.PublisherStatus;
+import org.chromium.brave_rewards.mojom.WalletStatus;
+import org.chromium.chrome.R;
+import org.chromium.chrome.browser.BraveRewardsBalance;
+import org.chromium.chrome.browser.BraveRewardsExternalWallet;
+import org.chromium.chrome.browser.BraveRewardsHelper;
+import org.chromium.chrome.browser.BraveRewardsNativeWorker;
+import org.chromium.chrome.browser.BraveRewardsObserver;
+import org.chromium.chrome.browser.BraveWalletProvider;
+import org.chromium.chrome.browser.app.BraveActivity;
+import org.chromium.chrome.browser.customtabs.CustomTabActivity;
+import org.chromium.chrome.browser.util.TabUtils;
+
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.util.Locale;
+
+public class RewardsTippingPanelFragment
+        extends BottomSheetDialogFragment implements BraveRewardsObserver {
+    final public static String TAG_FRAGMENT = "tipping_panel_tag";
+    private static final String TAG = "TippingPanelFragment";
+
+    private static final String WEB3_URL = "web3_url";
+    private BraveRewardsNativeWorker mBraveRewardsNativeWorker;
+    private String walletType = BraveRewardsNativeWorker.getInstance().getExternalWalletType();
+
+    private TextView radio_tip_amount[] = new TextView[4];
+    private double[] mTipChoices;
+    private TextView currency1TextView;
+    private TextView currency2TextView;
+    private EditText currency1ValueEditTextView;
+    private TextView currency1ValueTextView;
+    private TextView currency2ValueTextView;
+    private boolean toggle = true;
+    public static final double AMOUNT_STEP_BY = 0.25;
+    public static final int MAX_BAT_VALUE = 100;
+    private static final double DEFAULT_AMOUNT = 0.0;
+
+    private static final int DEFAULT_VALUE_OPTION_1 = 1;
+    private static final int DEFAULT_VALUE_OPTION_2 = 5;
+    private static final int DEFAULT_VALUE_OPTION_3 = 10;
+
+    private View mContentView;
+    private Button mSendButton;
+    private int mCurrentTabId = -1;
+    private double mBalance;
+    private String mWeb3Url;
+
+    private boolean mIsLogoutState;
+    private double mAmountSelected;
+
+    private double rate;
+    private boolean mIsBatCurrency;
+    private BraveRewardsExternalWallet mExternalWallet;
+
+    public static RewardsTippingPanelFragment newInstance(int tabId, String web3Url) {
+        RewardsTippingPanelFragment fragment = new RewardsTippingPanelFragment();
+        Bundle args = new Bundle();
+        args.putInt(RewardsTippingBannerActivity.TAB_ID_EXTRA, tabId);
+        args.putString(WEB3_URL, web3Url);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setStyle(STYLE_NORMAL, R.style.AppBottomSheetDialogTheme);
+        init();
+    }
+
+    private void init() {
+        mBraveRewardsNativeWorker = BraveRewardsNativeWorker.getInstance();
+        mBraveRewardsNativeWorker.AddObserver(this);
+        mBraveRewardsNativeWorker.GetExternalWallet();
+    }
+
+    @Override
+    public void show(@NonNull FragmentManager manager, @Nullable String tag) {
+        try {
+            RewardsTippingPanelFragment fragment =
+                    (RewardsTippingPanelFragment) manager.findFragmentByTag(
+                            RewardsTippingPanelFragment.TAG_FRAGMENT);
+            FragmentTransaction transaction = manager.beginTransaction();
+            if (fragment != null) {
+                transaction.remove(fragment);
+            }
+            transaction.add(this, tag);
+            transaction.commitAllowingStateLoss();
+        } catch (IllegalStateException e) {
+            Log.e(TAG, e.getMessage());
+        }
+    }
+
+    @SuppressLint("RestrictedApi")
+    @Override
+    public void setupDialog(@NonNull Dialog dialog, int style) {
+        super.setupDialog(dialog, style);
+        final View view = LayoutInflater.from(getContext())
+                                  .inflate(R.layout.brave_rewards_tippingpanel_fragment, null);
+        dialog.setContentView(view);
+        if (getArguments() != null) {
+            mCurrentTabId = getArguments().getInt(RewardsTippingBannerActivity.TAB_ID_EXTRA);
+            mWeb3Url = getArguments().getString(WEB3_URL);
+        }
+        mContentView = view;
+        mSendButton = view.findViewById(R.id.send_tip_button);
+
+        init(view);
+        setBalanceText(view);
+        initTipChoice(toggle);
+        setAlreadyMonthlyContributionSetMessage();
+        sendTipButtonClick(view);
+        exchangeButtonClick(view);
+        setCustodianIconAndName(view);
+        updateTermsOfServicePlaceHolder(view);
+        checkEnoughFund();
+        setupFullHeight((BottomSheetDialog) dialog);
+        setMonthlyInformationClick(view);
+    }
+
+    private void setMonthlyInformationClick(View view) {
+        View informationButton = view.findViewById(R.id.info_outline);
+        informationButton.setOnClickListener(v -> {
+            MonthlyContributionToolTip toolTip = new MonthlyContributionToolTip(view.getContext());
+            toolTip.show(informationButton);
+        });
+    }
+
+    private void setupFullHeight(BottomSheetDialog bottomSheetDialog) {
+        FrameLayout bottomSheet =
+                (FrameLayout) bottomSheetDialog.findViewById(R.id.design_bottom_sheet);
+        BottomSheetBehavior behavior = BottomSheetBehavior.from(bottomSheet);
+        behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+    }
+
+    private int getWindowHeight() {
+        // Calculate window height for fullscreen use
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        ((Activity) getContext()).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        return displayMetrics.heightPixels;
+    }
+
+    private void updateTermsOfServicePlaceHolder(View view) {
+        Resources res = getResources();
+        TextView proceedTextView = view.findViewById(R.id.proceed_terms_of_service);
+        proceedTextView.setMovementMethod(LinkMovementMethod.getInstance());
+        String termsOfServiceText = String.format(res.getString(R.string.brave_rewards_tos_text),
+                res.getString(R.string.terms_of_service), res.getString(R.string.privacy_policy));
+
+        SpannableString spannableString = stringToSpannableString(termsOfServiceText);
+        proceedTextView.setText(spannableString);
+    }
+
+    private SpannableString stringToSpannableString(String text) {
+        Spanned textSpanned = BraveRewardsHelper.spannedFromHtmlString(text);
+        SpannableString textSpannableString = new SpannableString(textSpanned.toString());
+        setSpan(text, textSpannableString, R.string.terms_of_service, termsOfServiceClickableSpan,
+                getResources().getColor(R.color.terms_of_service_text_color)); // terms of service
+        setSpan(text, textSpannableString, R.string.privacy_policy, privacyPolicyClickableSpan,
+                getResources().getColor(R.color.terms_of_service_text_color)); // privacy policy
+        return textSpannableString;
+    }
+
+    private void setSpan(String text, SpannableString tosTextSS, int stringId,
+            ClickableSpan clickableSpan, int textColor) {
+        String spanString = getResources().getString(stringId);
+        int spanLength = spanString.length();
+        int index = text.indexOf(spanString);
+        tosTextSS.setSpan(
+                clickableSpan, index, index + spanLength, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        Typeface typeface = Typeface.create("sans-serif", Typeface.NORMAL);
+        tosTextSS.setSpan(new StyleSpan(typeface.getStyle()), index, index + spanLength,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        tosTextSS.setSpan(new ForegroundColorSpan(textColor), index, index + spanLength,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+    }
+
+    private ClickableSpan termsOfServiceClickableSpan = new ClickableSpan() {
+        @Override
+        public void onClick(@NonNull View textView) {
+            CustomTabActivity.showInfoPage(getActivity(), BraveActivity.BRAVE_TERMS_PAGE);
+        }
+        @Override
+        public void updateDrawState(@NonNull TextPaint ds) {
+            super.updateDrawState(ds);
+            ds.setUnderlineText(false);
+        }
+    };
+
+    private ClickableSpan privacyPolicyClickableSpan = new ClickableSpan() {
+        @Override
+        public void onClick(@NonNull View textView) {
+            CustomTabActivity.showInfoPage(getActivity(), BraveActivity.BRAVE_PRIVACY_POLICY);
+        }
+        @Override
+        public void updateDrawState(@NonNull TextPaint ds) {
+            super.updateDrawState(ds);
+            ds.setUnderlineText(false);
+        }
+    };
+
+    @Override
+    public void OnGetExternalWallet(String externalWallet) {
+        int walletStatus = WalletStatus.NOT_CONNECTED;
+
+        if (!TextUtils.isEmpty(externalWallet)) {
+            try {
+                mExternalWallet = new BraveRewardsExternalWallet(externalWallet);
+                walletStatus = mExternalWallet.getStatus();
+
+                if (walletStatus == WalletStatus.LOGGED_OUT) {
+                    setLogutStateMessage();
+                } else {
+                    int pubStatus = mBraveRewardsNativeWorker.GetPublisherStatus(mCurrentTabId);
+                    setPublisherNoteText(pubStatus, walletStatus);
+                }
+            } catch (JSONException e) {
+                mExternalWallet = null;
+            }
+        }
+    }
+
+    private void setPublisherNoteText(int pubStatus, int walletStatus) {
+        if ((pubStatus == PublisherStatus.UPHOLD_VERIFIED
+                    && !walletType.equals(BraveWalletProvider.UPHOLD))
+                || (pubStatus == PublisherStatus.BITFLYER_VERIFIED
+                        && !walletType.equals(BraveWalletProvider.BITFLYER))
+                || (pubStatus == PublisherStatus.GEMINI_VERIFIED
+                        && !walletType.equals(BraveWalletProvider.GEMINI))) {
+            String notePart1 =
+                    String.format(getString(R.string.creator_unable_receive_contributions),
+                            getWalletStringFromType(walletType));
+            mContentView.findViewById(R.id.group1).setVisibility(View.GONE);
+            currency1ValueEditTextView.setVisibility(View.GONE);
+
+            if (!TextUtils.isEmpty(mWeb3Url)) {
+                notePart1 += getString(R.string.still_receive_contributions_from_web3);
+            }
+
+            mSendButton.setVisibility(View.GONE);
+
+            showWarningMessage(mContentView,
+                    R.drawable.rewards_panel_information_for_unverified_background,
+                    getString(R.string.can_not_send_your_contribution), notePart1);
+        }
+    }
+
+    private String getWalletStringFromStatus(int pubStatus) {
+        if (pubStatus == PublisherStatus.UPHOLD_VERIFIED) {
+            return getResources().getString(R.string.uphold);
+        } else if (pubStatus == PublisherStatus.GEMINI_VERIFIED) {
+            return getResources().getString(R.string.gemini);
+        } else {
+            return getResources().getString(R.string.bitflyer);
+        }
+    }
+
+    private void setAlreadyMonthlyContributionSetMessage() {
+        String pubId = mBraveRewardsNativeWorker.GetPublisherId(mCurrentTabId);
+
+        boolean isPrivouslyMonthlyContributionExist =
+                mBraveRewardsNativeWorker.IsCurrentPublisherInRecurrentDonations(pubId);
+        if (isPrivouslyMonthlyContributionExist) {
+            showAlreadySetMonthlyContribution();
+        }
+    }
+
+    @Override
+    public void onSendContribution(boolean result) {
+        if (result) {
+            RewardsTippingSuccessContributionFragment.showTippingSuccessContributionUi(
+                    (AppCompatActivity) getActivity(), mAmountSelected);
+        } else {
+            showErrorLayout();
+        }
+    }
+
+    private void showErrorLayout() {
+        mSendButton.setEnabled(true);
+        mSendButton.setText(R.string.try_again);
+        showWarningMessage(mContentView, R.drawable.tipping_error_alert_message_background,
+                getString(R.string.there_was_a_problem_sending_your_contribution),
+                getString(R.string.please_try_again));
+    }
+
+    private void showNotEnoughTokens() {
+        showWarningMessage(mContentView, R.drawable.tipping_error_alert_message_background,
+                getString(R.string.not_enough_tokens),
+                getString(R.string.not_enough_tokens_description));
+    }
+
+    private void showAlreadySetMonthlyContribution() {
+        mContentView.findViewById(R.id.monthly_switch).setVisibility(View.GONE);
+        mContentView.findViewById(R.id.info_outline).setVisibility(View.GONE);
+        mContentView.findViewById(R.id.set_as_monthly_contribution).setVisibility(View.GONE);
+
+        String already_monthly_contribution_description =
+                String.format(getString(R.string.already_monthly_contribution_description),
+                        getString(R.string.monthly_contributions));
+        SpannableString spannableString =
+                stringMonthlyToSpannableString(already_monthly_contribution_description);
+        showWarningMessage(mContentView,
+                R.drawable.rewards_panel_information_for_unverified_background,
+                getString(R.string.already_monthly_contribution),
+                already_monthly_contribution_description);
+        TextView warningDescription =
+                mContentView.findViewById(R.id.tipping_warning_description_text);
+        warningDescription.setMovementMethod(LinkMovementMethod.getInstance());
+
+        warningDescription.setText(spannableString);
+    }
+    private SpannableString stringMonthlyToSpannableString(String text) {
+        Spanned textSpanned = BraveRewardsHelper.spannedFromHtmlString(text);
+        SpannableString textSpannableString = new SpannableString(textSpanned.toString());
+        setSpan(text, textSpannableString, R.string.monthly_contributions,
+                monthlyContributionClickableSpan,
+                getResources().getColor(
+                        R.color.monthly_contributions_text_color)); // terms of service
+
+        return textSpannableString;
+    }
+    private ClickableSpan monthlyContributionClickableSpan = new ClickableSpan() {
+        @Override
+        public void onClick(@NonNull View textView) {
+            TabUtils.openUrlInNewTab(false, BraveActivity.BRAVE_REWARDS_SETTINGS_MONTHLY_URL);
+            getActivity().setResult(Activity.RESULT_OK);
+            getActivity().finish();
+        }
+        @Override
+        public void updateDrawState(@NonNull TextPaint ds) {
+            super.updateDrawState(ds);
+            ds.setUnderlineText(false);
+        }
+    };
+
+    @SuppressLint("SetTextI18n")
+    private void setLogutStateMessage() {
+        String logoutWarningMessage =
+                String.format(getString(R.string.logged_out_of_custodian_description),
+                        getWalletStringFromType(mExternalWallet.getType()));
+        if (!TextUtils.isEmpty(mWeb3Url)) {
+            logoutWarningMessage += getString(R.string.still_receive_contributions_from_web3);
+        }
+
+        showWarningMessage(mContentView, R.drawable.tipping_logout_message_background,
+                String.format(getString(R.string.logged_out_of_custodian),
+                        getWalletStringFromType(mExternalWallet.getType())),
+                logoutWarningMessage);
+
+        mContentView.findViewById(R.id.group1).setVisibility(View.GONE);
+        currency1ValueEditTextView.setVisibility(View.GONE);
+
+        ((TextView) mContentView.findViewById(R.id.wallet_amount_text))
+                .setText(getResources().getString(R.string.empty_value_palceholder) + " "
+                        + getResources().getString(R.string.bat));
+        mIsLogoutState = true;
+        mSendButton.setEnabled(true);
+        mSendButton.setText(String.format(getResources().getString(R.string.login_to_custodian),
+                getWalletStringFromType(mExternalWallet.getType())));
+    }
+
+    private String getWalletStringFromType(String walletType) {
+        if (walletType.equals(BraveWalletProvider.UPHOLD)) {
+            return getResources().getString(R.string.uphold);
+        } else if (walletType.equals(BraveWalletProvider.GEMINI)) {
+            return getResources().getString(R.string.gemini);
+        } else {
+            return getResources().getString(R.string.bitflyer);
+        }
+    }
+
+    private void showWarningMessage(View view, int background, String title, String description) {
+        View warningLayout = view.findViewById(R.id.tipping_warning_message_layout);
+        warningLayout.setVisibility(View.VISIBLE);
+        warningLayout.setBackground(ResourcesCompat.getDrawable(
+                getActivity().getResources(), background, /* theme= */ null));
+        TextView warningTitle = view.findViewById(R.id.tipping_warning_title_text);
+        warningTitle.setText(title);
+        TextView warningDescription = view.findViewById(R.id.tipping_warning_description_text);
+        warningDescription.setText(description);
+    }
+
+    private void sendTipButtonClick(View view) {
+        mSendButton.setOnClickListener(v -> {
+            if (mIsLogoutState) {
+                if (mExternalWallet != null) {
+                    TabUtils.openUrlInNewTab(false, mExternalWallet.getLoginUrl());
+                    getActivity().setResult(Activity.RESULT_OK);
+                    getActivity().finish();
+                }
+            } else {
+                SwitchCompat isMonthly = view.findViewById(R.id.monthly_switch);
+                mAmountSelected = selectedAmount();
+                if (mSendButton.isEnabled()) {
+                    mBraveRewardsNativeWorker.Donate(
+                            mBraveRewardsNativeWorker.GetPublisherId(mCurrentTabId),
+                            mAmountSelected, isMonthly.isChecked());
+                }
+            }
+        });
+    }
+
+    private void exchangeButtonClick(View view) {
+        View exchangeButton = view.findViewById(R.id.exchange_shape);
+        exchangeButton.setOnClickListener((v) -> {
+            toggle = !toggle;
+            currency1ValueEditTextView.setText(currency2ValueTextView.getText());
+            currency1ValueTextView.setText(currency2ValueTextView.getText());
+
+            initTipChoice(toggle);
+        });
+    }
+
+    private TextWatcher textChangeListener = new TextWatcher() {
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+        @SuppressLint("SetTextI18n")
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            if (TextUtils.isEmpty(s)) s = "0";
+            Double batValue = getBatValue(s.toString(), mIsBatCurrency);
+            Double usdValue = rate * batValue;
+
+            if (mIsBatCurrency) {
+                currency2ValueTextView.setText(String.valueOf(roundExchangeUp(usdValue)));
+            } else {
+                currency2ValueTextView.setText(String.valueOf(batValue));
+            }
+
+            mAmountSelected = selectedAmount();
+            checkEnoughFund();
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {}
+    };
+
+    private void init(View view) {
+        currency1TextView = view.findViewById(R.id.currency1);
+        currency2TextView = view.findViewById(R.id.currency2);
+        currency1ValueEditTextView = view.findViewById(R.id.currencyOneEditText);
+        currency1ValueEditTextView.setText(String.valueOf(0.0));
+
+        currency1ValueTextView = view.findViewById(R.id.currencyOneEditText1);
+        currency2ValueTextView = view.findViewById(R.id.exchange_amount1);
+        currency1ValueEditTextView.addTextChangedListener(textChangeListener);
+        rate = mBraveRewardsNativeWorker.GetWalletRate();
+        radio_tip_amount[0] = view.findViewById(R.id.tipChoice1);
+        radio_tip_amount[1] = view.findViewById(R.id.tipChoice2);
+        radio_tip_amount[2] = view.findViewById(R.id.tipChoice3);
+        radio_tip_amount[3] = view.findViewById(R.id.tipChoiceCustom);
+
+        for (TextView tb : radio_tip_amount) {
+            tb.setOnClickListener(radio_clicker);
+        }
+    }
+
+    void setBalanceText(View view) {
+        double balance = DEFAULT_AMOUNT;
+        BraveRewardsBalance rewards_balance = mBraveRewardsNativeWorker.GetWalletBalance();
+        if (rewards_balance != null) {
+            balance = rewards_balance.getTotal();
+            mBalance = balance;
+        }
+
+        DecimalFormat df = new DecimalFormat("#.###");
+        df.setRoundingMode(RoundingMode.FLOOR);
+        df.setMinimumFractionDigits(3);
+        String walletAmount = df.format(balance) + " " + BraveRewardsHelper.BAT_TEXT;
+
+        ((TextView) view.findViewById(R.id.wallet_amount_text)).setText(walletAmount);
+    }
+
+    private void checkEnoughFund() {
+        if (mAmountSelected <= AMOUNT_STEP_BY) { // if it's below range
+            mSendButton.setEnabled(false);
+            return;
+        }
+        if (mBalance < mAmountSelected) { // moment more than selected amount button disabled and
+                                          // show warning message
+            showNotEnoughTokens();
+            mSendButton.setEnabled(false);
+        } else { // if selected amount is with in range then enable it
+            mSendButton.setEnabled(true);
+        }
+    }
+
+    private void setCustodianIconAndName(View view) {
+        int custodianIcon = R.drawable.ic_logo_bitflyer_colored;
+        int custodianName = R.string.bitflyer;
+
+        if (walletType.equals(BraveWalletProvider.UPHOLD)) {
+            custodianIcon = R.drawable.upload_icon;
+            custodianName = R.string.uphold;
+        } else if (walletType.equals(BraveWalletProvider.GEMINI)) {
+            custodianIcon = R.drawable.ic_gemini_logo_cyan;
+            custodianName = R.string.gemini;
+        }
+
+        TextView custodian = view.findViewById(R.id.custodian_text);
+        custodian.setText(custodianName);
+        custodian.setCompoundDrawablesWithIntrinsicBounds(custodianIcon, 0, 0, 0);
+    }
+
+    private void initTipChoice(boolean isBat) {
+        mTipChoices = mBraveRewardsNativeWorker.GetTipChoices();
+        if (mTipChoices.length < 3) {
+            // when native not giving tip choices initialize with default values
+            mTipChoices = new double[3];
+            mTipChoices[0] = DEFAULT_VALUE_OPTION_1;
+            mTipChoices[1] = DEFAULT_VALUE_OPTION_2;
+            mTipChoices[2] = DEFAULT_VALUE_OPTION_3;
+        }
+
+        mIsBatCurrency = isBat;
+        String currency1 = currency1ValueEditTextView.getText().toString();
+
+        Double batValue = getBatValue(currency1, isBat);
+
+        Double usdValue = rate * batValue;
+
+        if (isBat) {
+            currency1TextView.setText(R.string.bat);
+            currency2TextView.setText(R.string.usd);
+            currency1ValueEditTextView.setText(String.valueOf(batValue));
+            currency1ValueTextView.setText(String.valueOf(batValue));
+            currency2ValueTextView.setText(String.valueOf(roundExchangeUp(usdValue)));
+
+        } else {
+            currency1TextView.setText(R.string.usd);
+            currency2TextView.setText(R.string.bat);
+            currency1ValueEditTextView.setText(String.valueOf(roundExchangeUp(usdValue)));
+            currency1ValueTextView.setText(String.valueOf(roundExchangeUp(usdValue)));
+            currency2ValueTextView.setText(String.valueOf(batValue));
+        }
+        mTipChoices[0] = mTipChoices[0] ;
+        mTipChoices[1] = mTipChoices[1] ;
+        mTipChoices[2] = mTipChoices[2] ;
+        for (int i = 0; i < 3; i++) {
+            radio_tip_amount[i].setText(String.valueOf(roundExchangeUp(mTipChoices[i])));
+        }
+    }
+
+    private View.OnClickListener radio_clicker = view -> {
+        currency1ValueEditTextView.removeTextChangedListener(textChangeListener);
+
+        TextView tb_pressed = (TextView) view;
+        if (!tb_pressed.isSelected()) {
+            tb_pressed.setSelected(true);
+        }
+
+        int id = view.getId();
+        if (id == R.id.tipChoiceCustom) {
+            currency1ValueEditTextView.requestFocus();
+            currency1ValueTextView.setVisibility(View.INVISIBLE);
+            currency1ValueEditTextView.setVisibility(View.VISIBLE);
+        } else {
+            currency1ValueTextView.setVisibility(View.VISIBLE);
+            currency1ValueEditTextView.setVisibility(View.INVISIBLE);
+            currency1ValueTextView.setInputType(InputType.TYPE_NULL);
+            String s = ((TextView) view).getText().toString();
+            currency1ValueTextView.setText(s);
+            currency1ValueEditTextView.setText(s);
+            Double batValue = getBatValue(s, mIsBatCurrency);
+
+            Double usdValue = rate * batValue;
+            if (mIsBatCurrency)
+                currency2ValueTextView.setText(String.valueOf(roundExchangeUp(usdValue)));
+            else
+                currency2ValueTextView.setText(String.valueOf(roundExchangeUp(batValue)));
+        }
+        for (TextView tb : radio_tip_amount) {
+            if (tb.getId() == id) {
+                continue;
+            }
+            tb.setSelected(false);
+        }
+        mAmountSelected = selectedAmount();
+
+        checkEnoughFund();
+        currency1ValueEditTextView.addTextChangedListener(textChangeListener);
+    };
+
+    private double selectedAmount() {
+        double amount = 0.0;
+
+        try {
+            if (mIsBatCurrency)
+                amount = Double.parseDouble(currency1ValueEditTextView.getText().toString());
+            else
+                amount = Double.parseDouble(currency2ValueTextView.getText().toString());
+        } catch (NumberFormatException e) {
+        }
+
+        return amount;
+    }
+
+    public static void showTippingPanelBottomSheet(
+            AppCompatActivity activity, int tabId, String web3Url) {
+        if (activity != null) {
+            RewardsTippingPanelFragment dialog =
+                    RewardsTippingPanelFragment.newInstance(tabId, web3Url);
+            dialog.show(activity.getSupportFragmentManager(), TAG_FRAGMENT);
+        }
+    }
+
+    private double roundExchangeUp(double batValue) {
+        return Math.ceil(batValue * 100) / 100;
+    }
+
+    /**
+     * @param inputValue : editText string passed here
+     * @return convert to bat value if current editText is USD
+     * It will return multiple 0.25
+     * And also return which is lower between Max and value
+     * decimal points always roundedOff to floor value.
+     */
+    private double getBatValue(String inputValue, boolean isBatCurrencyMode) {
+        double rawValue = 0;
+        try {
+            rawValue = Double.parseDouble(inputValue);
+        } catch (NumberFormatException e) {
+        }
+
+        if (!isBatCurrencyMode) {
+            // from USD to BAT
+            rawValue = rawValue / rate;
+        }
+
+        // Round value with 2 decimal
+        rawValue = Math.floor(rawValue / AMOUNT_STEP_BY) * AMOUNT_STEP_BY;
+
+        // There is a limit
+        return Math.min(MAX_BAT_VALUE, rawValue);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (null != mBraveRewardsNativeWorker) {
+            mBraveRewardsNativeWorker.RemoveObserver(this);
+        }
+    }
+}

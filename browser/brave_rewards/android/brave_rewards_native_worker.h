@@ -254,6 +254,7 @@ class BraveRewardsNativeWorker
   void onPublisherBanner(brave_rewards::mojom::PublisherBannerPtr wallet);
 
   void OnOneTimeTip(brave_rewards::mojom::Result result);
+  void onSendContribution(bool result);
 
   void OnExternalWalletConnected() override;
 

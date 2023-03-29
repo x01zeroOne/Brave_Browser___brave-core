@@ -20,6 +20,12 @@
         <item name="switchStyle">@style/Widget.MaterialComponents.CompoundButton.Switch</item>
     </style>
 
+    <style name="TippingSwitchTheme">
+        <item name="colorControlActivated">@color/rewards_panel_action_color</item>
+        <item name="colorSwitchThumbNormal">@color/modern_grey_600</item>
+        <item name="android:colorForeground">@color/modern_grey_600</item>
+    </style>
+
     <style name="AppBottomSheetDialogTheme"
            parent="Theme.Design.Light.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/AppModalStyle</item>
@@ -192,6 +198,17 @@
         <item name="android:windowContentOverlay">@null</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:backgroundDimEnabled">false</item>
+    </style>
+
+    <style name="TippingBraveTranslucent" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@color/translucent_activity_background_color</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:statusBarColor">#00000000</item>
     </style>
 
     <style name="BraveTranslucentMaterial" parent="Theme.MaterialComponents.Light.NoActionBar">
