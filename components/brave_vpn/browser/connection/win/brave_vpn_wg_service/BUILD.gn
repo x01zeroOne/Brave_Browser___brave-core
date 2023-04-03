@@ -1,0 +1,61 @@
+# Copyright (c) 2023 The Brave Authors. All rights reserved.
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this file,
+# You can obtain one at https://mozilla.org/MPL/2.0/.
+
+import("//brave/build/config.gni")
+import("//build/toolchain/win/midl.gni")
+import("//build/util/process_version.gni")
+import("//chrome/process_version_rc_template.gni")
+
+assert(is_win)
+
+# Must be in a config because of how GN orders flags (otherwise /W4 will appear
+# after this, and turn it back on).
+config("no-missing-braces") {
+  # Macros invoked by WRL CoCreatableClass omit optional braces.
+  cflags = [ "-Wno-missing-braces" ]
+}
+
+source_set("common") {
+  sources = [
+    "scoped_sc_handle.h",
+  ]
+
+  public_deps = [ "//brave/components/brave_vpn/common/buildflags" ]
+
+  deps = [
+    "//base",
+    "//brave/components/brave_vpn/common",
+    "//chrome/install_static:install_static_util",
+  ]
+}
+
+
+executable("brave_vpn_wg_service") {
+  sources = [
+    "main.cc",
+    "service_main.cc",
+    "service_main.h",
+    "service_utils.cc",
+    "service_utils.h"
+  ]
+
+  deps = [
+    ":common",
+    ":version_resources",
+    "//base",
+    "//base:base_static",
+    "//build/win:default_exe_manifest",
+    "//chrome/install_static:install_static_util",
+    "//components/version_info:channel",
+  ]
+  libs = [
+    "userenv.lib",  # For GetUserProfileDirectoryW()
+  ]
+}
+
+process_version_rc_template("version_resources") {
+  sources = [ "brave_vpn_wg_service.ver" ]
+  output = "$target_gen_dir/brave_vpn_wg_service.rc"
+}
