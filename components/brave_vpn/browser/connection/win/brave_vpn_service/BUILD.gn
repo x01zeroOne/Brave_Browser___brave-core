@@ -18,9 +18,7 @@ config("no-missing-braces") {
 }
 
 source_set("common") {
-  sources = [
-    "scoped_sc_handle.h",
-  ]
+  sources = [ "scoped_sc_handle.h" ]
 
   public_deps = [ "//brave/components/brave_vpn/common/buildflags" ]
 
@@ -31,14 +29,13 @@ source_set("common") {
   ]
 }
 
-
 executable("brave_vpn_service") {
   sources = [
     "main.cc",
     "service_main.cc",
     "service_main.h",
     "service_utils.cc",
-    "service_utils.h"
+    "service_utils.h",
   ]
 
   deps = [

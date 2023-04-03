@@ -6,7 +6,6 @@
 #ifndef BRAVE_COMPONENTS_BRAVE_VPN_BROWSER_CONNECTION_WIN_BRAVE_VPN_SERVICE_SERVICE_CONSTANTS_H_
 #define BRAVE_COMPONENTS_BRAVE_VPN_BROWSER_CONNECTION_WIN_BRAVE_VPN_SERVICE_SERVICE_CONSTANTS_H_
 
-
 #include <guiddef.h>
 
 #include "brave/components/brave_vpn/common/buildflags/buildflags.h"
@@ -14,7 +13,6 @@
 namespace brave_vpn {
 
 constexpr char kBraveWgServiceInstall[] = "install";
-
 
 }  // namespace brave_vpn
 

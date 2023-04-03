@@ -11,7 +11,6 @@
 #include "base/functional/callback.h"
 #include "base/no_destructor.h"
 
-
 namespace base {
 class CommandLine;
 }  // namespace base
