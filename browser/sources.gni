@@ -325,6 +325,7 @@ if (is_android) {
 
 if (toolkit_views) {
   brave_chrome_browser_deps += [
+    "//brave/browser/sidebar",
     "//brave/browser/ui/sidebar",
     "//brave/components/sidebar",
   ]

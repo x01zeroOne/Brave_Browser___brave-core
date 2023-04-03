@@ -28,6 +28,7 @@ source_set("sidebar") {
 
   deps = [
     "//base",
+    "//brave/browser/sidebar",
     "//brave/components/sidebar",
     "//chrome/browser/profiles",
     "//components/keyed_service/content",
