@@ -1,0 +1,13 @@
+diff --git a/build/toolchain/apple/toolchain.gni b/build/toolchain/apple/toolchain.gni
+index 97f56270997966451968d12037f51d37c7ee045b..50c60857e539bfa2513ae84cc8589fb4466fc77f 100644
+--- a/build/toolchain/apple/toolchain.gni
++++ b/build/toolchain/apple/toolchain.gni
+@@ -548,7 +548,7 @@ template("single_apple_toolchain") {
+       if (host_os == "mac") {
+         command = "rm -rf {{output}} && /bin/cp -Rc {{source}} {{output}}"
+       } else {
+-        command = "rm -rf {{output}} && /bin/cp -Rl {{source}} {{output}}"
++        command = "rm -rf {{output}} && /bin/cp -Rld {{source}} {{output}}"
+       }
+       description = "COPY_BUNDLE_DATA {{source}} {{output}}"
+       pool = "//build/toolchain/apple:bundle_pool($default_toolchain)"

@@ -103,7 +103,7 @@ template("cargo_build") {
     script = "//brave/script/cargo.py"
 
     cargo_bin = "$rustup_home/bin/cargo"
-    if (is_win) {
+    if (host_os == "win") {
       cargo_bin = cargo_bin + ".exe"
     }
 
@@ -115,10 +115,16 @@ template("cargo_build") {
     ]
 
     if (is_apple) {
-      if (host_cpu == "arm64") {
-        rust_host_toolchain = "aarch64-apple-darwin"
+      if (host_os == "mac") {
+        if (host_cpu == "arm64") {
+          rust_host_toolchain = "aarch64-apple-darwin"
+        } else {
+          rust_host_toolchain = "x86_64-apple-darwin"
+        }
       } else {
-        rust_host_toolchain = "x86_64-apple-darwin"
+        assert(host_os == "linux",
+               "Mac cross-compile is available only on Linux")
+        rust_host_toolchain = "x86_64-unknown-linux-gnu"
       }
       toolchain_home =
           "$rustup_home/toolchains/$brave_rust_version-$rust_host_toolchain"

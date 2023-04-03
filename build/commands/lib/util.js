@@ -265,7 +265,7 @@ const util = {
                  path.join(config.srcDir, 'ui', 'webui', 'resources', 'css', 'text_defaults_md.css')])
 
     let explicitSourceFiles = new Set()
-    if (process.platform === 'darwin') {
+    if (config.getTargetOS() === 'mac') {
       // Set proper mac app icon for channel to chrome/app/theme/mac/app.icns.
       // Each channel's app icons are stored in brave/app/theme/$channel/app.icns.
       // With this copying, we don't need to modify chrome/BUILD.gn for this.

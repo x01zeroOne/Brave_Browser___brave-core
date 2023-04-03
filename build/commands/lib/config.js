@@ -1005,15 +1005,13 @@ Object.defineProperty(Config.prototype, 'defaultOptions', {
       env.BRAVE_CHANNEL = this.channel
     }
 
-    if (process.platform === 'win32' || (this.targetOS && this.targetOS === 'win')) {
-      if (!this.gomaServerHost || !this.gomaServerHost.endsWith('.brave.com')) {
-        env.DEPOT_TOOLS_WIN_TOOLCHAIN = '0'
-      } else {
-        // Use hermetic toolchain only internally.
-        env.DEPOT_TOOLS_WIN_TOOLCHAIN = '1'
-        env.GYP_MSVS_HASH_27370823e7 = '01b3b59461'
-        env.DEPOT_TOOLS_WIN_TOOLCHAIN_BASE_URL = 'https://brave-build-deps-public.s3.brave.com/windows-hermetic-toolchain/'
-      }
+    if (!this.gomaServerHost || !this.gomaServerHost.endsWith('.brave.com')) {
+      env.DEPOT_TOOLS_WIN_TOOLCHAIN = '0'
+    } else {
+      // Use hermetic toolchain only internally.
+      env.DEPOT_TOOLS_WIN_TOOLCHAIN = '1'
+      env.GYP_MSVS_HASH_27370823e7 = '01b3b59461'
+      env.DEPOT_TOOLS_WIN_TOOLCHAIN_BASE_URL = 'https://brave-build-deps-public.s3.brave.com/windows-hermetic-toolchain/'
     }
 
     if (this.getCachePath()) {

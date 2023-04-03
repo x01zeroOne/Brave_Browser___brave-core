@@ -69,8 +69,8 @@ template("rust_cxx") {
     output_cc = "{{source_gen_dir}}/{{source_file_part}}.cc"
 
     cxxbridge_executable = "${rustup_home}/bin/cxxbridge"
-    if (is_win) {
-      cxxbridge_executable = "${cxxbridge_executable}.exe"
+    if (host_os == "win") {
+      cxxbridge_executable = cxxbridge_executable + ".exe"
     }
 
     script = "//third_party/rust/cxx/chromium_integration/run_cxxbridge.py"
