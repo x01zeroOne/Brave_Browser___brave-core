@@ -206,6 +206,15 @@ void BraveVPNOSConnectionAPIMac::CreateVPNConnectionImpl(
     [vpn_manager setProtocolConfiguration:CreateProtocolConfig(info)];
     [vpn_manager setLocalizedDescription:base::SysUTF8ToNSString(
                                              info.connection_name())];
+    [vpn_manager setOnDemandEnabled:YES];
+    NEOnDemandRuleConnect* vpn_server_connect_rule =
+        [[NEOnDemandRuleConnect alloc] init];
+    vpn_server_connect_rule.interfaceTypeMatch = NEOnDemandRuleInterfaceTypeAny;
+    vpn_server_connect_rule.probeURL = [NSURL
+        URLWithString:[NSString stringWithFormat:
+                                    @"https://%@/vpnsrv/api/server-status",
+                                    base::SysUTF8ToNSString(info.hostname())]];
+    [vpn_manager setOnDemandRules:@[ vpn_server_connect_rule ]];
 
     [vpn_manager saveToPreferencesWithCompletionHandler:^(NSError* save_error) {
       if (save_error) {
@@ -321,7 +330,16 @@ void BraveVPNOSConnectionAPIMac::DisconnectImpl(const std::string& name) {
       return;
     }
 
-    [[vpn_manager connection] stopVPNTunnel];
+    [vpn_manager setOnDemandEnabled:NO];
+    [vpn_manager saveToPreferencesWithCompletionHandler:^(NSError* save_error) {
+      if (save_error) {
+        SetLastConnectionError(
+            base::SysNSStringToUTF8([save_error localizedDescription]));
+        LOG(ERROR) << "Create - saveToPrefs error: "
+                   << GetLastConnectionError();
+      }
+      [[vpn_manager connection] stopVPNTunnel];
+    }];
   }];
 }
 
