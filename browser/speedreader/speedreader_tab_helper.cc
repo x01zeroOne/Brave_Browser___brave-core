@@ -69,8 +69,7 @@ std::u16string GetSpeedreaderData(
 }
 
 constexpr const char* kPropertyPrefNames[] = {
-    kSpeedreaderPrefTheme, kSpeedreaderPrefFontSize, kSpeedreaderPrefFontFamily,
-    kSpeedreaderPrefContentStyle};
+    kSpeedreaderPrefTheme, kSpeedreaderPrefFontSize, kSpeedreaderPrefFontFamily};
 
 SpeedreaderTabHelper::SpeedreaderTabHelper(content::WebContents* web_contents)
     : content::WebContentsObserver(web_contents),
@@ -226,7 +225,8 @@ SpeedreaderBubbleView* SpeedreaderTabHelper::speedreader_bubble_view() const {
 bool SpeedreaderTabHelper::MaybeUpdateCachedState(
     content::NavigationHandle* handle) {
   auto* entry = handle->GetNavigationEntry();
-  if (!entry || handle->GetRestoreType() != content::RestoreType::kRestored) {
+  if (!entry || (handle->GetRestoreType() != content::RestoreType::kRestored &&
+                 !handle->IsServedFromBackForwardCache())) {
     return false;
   }
   auto* speedreader_service =
@@ -282,13 +282,7 @@ void SpeedreaderTabHelper::SetNextRequestState(DistillState state) {
 
 void SpeedreaderTabHelper::OnBubbleClosed() {
   speedreader_bubble_ = nullptr;
-  UpdateButtonIfNeeded();
-
-  // auto* contents = web_contents();
-  // Browser* browser = chrome::FindBrowserWithWebContents(contents);
-  // if (browser) {
-  //   static_cast<BraveBrowserWindow*>(browser->window())->ShowSpeedreaderWebUIBubble(browser);
-  // }
+  UpdateUI();
 }
 
 void SpeedreaderTabHelper::ShowSpeedreaderBubble() {
@@ -297,6 +291,18 @@ void SpeedreaderTabHelper::ShowSpeedreaderBubble() {
 
 void SpeedreaderTabHelper::ShowReaderModeBubble() {
   ShowBubble(false);
+}
+
+void SpeedreaderTabHelper::ShowReaderModeToolbar() {
+  Browser* browser = chrome::FindBrowserWithWebContents(web_contents());
+  static_cast<BraveBrowserWindow*>(browser->window())
+      ->ShowReaderModeToolbar(browser);
+}
+
+void SpeedreaderTabHelper::HideReaderModeToolbar() {
+  Browser* browser = chrome::FindBrowserWithWebContents(web_contents());
+  static_cast<BraveBrowserWindow*>(browser->window())
+      ->HideReaderModeToolbar();
 }
 
 Profile* SpeedreaderTabHelper::GetProfile() const {
@@ -311,12 +317,6 @@ void SpeedreaderTabHelper::ShowBubble(bool is_bubble_speedreader) {
   auto* contents = web_contents();
   Browser* browser = chrome::FindBrowserWithWebContents(contents);
   DCHECK(browser);
-
-  if (speedreader::IsSpeedreaderPanelV2Enabled()) {
-    static_cast<BraveBrowserWindow*>(browser->window())
-        ->ShowSpeedreaderWebUIBubble(browser);
-    return;
-  }
 
   speedreader_bubble_ =
       static_cast<BraveBrowserWindow*>(browser->window())
@@ -336,89 +336,32 @@ void SpeedreaderTabHelper::OnShowOriginalPage() {
   ReloadContents();
 }
 
-void SpeedreaderTabHelper::SetTheme(Theme theme) {
+mojom::SiteSettingsPtr SpeedreaderTabHelper::GetSiteSettings() {
+  auto* speedreader_service =
+      SpeedreaderServiceFactory::GetForProfile(GetProfile());
+  if (!speedreader_service) {
+    return nullptr;
+  }
+
+  auto settings = speedreader_service->GetSiteSettings();
+
+  settings.is_enabled = IsEnabledForSite();
+  settings.host = web_contents()->GetLastCommittedURL().host();
+
+  return settings.Clone();
+}
+
+void SpeedreaderTabHelper::SetSiteSettings(
+    const mojom::SiteSettings& site_settings) {
   auto* speedreader_service =
       SpeedreaderServiceFactory::GetForProfile(GetProfile());
   if (!speedreader_service) {
     return;
   }
 
-  if (speedreader_service->GetTheme() == theme) {
-    return;
-  }
-  speedreader_service->SetTheme(theme);
-}
+  MaybeToggleEnabledForSite(site_settings.is_enabled);
 
-Theme SpeedreaderTabHelper::GetTheme() {
-  const Theme theme =
-      SpeedreaderServiceFactory::GetForProfile(GetProfile())->GetTheme();
-  if (theme == Theme::kNone) {
-    switch (dark_mode::GetActiveBraveDarkModeType()) {
-      case dark_mode::BraveDarkModeType::BRAVE_DARK_MODE_TYPE_DARK:
-        return Theme::kDark;
-      case dark_mode::BraveDarkModeType::BRAVE_DARK_MODE_TYPE_DEFAULT:
-      case dark_mode::BraveDarkModeType::BRAVE_DARK_MODE_TYPE_LIGHT:
-        return Theme::kLight;
-    }
-  }
-  return theme;
-}
-
-void SpeedreaderTabHelper::SetFontFamily(FontFamily font) {
-  auto* speedreader_service =
-      SpeedreaderServiceFactory::GetForProfile(GetProfile());
-  if (!speedreader_service) {
-    return;
-  }
-  if (speedreader_service->GetFontFamily() == font) {
-    return;
-  }
-
-  speedreader_service->SetFontFamily(font);
-}
-
-FontFamily SpeedreaderTabHelper::GetFontFamily() {
-  return SpeedreaderServiceFactory::GetForProfile(GetProfile())
-      ->GetFontFamily();
-}
-
-void SpeedreaderTabHelper::SetFontSize(FontSize size) {
-  auto* speedreader_service =
-      SpeedreaderServiceFactory::GetForProfile(GetProfile());
-  if (!speedreader_service) {
-    return;
-  }
-  if (speedreader_service->GetFontSize() == size) {
-    return;
-  }
-
-  speedreader_service->SetFontSize(size);
-}
-
-FontSize SpeedreaderTabHelper::GetFontSize() const {
-  return SpeedreaderServiceFactory::GetForProfile(GetProfile())->GetFontSize();
-}
-
-void SpeedreaderTabHelper::SetContentStyle(ContentStyle style) {
-  auto* speedreader_service =
-      SpeedreaderServiceFactory::GetForProfile(GetProfile());
-  if (!speedreader_service) {
-    return;
-  }
-  if (speedreader_service->GetContentStyle() == style) {
-    return;
-  }
-
-  speedreader_service->SetContentStyle(style);
-}
-
-ContentStyle SpeedreaderTabHelper::GetContentStyle() {
-  return SpeedreaderServiceFactory::GetForProfile(GetProfile())
-      ->GetContentStyle();
-}
-
-std::string SpeedreaderTabHelper::GetCurrentSiteURL() {
-  return web_contents()->GetLastCommittedURL().host();
+  speedreader_service->SetSiteSettings(site_settings);
 }
 
 void SpeedreaderTabHelper::ClearPersistedData() {
@@ -436,13 +379,14 @@ void SpeedreaderTabHelper::ProcessNavigation(
   if (!navigation_handle->IsInPrimaryMainFrame() ||
       navigation_handle->IsSameDocument() ||
       MaybeUpdateCachedState(navigation_handle)) {
+    UpdateUI();
     return;
   }
 
   original_page_shown_ = show_original_page_;
 
   UpdateActiveState(navigation_handle->GetURL());
-  UpdateButtonIfNeeded();
+  UpdateUI();
 }
 
 void SpeedreaderTabHelper::OnPrefChanged() {
@@ -479,7 +423,7 @@ void SpeedreaderTabHelper::OnPrefChanged() {
       break;
   }
 
-  UpdateButtonIfNeeded();
+  UpdateUI();
 }
 
 void SpeedreaderTabHelper::OnPropertyPrefChanged(const std::string& path) {
@@ -502,13 +446,10 @@ void SpeedreaderTabHelper::OnPropertyPrefChanged(const std::string& path) {
   } else if (path == kSpeedreaderPrefFontSize) {
     SetDocumentAttribute("data-font-size",
                          speedreader_service->GetFontSizeName());
-  } else if (path == kSpeedreaderPrefContentStyle) {
-    SetDocumentAttribute("data-content-style",
-                         speedreader_service->GetContentStyleName());
   }
 }
 
-void SpeedreaderTabHelper::UpdateButtonIfNeeded() {
+void SpeedreaderTabHelper::UpdateUI() {
   if (PageStateIsDistilled(distill_state_)) {
     UpdateState(State::kDistilled);
   } else if (PageSupportsDistillation(distill_state_)) {
@@ -521,6 +462,12 @@ void SpeedreaderTabHelper::UpdateButtonIfNeeded() {
     return;
   }
 #if !BUILDFLAG(IS_ANDROID)
+  if (PageStateIsDistilled(PageDistillState())) {
+    ShowReaderModeToolbar();
+  } else {
+    HideReaderModeToolbar();
+  }
+
   if (const auto* browser =
           chrome::FindBrowserWithWebContents(web_contents())) {
     browser->window()->UpdatePageActionIcon(PageActionIconType::kReaderMode);
@@ -553,18 +500,19 @@ void SpeedreaderTabHelper::DOMContentLoaded(
     if (rewriter_service && rewriter_service->URLLooksReadable(
                                 web_contents()->GetLastCommittedURL())) {
       distill_state_ = DistillState::kPageProbablyReadable;
-      UpdateButtonIfNeeded();
+      UpdateUI();
     }
     return;
   }
 
   if (!PageWantsDistill(distill_state_)) {
     return;
+  } else {
+    UpdateUI();
   }
 
-  static base::NoDestructor<std::u16string> kSpeedreaderData(GetSpeedreaderData(
-      {{"showOriginalLinkText", IDS_SPEEDREADER_SHOW_ORIGINAL_PAGE_LINK},
-       {"minutesText", IDS_SPEEDREADER_MINUTES_TEXT}}));
+  static base::NoDestructor<std::u16string> kSpeedreaderData(
+      GetSpeedreaderData({{"minutesText", IDS_SPEEDREADER_MINUTES_TEXT}}));
 
   static base::NoDestructor<std::u16string> kJsScript(base::UTF8ToUTF16(
       ui::ResourceBundle::GetSharedInstance().LoadDataResourceString(
@@ -579,6 +527,7 @@ void SpeedreaderTabHelper::DOMContentLoaded(
 
 void SpeedreaderTabHelper::OnVisibilityChanged(content::Visibility visibility) {
   is_visible_ = visibility != content::Visibility::HIDDEN;
+  UpdateUI();
 }
 
 void SpeedreaderTabHelper::WebContentsDestroyed() {
@@ -622,7 +571,7 @@ void SpeedreaderTabHelper::OnDistillComplete(DistillationResult result) {
            distill_state_ == DistillState::kReaderMode);
   }
 
-  UpdateButtonIfNeeded();
+  UpdateUI();
 }
 
 void SpeedreaderTabHelper::OnResult(
@@ -631,7 +580,7 @@ void SpeedreaderTabHelper::OnResult(
     if (result.is_distillable) {
       // Page detected as non-readable by URL, but readable by content.
       distill_state_ = DistillState::kPageProbablyReadable;
-      UpdateButtonIfNeeded();
+      UpdateUI();
     }
   }
 }
@@ -664,7 +613,7 @@ void SpeedreaderTabHelper::OnGetDocumentSource(bool success, std::string html) {
   if (!success) {
     // TODO(boocmp): Show error dialog [Distillation failed on this page].
     SetNextRequestState(DistillState::kPageProbablyReadable);
-    UpdateButtonIfNeeded();
+    UpdateUI();
     return;
   }
 
