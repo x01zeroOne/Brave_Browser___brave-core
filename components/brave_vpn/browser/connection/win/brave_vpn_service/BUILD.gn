@@ -32,7 +32,7 @@ source_set("common") {
 }
 
 
-executable("brave_vpn_wg_service") {
+executable("brave_vpn_service") {
   sources = [
     "main.cc",
     "service_main.cc",
@@ -56,6 +56,6 @@ executable("brave_vpn_wg_service") {
 }
 
 process_version_rc_template("version_resources") {
-  sources = [ "brave_vpn_wg_service.ver" ]
-  output = "$target_gen_dir/brave_vpn_wg_service.rc"
+  sources = [ "brave_vpn_service.ver" ]
+  output = "$target_gen_dir/brave_vpn_service.rc"
 }

@@ -1,4 +1,4 @@
-#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_wg_service/service_utils.h"
+#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_utils.h"
 
 namespace brave_vpn {
 

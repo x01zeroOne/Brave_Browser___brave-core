@@ -11,8 +11,8 @@
 #include "base/logging.h"
 #include "base/process/memory.h"
 #include "base/strings/utf_string_conversions.h"
-#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_wg_service/service_constants.h"
-#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_wg_service/service_utils.h"
+#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_constants.h"
+#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_utils.h"
 #include "base/win/process_startup_helper.h"
 
 
