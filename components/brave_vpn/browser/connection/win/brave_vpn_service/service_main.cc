@@ -3,7 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_helper/service_main.h"
+#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_main.h"
 
 #include <utility>
 
@@ -14,8 +14,7 @@
 #include "base/task/single_thread_task_executor.h"
 #include "base/task/thread_pool.h"
 #include "base/threading/thread_restrictions.h"
-#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_helper/brave_vpn_helper_constants.h"
-#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_helper/brave_vpn_helper_state.h"
+#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_utils.h"
 
 namespace brave_vpn {
 namespace {
@@ -34,12 +33,6 @@ bool ServiceMain::InitWithCommandLine(const base::CommandLine* command_line) {
   if (!args.empty()) {
     LOG(ERROR) << "No positional parameters expected.";
     return false;
-  }
-
-  // Crash itself if crash-me was used.
-  if (command_line->HasSwitch(kBraveVpnHelperCrashMe)) {
-    CHECK(!command_line->HasSwitch(kBraveVpnHelperCrashMe))
-        << "--crash-me was used.";
   }
 
   // Run interactively if needed.
@@ -139,7 +132,7 @@ HRESULT ServiceMain::Run() {
       base::MessagePumpType::UI);
   base::RunLoop loop;
   quit_ = loop.QuitClosure();
-  dns_handler_.StartVPNConnectionChangeMonitoring();
+
   loop.Run();
   return S_OK;
 }

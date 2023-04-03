@@ -13,12 +13,11 @@
 #include "base/strings/utf_string_conversions.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_constants.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_utils.h"
+#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_main.h"
 #include "base/win/process_startup_helper.h"
 
 
 namespace {
-const char kUserDataDir[] = "user-data-dir";
-const char kProcessType[] = "type";
 const char kLogFile[] = "log-file";
 }  // namespace
 
@@ -48,7 +47,7 @@ int main(int argc, char* argv[]) {
   // Register vpn helper service in the system.
   if (command_line->HasSwitch(brave_vpn::kBraveWgServiceInstall)) {
     auto success = brave_vpn::ConfigureServiceAutoRestart(
-        brave_vpn::GetVpnServiceName(), brave_vpn::GetBraveVPNConnectionName());
+        brave_vpn::GetVpnServiceName());
     return success ? 0 : 1;
   }
 

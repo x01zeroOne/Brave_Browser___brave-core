@@ -1,18 +1,16 @@
-/* Copyright (c) 2022 The Brave Authors. All rights reserved.
+/* Copyright (c) 2023 The Brave Authors. All rights reserved.
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#ifndef BRAVE_COMPONENTS_BRAVE_VPN_BROWSER_CONNECTION_WIN_BRAVE_VPN_HELPER_SERVICE_MAIN_H_
-#define BRAVE_COMPONENTS_BRAVE_VPN_BROWSER_CONNECTION_WIN_BRAVE_VPN_HELPER_SERVICE_MAIN_H_
+#ifndef BRAVE_COMPONENTS_BRAVE_VPN_BROWSER_CONNECTION_WIN_BRAVE_VPN_SERVICE_SERVICE_MAIN_H_
+#define BRAVE_COMPONENTS_BRAVE_VPN_BROWSER_CONNECTION_WIN_BRAVE_VPN_SERVICE_SERVICE_MAIN_H_
 
 #include <windows.h>
 
 #include "base/functional/callback.h"
-#include "base/memory/scoped_refptr.h"
 #include "base/no_destructor.h"
-#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_helper/brave_vpn_dns_delegate.h"
-#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_helper/vpn_dns_handler.h"
+
 
 namespace base {
 class CommandLine;
@@ -20,7 +18,7 @@ class CommandLine;
 
 namespace brave_vpn {
 
-class ServiceMain : public brave_vpn::BraveVpnDnsDelegate {
+class ServiceMain {
  public:
   static ServiceMain* GetInstance();
 
@@ -33,14 +31,13 @@ class ServiceMain : public brave_vpn::BraveVpnDnsDelegate {
   // Start() is the entry point called by WinMain.
   int Start();
 
-  // brave_vpn::BraveVpnDnsDelegate:
-  void SignalExit() override;
-
  private:
   friend class base::NoDestructor<ServiceMain>;
 
   ServiceMain();
   ~ServiceMain();
+
+  void SignalExit();
 
   // This function handshakes with the service control manager and starts
   // the service.
@@ -69,7 +66,6 @@ class ServiceMain : public brave_vpn::BraveVpnDnsDelegate {
   // The action routine to be executed.
   int (ServiceMain::*run_routine_)();
 
-  VpnDnsHandler dns_handler_{this};
   SERVICE_STATUS_HANDLE service_status_handle_;
   SERVICE_STATUS service_status_;
   base::OnceClosure quit_;
@@ -77,4 +73,4 @@ class ServiceMain : public brave_vpn::BraveVpnDnsDelegate {
 
 }  // namespace brave_vpn
 
-#endif  // BRAVE_COMPONENTS_BRAVE_VPN_BROWSER_CONNECTION_WIN_BRAVE_VPN_HELPER_SERVICE_MAIN_H_
+#endif  // BRAVE_COMPONENTS_BRAVE_VPN_BROWSER_CONNECTION_WIN_BRAVE_VPN_SERVICE_SERVICE_MAIN_H_

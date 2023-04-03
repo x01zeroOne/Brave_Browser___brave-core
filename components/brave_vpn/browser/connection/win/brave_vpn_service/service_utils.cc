@@ -1,9 +1,32 @@
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_utils.h"
 
+#include "base/logging.h"
+#include "chrome/install_static/install_util.h"
+#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/scoped_sc_handle.h"
+
 namespace brave_vpn {
 
-bool ConfigureServiceAutoRestart(const std::wstring& service_name,
-                                 const std::wstring& brave_vpn_entry) {
+namespace {
+
+HRESULT HRESULTFromLastError() {
+  const auto error_code = ::GetLastError();
+  return (error_code != NO_ERROR) ? HRESULT_FROM_WIN32(error_code) : E_FAIL;
+}
+
+}  // namespace
+
+std::wstring GetVpnServiceDisplayName() {
+  static constexpr wchar_t kBraveVpnServiceDisplayName[] = L" Vpn Service";
+  return install_static::GetBaseAppName() + kBraveVpnServiceDisplayName;
+}
+
+std::wstring GetVpnServiceName() {
+  std::wstring name = GetVpnServiceDisplayName();
+  name.erase(std::remove_if(name.begin(), name.end(), isspace), name.end());
+  return name;
+}
+
+bool ConfigureServiceAutoRestart(const std::wstring& service_name) {
   ScopedScHandle scm(::OpenSCManager(nullptr, nullptr, SC_MANAGER_CONNECT));
   if (!scm.IsValid()) {
     LOG(ERROR) << "::OpenSCManager failed. service_name: " << service_name
@@ -23,11 +46,7 @@ bool ConfigureServiceAutoRestart(const std::wstring& service_name,
                << HRESULTFromLastError();
     return false;
   }
-  if (!SetServiceTriggerForVPNConnection(service.Get(), brave_vpn_entry)) {
-    LOG(ERROR) << "SetServiceTriggerForVPNConnection failed:" << std::hex
-               << HRESULTFromLastError();
-    return false;
-  }
+
   return true;
 }
 
