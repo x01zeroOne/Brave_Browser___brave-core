@@ -38,8 +38,6 @@ int main(int argc, char* argv[]) {
   // The exit manager is in charge of calling the dtors of singletons.
   base::AtExitManager exit_manager;
   // Make sure the process exits cleanly on unexpected errors.
-  base::EnableTerminationOnHeapCorruption();
-  base::EnableTerminationOnOutOfMemory();
   base::win::RegisterInvalidParamHandler();
   
   base::win::SetupCRT(*command_line);
@@ -47,7 +45,7 @@ int main(int argc, char* argv[]) {
   // Register vpn helper service in the system.
   if (command_line->HasSwitch(brave_vpn::kBraveWgServiceInstall)) {
     auto success =
-        brave_vpn::ConfigureServiceAutoRestart(brave_vpn::GetVpnServiceName());
+        brave_vpn::ConfigureService(brave_vpn::GetVpnServiceName());
     return success ? 0 : 1;
   }
 

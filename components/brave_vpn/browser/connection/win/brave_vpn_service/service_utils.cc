@@ -5,6 +5,9 @@
 
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_utils.h"
 
+#include "base/files/file_path.h"
+#include "base/base_paths.h"
+#include "base/path_service.h"
 #include "base/logging.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/scoped_sc_handle.h"
 #include "chrome/install_static/install_util.h"
@@ -21,7 +24,7 @@ HRESULT HRESULTFromLastError() {
 }  // namespace
 
 std::wstring GetVpnServiceDisplayName() {
-  static constexpr wchar_t kBraveVpnServiceDisplayName[] = L" Vpn Service";
+  static constexpr wchar_t kBraveVpnServiceDisplayName[] = L" Vpn WG Service";
   return install_static::GetBaseAppName() + kBraveVpnServiceDisplayName;
 }
 
@@ -31,27 +34,41 @@ std::wstring GetVpnServiceName() {
   return name;
 }
 
-bool ConfigureServiceAutoRestart(const std::wstring& service_name) {
-  ScopedScHandle scm(::OpenSCManager(nullptr, nullptr, SC_MANAGER_CONNECT));
+bool ConfigureService(const std::wstring& service_name) {
+  ScopedScHandle scm(::OpenSCManager(nullptr, nullptr, SC_MANAGER_ALL_ACCESS));
   if (!scm.IsValid()) {
     LOG(ERROR) << "::OpenSCManager failed. service_name: " << service_name
                << ", error: " << std::hex << HRESULTFromLastError();
     return false;
   }
+  base::FilePath exe_path;
+  if (!base::PathService::Get(base::FILE_EXE, &exe_path))
+    return S_OK;
+
   ScopedScHandle service(
-      ::OpenService(scm.Get(), service_name.c_str(), SERVICE_ALL_ACCESS));
+      ::CreateService(scm.Get(), service_name.c_str(), service_name.c_str(),
+        SERVICE_ALL_ACCESS, SERVICE_WIN32_OWN_PROCESS, SERVICE_DEMAND_START,
+        SERVICE_ERROR_NORMAL, exe_path.value().c_str(), NULL, NULL, L"Nsi\0TcpIp\0",
+        NULL, NULL));
   if (!service.IsValid()) {
-    LOG(ERROR) << "::OpenService failed. service_name: " << service_name
+    LOG(ERROR) << "Failed to create service_name: " << service_name
                << ", error: " << std::hex << HRESULTFromLastError();
     return false;
   }
-
+  SERVICE_SID_INFO info = {};
+  info.dwServiceSidType = SERVICE_SID_TYPE_UNRESTRICTED;
+  if (!ChangeServiceConfig2(service.Get(),
+                            SERVICE_CONFIG_SERVICE_SID_INFO,
+                            &info)) {
+      LOG(ERROR) << "ChangeServiceConfig2 failed:" << std::hex
+               << HRESULTFromLastError();
+      return false;
+  }
   if (!SetServiceFailActions(service.Get())) {
     LOG(ERROR) << "SetServiceFailActions failed:" << std::hex
                << HRESULTFromLastError();
     return false;
   }
-
   return true;
 }
 

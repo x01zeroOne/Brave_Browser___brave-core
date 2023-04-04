@@ -5,19 +5,27 @@
 
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_main.h"
 
+#include <windows.h>
 #include <utility>
 
 #include "base/command_line.h"
+#include "base/files/file_path.h"
 #include "base/logging.h"
 #include "base/no_destructor.h"
 #include "base/run_loop.h"
+#include "base/path_service.h"
 #include "base/task/single_thread_task_executor.h"
-#include "base/task/thread_pool.h"
+#include "base/strings/utf_string_conversions.h"
 #include "base/threading/thread_restrictions.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_utils.h"
 
 namespace brave_vpn {
 namespace {
+HRESULT HRESULTFromLastError() {
+  const auto error_code = ::GetLastError();
+  return (error_code != NO_ERROR) ? HRESULT_FROM_WIN32(error_code) : E_FAIL;
+}
+
 // Command line switch "--console" runs the service interactively for
 // debugging purposes.
 constexpr char kConsoleSwitchName[] = "console";
@@ -40,7 +48,6 @@ bool ServiceMain::InitWithCommandLine(const base::CommandLine* command_line) {
   if (command_line->HasSwitch(kConsoleSwitchName)) {
     run_routine_ = &ServiceMain::RunInteractive;
   }
-  VLOG(1) << __func__ << " true";
   return true;
 }
 
@@ -130,19 +137,37 @@ void ServiceMain::SetServiceStatus(DWORD state) {
 
 HRESULT ServiceMain::Run() {
   VLOG(1) << __func__;
-  base::SingleThreadTaskExecutor service_task_executor(
-      base::MessagePumpType::UI);
-  base::RunLoop loop;
-  quit_ = loop.QuitClosure();
+ 
+  typedef bool WireGuardTunnelService(const LPCWSTR settings);
+  base::FilePath directory;
+  if (!base::PathService::Get(base::DIR_EXE, &directory))
+    return S_OK;
+  auto tunnel_dll_path = directory.Append(L"tunnel.dll").value();
+  VLOG(1) << __func__ << ": Loading " << tunnel_dll_path;
+  HMODULE tunnel_lib = LoadLibrary(tunnel_dll_path.c_str());
+  if (!tunnel_lib) {
+      VLOG(1) << __func__ << ": tunnel.dll not found, error: " <<  logging::SystemErrorCodeToString(logging::GetLastSystemErrorCode());
+      return S_OK;
+  }
 
-  //loop.Run();
+  WireGuardTunnelService* tunnel_proc = reinterpret_cast<WireGuardTunnelService*>(GetProcAddress(tunnel_lib, "WireGuardTunnelService"));
+  if (!tunnel_proc) {
+      VLOG(1) << __func__ << ": WireGuardTunnelService not found error: " << logging::SystemErrorCodeToString(logging::GetLastSystemErrorCode());
+      return S_OK;
+  }
+
+  auto config_path = directory.Append(L"brave.conf").value();
+  VLOG(1) << __func__ << ": Brave " << config_path;
+  auto result = tunnel_proc(config_path.c_str());
+  
+  if (!result) {
+    VLOG(1) << __func__ << ": failed to activate tunnel service:" << logging::SystemErrorCodeToString(logging::GetLastSystemErrorCode()) << " -> " << std::hex << HRESULTFromLastError();
+  }
   return S_OK;
 }
 
 void ServiceMain::SignalExit() {
   VLOG(1) << __func__;
-
-  std::move(quit_).Run();
 }
 
 }  // namespace brave_vpn
