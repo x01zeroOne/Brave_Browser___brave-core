@@ -20,12 +20,8 @@ config("no-missing-braces") {
 source_set("common") {
   sources = [ "scoped_sc_handle.h" ]
 
-  public_deps = [ "//brave/components/brave_vpn/common/buildflags" ]
-
   deps = [
     "//base",
-    "//brave/components/brave_vpn/common",
-    "//chrome/install_static:install_static_util",
   ]
 }
 

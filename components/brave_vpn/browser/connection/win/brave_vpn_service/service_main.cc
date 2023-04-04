@@ -29,6 +29,7 @@ ServiceMain* ServiceMain::GetInstance() {
 }
 
 bool ServiceMain::InitWithCommandLine(const base::CommandLine* command_line) {
+  VLOG(1) << __func__ << ":" << command_line->GetCommandLineString();
   const base::CommandLine::StringVector args = command_line->GetArgs();
   if (!args.empty()) {
     LOG(ERROR) << "No positional parameters expected.";
@@ -39,7 +40,7 @@ bool ServiceMain::InitWithCommandLine(const base::CommandLine* command_line) {
   if (command_line->HasSwitch(kConsoleSwitchName)) {
     run_routine_ = &ServiceMain::RunInteractive;
   }
-
+  VLOG(1) << __func__ << " true";
   return true;
 }
 
@@ -60,12 +61,13 @@ ServiceMain::ServiceMain()
 ServiceMain::~ServiceMain() = default;
 
 int ServiceMain::RunAsService() {
+  VLOG(1) << __func__;
   const std::wstring& service_name(brave_vpn::GetVpnServiceName());
   const SERVICE_TABLE_ENTRY dispatch_table[] = {
       {const_cast<LPTSTR>(service_name.c_str()),
        &ServiceMain::ServiceMainEntry},
       {nullptr, nullptr}};
-
+  
   if (!::StartServiceCtrlDispatcher(dispatch_table)) {
     service_status_.dwWin32ExitCode = ::GetLastError();
     LOG(ERROR) << "Failed to connect to the service control manager:"
@@ -133,7 +135,7 @@ HRESULT ServiceMain::Run() {
   base::RunLoop loop;
   quit_ = loop.QuitClosure();
 
-  loop.Run();
+  //loop.Run();
   return S_OK;
 }
 
