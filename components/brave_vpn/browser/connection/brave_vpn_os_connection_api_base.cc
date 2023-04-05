@@ -470,6 +470,9 @@ void BraveVPNOSConnectionAPIBase::OnGetProfileCredentials(
 
   absl::optional<base::Value> value =
       base::JSONReader::Read(profile_credential);
+  if (value) {
+    LOG(ERROR) << value->DebugString();
+  }
   if (value && value->is_dict()) {
     constexpr char kUsernameKey[] = "eap-username";
     constexpr char kPasswordKey[] = "eap-password";

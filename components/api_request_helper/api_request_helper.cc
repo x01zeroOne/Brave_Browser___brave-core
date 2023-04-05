@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "base/json/json_writer.h"
+#include "base/json/json_reader.h"
 #include "net/base/load_flags.h"
 #include "net/http/http_status_code.h"
 #include "services/data_decoder/public/cpp/data_decoder.h"
@@ -28,7 +29,7 @@ void OnParseJsonIsolated(
     APIRequestHelper::ResultCallback result_callback,
     data_decoder::DataDecoder::ValueOrError result) {
   if (!result.has_value()) {
-    VLOG(1) << "Response validation error:" << result.error();
+    LOG(ERROR) << "Response validation error:" << result.error();
     std::move(result_callback)
         .Run(APIRequestResult(http_code, "", base::Value(), std::move(headers),
                               error_code, final_url));
@@ -269,6 +270,7 @@ void APIRequestHelper::OnResponse(
     raw_body = converted_body.value();
   }
 
+  LOG(ERROR) << "raw_body:" << raw_body << "*";
   data_decoder::DataDecoder::ParseJsonIsolated(
       raw_body,
       base::BindOnce(&OnParseJsonIsolated, response_code, std::move(headers),
