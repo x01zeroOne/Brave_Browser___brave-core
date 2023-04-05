@@ -39,6 +39,8 @@ RasOperationResult RemoveEntry(const std::wstring& entry_name);
 RasOperationResult DisconnectEntry(const std::wstring& entry_name);
 RasOperationResult ConnectEntry(const std::wstring& entry_name);
 CheckConnectionResult CheckConnection(const std::wstring& entry_name);
+bool WireGuardGenerateKeypair(std::string* public_key,
+                              std::string* private_key);
 
 }  // namespace internal
 

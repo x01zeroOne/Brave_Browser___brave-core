@@ -5,12 +5,14 @@
 
 #include "brave/components/brave_vpn/browser/connection/win/utils.h"
 
+#include <stdint.h>
 #include <windows.h>
 
 #include <ras.h>
 #include <raserror.h>
 #include <stdio.h>
 
+#include "base/base64.h"
 #include "base/files/file_util.h"
 #include "base/logging.h"
 #include "base/path_service.h"
@@ -562,6 +564,53 @@ CheckConnectionResult CheckConnection(const std::wstring& entry_name) {
     }
   }
   return result;
+}
+
+bool WireGuardGenerateKeypair(std::string* public_key,
+                              std::string* private_key) {
+  base::FilePath directory;
+  if (!base::PathService::Get(base::DIR_EXE, &directory)) {
+    VLOG(1) << __func__ << ": executable path not found, error: "
+            << logging::SystemErrorCodeToString(
+                   logging::GetLastSystemErrorCode());
+    return false;
+  }
+  auto tunnel_dll_path = directory.Append(L"tunnel.dll").value();
+  VLOG(1) << __func__ << ": Loading " << tunnel_dll_path;
+  HMODULE tunnel_lib = LoadLibrary(tunnel_dll_path.c_str());
+  if (!tunnel_lib) {
+    VLOG(1) << __func__ << ": tunnel.dll not found, error: "
+            << logging::SystemErrorCodeToString(
+                   logging::GetLastSystemErrorCode());
+    return false;
+  }
+
+  typedef bool WireGuardGenerateKeypair(uint8_t[32], uint8_t[32]);
+  std::vector<uint8_t> public_key_bytes(32);
+  std::vector<uint8_t> private_key_bytes(32);
+  WireGuardGenerateKeypair* generate_proc =
+      reinterpret_cast<WireGuardGenerateKeypair*>(
+          GetProcAddress(tunnel_lib, "WireGuardGenerateKeypair"));
+  if (!generate_proc) {
+    VLOG(ERROR) << __func__ << ": WireGuardGenerateKeypair not found error: "
+                << logging::SystemErrorCodeToString(
+                       logging::GetLastSystemErrorCode());
+    return false;
+  }
+  auto result =
+      generate_proc(public_key_bytes.data(), private_key_bytes.data());
+
+  if (result) {
+    return false;
+  }
+
+  *public_key = base::Base64Encode(base::span<const uint8_t>(public_key_bytes));
+  *private_key =
+      base::Base64Encode(base::span<const uint8_t>(private_key_bytes));
+  LOG(ERROR) << "public_key:" << *public_key << " private_key:" << *private_key;
+  LOG(ERROR) << private_key->size();
+  LOG(ERROR) << public_key->size();
+  return true;
 }
 
 }  // namespace internal

@@ -13,6 +13,7 @@
 #include "base/json/json_reader.h"
 #include "base/power_monitor/power_monitor.h"
 #include "brave/components/brave_vpn/browser/api/brave_vpn_api_helper.h"
+#include "brave/components/brave_vpn/browser/connection/win/utils.h"
 #include "brave/components/brave_vpn/common/brave_vpn_constants.h"
 #include "brave/components/brave_vpn/common/brave_vpn_data_types.h"
 #include "brave/components/brave_vpn/common/brave_vpn_utils.h"
@@ -440,17 +441,23 @@ void BraveVPNOSConnectionAPIBase::ParseAndCacheHostnames(
   VLOG(2) << __func__ << " : request profile credential:"
           << GetBraveVPNPaymentsEnv(GetCurrentEnvironment());
 
-  GetAPIRequest()->GetProfileCredentials(
+  std::string private_key;
+  std::string public_key;
+  LOG(ERROR) << brave_vpn::internal::WireGuardGenerateKeypair(&public_key,
+                                                              &private_key);
+  LOG(ERROR) << "public_key:" << public_key << " private_key:" << private_key;
+
+  GetAPIRequest()->GetWireguardProfileCredentials(
       base::BindOnce(&BraveVPNOSConnectionAPIBase::OnGetProfileCredentials,
                      base::Unretained(this)),
-      GetSubscriberCredential(local_prefs_), hostname_->hostname);
+      GetSubscriberCredential(local_prefs_), public_key, hostname_->hostname);
 }
 
 void BraveVPNOSConnectionAPIBase::OnGetProfileCredentials(
     const std::string& profile_credential,
     bool success) {
   DCHECK(!cancel_connecting_);
-
+  LOG(ERROR) << profile_credential;
   if (!success) {
     VLOG(2) << __func__ << " : failed to get profile credential";
     UpdateAndNotifyConnectionStateChange(ConnectionState::CONNECT_FAILED);

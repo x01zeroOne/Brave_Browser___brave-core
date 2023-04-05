@@ -12,10 +12,10 @@
 #include "base/files/file_path.h"
 #include "base/logging.h"
 #include "base/no_destructor.h"
-#include "base/run_loop.h"
 #include "base/path_service.h"
-#include "base/task/single_thread_task_executor.h"
+#include "base/run_loop.h"
 #include "base/strings/utf_string_conversions.h"
+#include "base/task/single_thread_task_executor.h"
 #include "base/threading/thread_restrictions.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_utils.h"
 
@@ -74,7 +74,7 @@ int ServiceMain::RunAsService() {
       {const_cast<LPTSTR>(service_name.c_str()),
        &ServiceMain::ServiceMainEntry},
       {nullptr, nullptr}};
-  
+
   if (!::StartServiceCtrlDispatcher(dispatch_table)) {
     service_status_.dwWin32ExitCode = ::GetLastError();
     LOG(ERROR) << "Failed to connect to the service control manager:"
@@ -137,31 +137,42 @@ void ServiceMain::SetServiceStatus(DWORD state) {
 
 HRESULT ServiceMain::Run() {
   VLOG(1) << __func__;
- 
+
   typedef bool WireGuardTunnelService(const LPCWSTR settings);
+
   base::FilePath directory;
-  if (!base::PathService::Get(base::DIR_EXE, &directory))
+  if (!base::PathService::Get(base::DIR_EXE, &directory)) {
     return S_OK;
+  }
   auto tunnel_dll_path = directory.Append(L"tunnel.dll").value();
   VLOG(1) << __func__ << ": Loading " << tunnel_dll_path;
   HMODULE tunnel_lib = LoadLibrary(tunnel_dll_path.c_str());
   if (!tunnel_lib) {
-      VLOG(1) << __func__ << ": tunnel.dll not found, error: " <<  logging::SystemErrorCodeToString(logging::GetLastSystemErrorCode());
-      return S_OK;
+    VLOG(1) << __func__ << ": tunnel.dll not found, error: "
+            << logging::SystemErrorCodeToString(
+                   logging::GetLastSystemErrorCode());
+    return S_OK;
   }
 
-  WireGuardTunnelService* tunnel_proc = reinterpret_cast<WireGuardTunnelService*>(GetProcAddress(tunnel_lib, "WireGuardTunnelService"));
+  WireGuardTunnelService* tunnel_proc =
+      reinterpret_cast<WireGuardTunnelService*>(
+          GetProcAddress(tunnel_lib, "WireGuardTunnelService"));
   if (!tunnel_proc) {
-      VLOG(1) << __func__ << ": WireGuardTunnelService not found error: " << logging::SystemErrorCodeToString(logging::GetLastSystemErrorCode());
-      return S_OK;
+    VLOG(1) << __func__ << ": WireGuardTunnelService not found error: "
+            << logging::SystemErrorCodeToString(
+                   logging::GetLastSystemErrorCode());
+    return S_OK;
   }
 
-  auto config_path = directory.Append(L"brave.conf").value();
+  auto config_path = directory.Append(L"brave.test.conf").value();
   VLOG(1) << __func__ << ": Brave " << config_path;
   auto result = tunnel_proc(config_path.c_str());
-  
+
   if (!result) {
-    VLOG(1) << __func__ << ": failed to activate tunnel service:" << logging::SystemErrorCodeToString(logging::GetLastSystemErrorCode()) << " -> " << std::hex << HRESULTFromLastError();
+    VLOG(1) << __func__ << ": failed to activate tunnel service:"
+            << logging::SystemErrorCodeToString(
+                   logging::GetLastSystemErrorCode())
+            << " -> " << std::hex << HRESULTFromLastError();
   }
   return S_OK;
 }

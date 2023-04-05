@@ -53,6 +53,7 @@ BraveVpnService::BraveVpnService(
       skus_service_getter_(skus_service_getter),
       api_request_(new BraveVpnAPIRequest(url_loader_factory)) {
   DCHECK(IsBraveVPNFeatureEnabled());
+
 #if !BUILDFLAG(IS_ANDROID)
   DCHECK(connection_api);
   connection_api_ = connection_api;
@@ -533,6 +534,7 @@ void BraveVpnService::OnPrepareCredentialsPresentation(
     const std::string& credential_as_cookie) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
   auto env = skus::GetEnvironmentForDomain(domain);
+  LOG(ERROR) << __func__ << ":" << credential_as_cookie;
   // Credential is returned in cookie format.
   net::CookieInclusionStatus status;
   net::ParsedCookie credential_cookie(credential_as_cookie, &status);
@@ -599,6 +601,7 @@ void BraveVpnService::OnGetSubscriberCredentialV12(
     const base::Time& expiration_time,
     const std::string& subscriber_credential,
     bool success) {
+  LOG(ERROR) << __func__ << ":" << subscriber_credential;
   if (!success) {
     VLOG(2) << __func__ << " : failed to get subscriber credential";
 #if BUILDFLAG(IS_ANDROID)

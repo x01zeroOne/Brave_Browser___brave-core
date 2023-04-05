@@ -20,9 +20,7 @@ config("no-missing-braces") {
 source_set("common") {
   sources = [ "scoped_sc_handle.h" ]
 
-  deps = [
-    "//base",
-  ]
+  deps = [ "//base" ]
 }
 
 executable("brave_vpn_service") {
