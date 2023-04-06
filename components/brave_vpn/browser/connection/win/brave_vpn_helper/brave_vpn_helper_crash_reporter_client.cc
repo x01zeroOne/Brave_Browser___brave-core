@@ -21,6 +21,7 @@
 #include "chrome/install_static/product_install_details.h"
 #include "chrome/install_static/user_data_dir.h"
 #include "components/crash/core/app/crash_switches.h"
+#include "chrome/install_static/install_details.h"
 #include "components/crash/core/app/crashpad.h"
 #include "components/version_info/channel.h"
 
@@ -139,11 +140,18 @@ bool BraveVPNHelperCrashReporterClient::IsRunningUnattended() {
 }
 
 bool BraveVPNHelperCrashReporterClient::GetCollectStatsConsent() {
-  return install_static::GetCollectStatsConsent();
+  auto consent = install_static::GetCollectStatsConsent();
+  LOG(ERROR) << __func__ << ": consent:" << consent;
+  LOG(ERROR) << "system_install:" << install_static::IsSystemInstall() << "| path:" <<
+     install_static::InstallDetails::Get().GetClientStateMediumKeyPath() << "| client state path:" <<
+      install_static::InstallDetails::Get().GetClientStateKeyPath();
+  return consent;
 }
 
 bool BraveVPNHelperCrashReporterClient::GetCollectStatsInSample() {
-  return install_static::GetCollectStatsInSample();
+  auto consent = install_static::GetCollectStatsInSample();
+  LOG(ERROR) << __func__ << ": consent:" << consent;
+  return consent;
 }
 
 bool BraveVPNHelperCrashReporterClient::ReportingIsEnforcedByPolicy(
