@@ -34,6 +34,7 @@ import {
   UpdateSelectedAssetType,
   UpdateNftPinningStatusType
 } from '../constants/action_types'
+import { pageStatePersistorWhitelist } from '../../common/constants/persisted-state-keys-whitelists'
 
 const defaultState: PageState = {
   hasInitialized: false,
@@ -253,25 +254,7 @@ export const persistedPageReducer = persistVersionedReducer(
   {
     key: 'page',
     version: PERSISTED_STATE_VERSION,
-    whitelist: [
-      'enablingAutoPin',
-      'isAutoPinEnabled',
-      'nftMetadata',
-      'nftMetadataError',
-      'nftsPinningStatus',
-      'pinStatusOverview',
-      'portfolioPriceHistory',
-      'selectedAsset',
-      'selectedAssetCryptoPrice',
-      'selectedAssetFiatPrice',
-      'selectedAssetPriceHistory',
-      'selectedCoinMarket',
-      'selectedTimeline',
-      'setupStillInProgress',
-      'showAddModal',
-      'showIsRestoring',
-      'walletTermsAcknowledged'
-    ]
+    whitelist: pageStatePersistorWhitelist
   }
 )
 

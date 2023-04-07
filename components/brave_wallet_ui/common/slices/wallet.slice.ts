@@ -77,6 +77,7 @@ import { HighToLowAssetsFilterOption } from '../../options/asset-filter-options'
 import { AllNetworksOptionDefault } from '../../options/network-filter-options'
 import { AllAccountsOption } from '../../options/account-filter-options'
 import { createAction, createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { walletStatePersistorWhitelist } from '../constants/persisted-state-keys-whitelists'
 
 const defaultState: WalletState = {
   hasInitialized: false,
@@ -576,33 +577,7 @@ export const walletReducer = walletSlice.reducer
 export const persistedWalletReducer = persistVersionedReducer(walletReducer, {
   key: 'wallet',
   version: PERSISTED_STATE_VERSION,
-  whitelist: [
-    'accounts',
-    'coinMarketData',
-    'connectedAccounts',
-    'defaultAccounts',
-    'defaultCurrencies',
-    'favoriteApps',
-    'fullTokenList',
-    'hasInitialized',
-    'isFetchingPortfolioPriceHistory',
-    'isFilecoinEnabled',
-    'isLoadingCoinMarketData',
-    'isPanelV2FeatureEnabled',
-    'isSolanaEnabled',
-    'isWalletBackedUp',
-    'isWalletCreated',
-    'knownTransactions',
-    'onRampCurrencies',
-    'portfolioPriceHistory',
-    'selectedAccountFilter',
-    'selectedAssetFilter',
-    'selectedCurrency',
-    'selectedNetworkFilter',
-    'selectedPortfolioTimeline',
-    'transactions',
-    'userVisibleTokensInfo'
-  ]
+  whitelist: walletStatePersistorWhitelist
 })
 
 export const WalletActions = { ...walletSlice.actions, ...WalletAsyncActions }

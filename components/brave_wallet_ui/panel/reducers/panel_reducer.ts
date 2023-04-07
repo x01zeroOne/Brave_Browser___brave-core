@@ -18,6 +18,7 @@ import {
   persistVersionedReducer,
   PERSISTED_STATE_VERSION
 } from '../../utils/state-migration-utils'
+import { panelStatePersistorWhitelist } from '../../common/constants/persisted-state-keys-whitelists'
 
 const defaultOriginInfo: SerializableOriginInfo = {
   origin: {
@@ -198,6 +199,6 @@ export const panelReducer = reducer
 export const persistedPanelReducer = persistVersionedReducer(panelReducer, {
   key: 'panel',
   version: PERSISTED_STATE_VERSION,
-  whitelist: []
+  whitelist: panelStatePersistorWhitelist
 })
 export default reducer

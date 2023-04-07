@@ -129,6 +129,7 @@ import {
   PERSISTED_STATE_VERSION,
   persistVersionedReducer
 } from '../../utils/state-migration-utils'
+import { apiStatePersistorWhitelist } from '../constants/persisted-state-keys-whitelists'
 
 export type AssetPriceById = BraveWallet.AssetPrice & {
   id: EntityId
@@ -3017,18 +3018,12 @@ export const {
   useUpdateUserTokenMutation,
 } = walletApi
 
-// api initial state
 export const persistedWalletApiReducer = persistVersionedReducer(
   walletApi.reducer,
   {
     key: walletApi.reducerPath,
     version: PERSISTED_STATE_VERSION,
-    whitelist: [
-      'config',
-      'mutations',
-      'provided',
-      'queries'
-    ]
+    whitelist: apiStatePersistorWhitelist
   }
 )
 
