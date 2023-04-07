@@ -153,12 +153,14 @@ import org.chromium.mojo.system.MojoException;
 import org.chromium.playlist.mojom.Playlist;
 import org.chromium.playlist.mojom.PlaylistItem;
 import org.chromium.playlist.mojom.PlaylistService;
+import org.chromium.playlist.mojom.PlaylistServiceObserver;
 import org.chromium.ui.UiUtils;
 import org.chromium.ui.base.ViewUtils;
 import org.chromium.ui.interpolators.BakedBezierInterpolator;
 import org.chromium.ui.util.ColorUtils;
 import org.chromium.ui.widget.Toast;
 import org.chromium.url.GURL;
+import org.chromium.url.mojom.Url;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -229,6 +231,7 @@ public abstract class BraveToolbarLayoutImpl extends ToolbarLayout
     private CookieListOptInPageAndroidHandler mCookieListOptInPageAndroidHandler;
     private FilterListAndroidHandler mFilterListAndroidHandler;
     private PlaylistService mPlaylistService;
+    private PlaylistServiceObserver mPlaylistServiceObserver;
 
     private enum BIGTECH_COMPANY { Google, Facebook, Amazon }
 
@@ -249,6 +252,9 @@ public abstract class BraveToolbarLayoutImpl extends ToolbarLayout
         }
         if (mPlaylistService != null) {
             mPlaylistService.close();
+        }
+        if (mPlaylistServiceObserver != null) {
+            mPlaylistServiceObserver.close();
         }
         super.destroy();
         if (mBraveRewardsNativeWorker != null) {
@@ -422,8 +428,101 @@ public abstract class BraveToolbarLayoutImpl extends ToolbarLayout
         if (mPlaylistService != null) {
             return;
         }
-
         mPlaylistService = PlaylistServiceFactoryAndroid.getInstance().getPlaylistService(this);
+        // TODO: Please refactor this. This code was copied from showPlaylistButton().
+        if (mPlaylistServiceObserver == null) {
+            mPlaylistServiceObserver = new PlaylistServiceObserver() {
+                @Override
+                public void close() {}
+
+                @Override
+                public void onConnectionError(MojoException e) {}
+
+                @Override
+                public void onEvent(int event, String playlistId) {}
+
+                @Override
+                public void onMediaFileDownloadProgressed(String id, long totalBytes,
+                        long receivedBytes, byte percentComplete, String timeRemaining) {}
+
+                @Override
+                public void onMediaFilesUpdated(Url pageUrl, PlaylistItem[] items) {
+                    // TODO: we should compare the pageUrl with the active tab's url.
+                    if (!SharedPreferencesManager.getInstance().readBoolean(
+                                BravePlaylistPreferences.PREF_ADD_TO_PLAYLIST_BUTTON, true)) {
+                        return;
+                    }
+
+                    try {
+                        ViewGroup viewGroup = BraveActivity.getBraveActivity()
+                                                      .getWindow()
+                                                      .getDecorView()
+                                                      .findViewById(android.R.id.content);
+
+                        PlaylistOptionsListener playlistOptionsListener =
+                                new PlaylistOptionsListener() {
+                                    @Override
+                                    public void onOptionClicked(
+                                            PlaylistOptionsModel playlistOptionsModel) {
+                                        if (playlistOptionsModel.getOptionType()
+                                                == PlaylistOptions.ADD_MEDIA) {
+                                            int mediaCount =
+                                                    SharedPreferencesManager.getInstance().readInt(
+                                                            PlaylistPreferenceUtils
+                                                                    .ADD_MEDIA_COUNT);
+                                            if (mediaCount <= 2) {
+                                                SharedPreferencesManager.getInstance().writeInt(
+                                                        PlaylistPreferenceUtils.ADD_MEDIA_COUNT,
+                                                        mediaCount + 1);
+                                            }
+                                            // if (mediaCount == 2) {
+                                            //     PlaylistWarningDialogListener
+                                            //     playlistWarningDialogListener =
+                                            //             new PlaylistWarningDialogListener() {
+                                            //                 @Override
+                                            //                 public void onActionClicked() {
+                                            //                     addMediaToPlaylist(items,
+                                            //                     viewGroup);
+                                            //                 }
+
+                                            //                 @Override
+                                            //                 public void onSettingsClicked() {
+                                            //                     try {
+                                            //                         BraveActivity.getBraveActivity()
+                                            //                                 .openBravePlaylistSettings();
+                                            //                     } catch (
+                                            //                             BraveActivity
+                                            //                                     .BraveActivityNotFoundException
+                                            //                                             e) {
+                                            //                         Log.e(TAG,
+                                            //                                 "showPlaylistButton"
+                                            //                                         + "
+                                            //                                         onOptionClicked"
+                                            //                                         + "
+                                            //                                         onSettingsClicked"
+                                            //                                         + e);
+                                            //                     }
+                                            //                 }
+                                            //             };
+                                            //     BraveActivity.getBraveActivity().showPlaylistWarningDialog(
+                                            //             playlistWarningDialogListener);
+
+                                            // } else {
+                                            addMediaToPlaylist(items, viewGroup);
+                                            // }
+                                        }
+                                    }
+                                };
+                        PlaylistViewUtils.showPlaylistButton(BraveActivity.getBraveActivity(),
+                                viewGroup, playlistOptionsListener);
+
+                    } catch (BraveActivity.BraveActivityNotFoundException e) {
+                        Log.e(TAG, "showPlaylistButton onOptionClicked " + e);
+                    }
+                }
+            };
+            mPlaylistService.addObserver(mPlaylistServiceObserver);
+        }
     }
 
     @Override
@@ -717,10 +816,7 @@ public abstract class BraveToolbarLayoutImpl extends ToolbarLayout
         }
     }
 
-    private void addMediaToPlaylist(org.chromium.url.mojom.Url contentUrl, ViewGroup viewGroup) {
-        if (mPlaylistService == null) {
-            return;
-        }
+    private boolean shouldCacheMediaFileForPlaylist() {
         boolean shouldCacheOnlyOnWifi =
                 (SharedPreferencesManager.getInstance().readInt(
                          BravePlaylistPreferences.PREF_AUTO_SAVE_MEDIA_FOR_OFFLINE, 0)
@@ -731,8 +827,11 @@ public abstract class BraveToolbarLayoutImpl extends ToolbarLayout
                                       BravePlaylistPreferences.PREF_AUTO_SAVE_MEDIA_FOR_OFFLINE, 0)
                         == 0
                 || shouldCacheOnlyOnWifi;
-        mPlaylistService.addMediaFilesFromPageToPlaylist(
-                ConstantUtils.DEFAULT_PLAYLIST, contentUrl, shouldCache);
+
+        return shouldCache;
+    }
+
+    private void showAddedToPlaylistSnackBar(ViewGroup viewGroup) {
         SnackBarActionModel snackBarActionModel =
                 new SnackBarActionModel(getContext().getResources().getString(R.string.view_action),
                         new View.OnClickListener() {
@@ -751,6 +850,25 @@ public abstract class BraveToolbarLayoutImpl extends ToolbarLayout
                 String.format(getContext().getResources().getString(R.string.added_to_playlist),
                         getContext().getResources().getString(R.string.playlist_play_later)),
                 snackBarActionModel);
+    }
+
+    private void addMediaToPlaylist(org.chromium.url.mojom.Url contentUrl, ViewGroup viewGroup) {
+        if (mPlaylistService == null) {
+            return;
+        }
+        mPlaylistService.addMediaFilesFromPageToPlaylist(
+                ConstantUtils.DEFAULT_PLAYLIST, contentUrl, shouldCacheMediaFileForPlaylist());
+        showAddedToPlaylistSnackBar(viewGroup);
+    }
+
+    private void addMediaToPlaylist(PlaylistItem[] items, ViewGroup viewGroup) {
+        if (mPlaylistService == null) {
+            return;
+        }
+
+        mPlaylistService.addMediaFiles(
+                items, ConstantUtils.DEFAULT_PLAYLIST, shouldCacheMediaFileForPlaylist());
+        showAddedToPlaylistSnackBar(viewGroup);
     }
 
     private void checkForTooltip(Tab tab) {
