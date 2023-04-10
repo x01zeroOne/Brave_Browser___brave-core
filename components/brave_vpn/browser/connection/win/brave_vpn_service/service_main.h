@@ -30,6 +30,16 @@ class ServiceMain {
   // Start() is the entry point called by WinMain.
   int Start();
 
+  // Creates an out-of-proc WRL Module.
+  void CreateWRLModule();
+
+  // Registers the Service COM class factory object so other applications can
+  // connect to it. Returns the registration status.
+  HRESULT RegisterClassObject();
+
+  // Unregisters the Service COM class factory object.
+  void UnregisterClassObject();
+
  private:
   friend class base::NoDestructor<ServiceMain>;
 
@@ -54,17 +64,22 @@ class ServiceMain {
 
   // The main service entry point.
   static void WINAPI ServiceMainEntry(DWORD argc, wchar_t* argv[]);
-
+  HRESULT CreateWGConnection();
   // Calls ::SetServiceStatus().
   void SetServiceStatus(DWORD state);
 
   // Handles object registration, message loop, and unregistration. Returns
   // when all registered objects are released.
   HRESULT Run();
+  // Calls ::CoInitializeSecurity to allow all users to create COM objects
+  // within the server.
+  static HRESULT InitializeComSecurity();
 
   // The action routine to be executed.
   int (ServiceMain::*run_routine_)();
 
+  // Identifier of registered class objects used for unregistration.
+  DWORD cookies_[1];
   SERVICE_STATUS_HANDLE service_status_handle_;
   SERVICE_STATUS service_status_;
   base::OnceClosure quit_;

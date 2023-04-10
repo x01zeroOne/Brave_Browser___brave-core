@@ -6,7 +6,7 @@
  /* File created by MIDL compiler version 8.xx.xxxx */
 /* at a redacted point in time
  */
-/* Compiler settings for ../../brave/components/brave_vpn/browser/connection/win/brave_vpn_service/brave_vpn_service.idl:
+/* Compiler settings for ../../brave/components/brave_vpn/browser/connection/win/brave_vpn_service/brave_vpn_service_idl.idl:
     Oicf, W1, Zp8, env=Win64 (32b run), target_arch=AMD64 8.xx.xxxx 
     protocol : dce , ms_ext, c_ext, robust
     error checks: allocation ref bounds_check enum stub_data 
@@ -44,7 +44,7 @@
 #endif /* __RPCPROXY_H_VERSION__ */
 
 
-#include "brave_vpn_service.h"
+#include "brave_vpn_service_idl.h"
 
 #define TYPE_FORMAT_STRING_SIZE   7                                 
 #define PROC_FORMAT_STRING_SIZE   39                                
@@ -52,23 +52,23 @@
 #define TRANSMIT_AS_TABLE_SIZE    0            
 #define WIRE_MARSHAL_TABLE_SIZE   0            
 
-typedef struct _brave_vpn_service_MIDL_TYPE_FORMAT_STRING
+typedef struct _brave_vpn_service_idl_MIDL_TYPE_FORMAT_STRING
     {
     short          Pad;
     unsigned char  Format[ TYPE_FORMAT_STRING_SIZE ];
-    } brave_vpn_service_MIDL_TYPE_FORMAT_STRING;
+    } brave_vpn_service_idl_MIDL_TYPE_FORMAT_STRING;
 
-typedef struct _brave_vpn_service_MIDL_PROC_FORMAT_STRING
+typedef struct _brave_vpn_service_idl_MIDL_PROC_FORMAT_STRING
     {
     short          Pad;
     unsigned char  Format[ PROC_FORMAT_STRING_SIZE ];
-    } brave_vpn_service_MIDL_PROC_FORMAT_STRING;
+    } brave_vpn_service_idl_MIDL_PROC_FORMAT_STRING;
 
-typedef struct _brave_vpn_service_MIDL_EXPR_FORMAT_STRING
+typedef struct _brave_vpn_service_idl_MIDL_EXPR_FORMAT_STRING
     {
     long          Pad;
     unsigned char  Format[ EXPR_FORMAT_STRING_SIZE ];
-    } brave_vpn_service_MIDL_EXPR_FORMAT_STRING;
+    } brave_vpn_service_idl_MIDL_EXPR_FORMAT_STRING;
 
 
 static const RPC_SYNTAX_IDENTIFIER  _RpcTransferSyntax_2_0 = 
@@ -129,9 +129,9 @@ ObjectType ## _unbind((ObjectType) pObject, ServerHandle);\
 #endif
 
 
-extern const brave_vpn_service_MIDL_TYPE_FORMAT_STRING brave_vpn_service__MIDL_TypeFormatString;
-extern const brave_vpn_service_MIDL_PROC_FORMAT_STRING brave_vpn_service__MIDL_ProcFormatString;
-extern const brave_vpn_service_MIDL_EXPR_FORMAT_STRING brave_vpn_service__MIDL_ExprFormatString;
+extern const brave_vpn_service_idl_MIDL_TYPE_FORMAT_STRING brave_vpn_service_idl__MIDL_TypeFormatString;
+extern const brave_vpn_service_idl_MIDL_PROC_FORMAT_STRING brave_vpn_service_idl__MIDL_ProcFormatString;
+extern const brave_vpn_service_idl_MIDL_EXPR_FORMAT_STRING brave_vpn_service_idl__MIDL_ExprFormatString;
 
 #ifdef __cplusplus
 namespace {
@@ -152,7 +152,7 @@ extern const MIDL_STUBLESS_PROXY_INFO IBraveVpnService_ProxyInfo;
 #error  Invalid build platform for this stub.
 #endif
 
-static const brave_vpn_service_MIDL_PROC_FORMAT_STRING brave_vpn_service__MIDL_ProcFormatString =
+static const brave_vpn_service_idl_MIDL_PROC_FORMAT_STRING brave_vpn_service_idl__MIDL_ProcFormatString =
     {
         0,
         {
@@ -192,7 +192,7 @@ static const brave_vpn_service_MIDL_PROC_FORMAT_STRING brave_vpn_service__MIDL_P
         }
     };
 
-static const brave_vpn_service_MIDL_TYPE_FORMAT_STRING brave_vpn_service__MIDL_TypeFormatString =
+static const brave_vpn_service_idl_MIDL_TYPE_FORMAT_STRING brave_vpn_service_idl__MIDL_TypeFormatString =
     {
         0,
         {
@@ -224,7 +224,7 @@ static const unsigned short IBraveVpnService_FormatStringOffsetTable[] =
 static const MIDL_STUBLESS_PROXY_INFO IBraveVpnService_ProxyInfo =
     {
     &Object_StubDesc,
-    brave_vpn_service__MIDL_ProcFormatString.Format,
+    brave_vpn_service_idl__MIDL_ProcFormatString.Format,
     &IBraveVpnService_FormatStringOffsetTable[-3],
     0,
     0,
@@ -236,7 +236,7 @@ static const MIDL_SERVER_INFO IBraveVpnService_ServerInfo =
     {
     &Object_StubDesc,
     0,
-    brave_vpn_service__MIDL_ProcFormatString.Format,
+    brave_vpn_service_idl__MIDL_ProcFormatString.Format,
     &IBraveVpnService_FormatStringOffsetTable[-3],
     0,
     0,
@@ -274,7 +274,7 @@ static const MIDL_STUB_DESC Object_StubDesc =
     0,
     0,
     0,
-    brave_vpn_service__MIDL_TypeFormatString.Format,
+    brave_vpn_service_idl__MIDL_TypeFormatString.Format,
     1, /* -error bounds_check flag */
     0x50002, /* Ndr library version */
     0,
@@ -291,31 +291,31 @@ static const MIDL_STUB_DESC Object_StubDesc =
 }
 #endif
 
-const CInterfaceProxyVtbl * const _brave_vpn_service_ProxyVtblList[] = 
+const CInterfaceProxyVtbl * const _brave_vpn_service_idl_ProxyVtblList[] = 
 {
     ( CInterfaceProxyVtbl *) &_IBraveVpnServiceProxyVtbl,
     0
 };
 
-const CInterfaceStubVtbl * const _brave_vpn_service_StubVtblList[] = 
+const CInterfaceStubVtbl * const _brave_vpn_service_idl_StubVtblList[] = 
 {
     ( CInterfaceStubVtbl *) &_IBraveVpnServiceStubVtbl,
     0
 };
 
-PCInterfaceName const _brave_vpn_service_InterfaceNamesList[] = 
+PCInterfaceName const _brave_vpn_service_idl_InterfaceNamesList[] = 
 {
     "IBraveVpnService",
     0
 };
 
 
-#define _brave_vpn_service_CHECK_IID(n)	IID_GENERIC_CHECK_IID( _brave_vpn_service, pIID, n)
+#define _brave_vpn_service_idl_CHECK_IID(n)	IID_GENERIC_CHECK_IID( _brave_vpn_service_idl, pIID, n)
 
-int __stdcall _brave_vpn_service_IID_Lookup( const IID * pIID, int * pIndex )
+int __stdcall _brave_vpn_service_idl_IID_Lookup( const IID * pIID, int * pIndex )
 {
     
-    if(!_brave_vpn_service_CHECK_IID(0))
+    if(!_brave_vpn_service_idl_CHECK_IID(0))
         {
         *pIndex = 0;
         return 1;
@@ -324,13 +324,13 @@ int __stdcall _brave_vpn_service_IID_Lookup( const IID * pIID, int * pIndex )
     return 0;
 }
 
-EXTERN_C const ExtendedProxyFileInfo brave_vpn_service_ProxyFileInfo = 
+EXTERN_C const ExtendedProxyFileInfo brave_vpn_service_idl_ProxyFileInfo = 
 {
-    (PCInterfaceProxyVtblList *) & _brave_vpn_service_ProxyVtblList,
-    (PCInterfaceStubVtblList *) & _brave_vpn_service_StubVtblList,
-    (const PCInterfaceName * ) & _brave_vpn_service_InterfaceNamesList,
+    (PCInterfaceProxyVtblList *) & _brave_vpn_service_idl_ProxyVtblList,
+    (PCInterfaceStubVtblList *) & _brave_vpn_service_idl_StubVtblList,
+    (const PCInterfaceName * ) & _brave_vpn_service_idl_InterfaceNamesList,
     0, /* no delegation */
-    & _brave_vpn_service_IID_Lookup, 
+    & _brave_vpn_service_idl_IID_Lookup, 
     1,
     2,
     0, /* table of [async_uuid] interfaces */

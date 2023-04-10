@@ -18,12 +18,12 @@
 extern "C"   {
 #endif
 
-EXTERN_PROXY_FILE( brave_vpn_service )
+EXTERN_PROXY_FILE( brave_vpn_service_idl )
 
 
 PROXYFILE_LIST_START
 /* Start of list */
-  REFERENCE_PROXY_FILE( brave_vpn_service ),
+  REFERENCE_PROXY_FILE( brave_vpn_service_idl ),
 /* End of list */
 PROXYFILE_LIST_END
 

@@ -6,7 +6,7 @@
  /* File created by MIDL compiler version 8.xx.xxxx */
 /* at a redacted point in time
  */
-/* Compiler settings for ../../brave/components/brave_vpn/browser/connection/win/brave_vpn_service/brave_vpn_service.idl:
+/* Compiler settings for ../../brave/components/brave_vpn/browser/connection/win/brave_vpn_service/brave_vpn_service_idl.idl:
     Oicf, W1, Zp8, env=Win64 (32b run), target_arch=AMD64 8.xx.xxxx 
     protocol : dce , ms_ext, c_ext, robust
     error checks: allocation ref bounds_check enum stub_data 
@@ -36,8 +36,8 @@
 #include "ole2.h"
 #endif /*COM_NO_WINDOWS_H*/
 
-#ifndef __brave_vpn_service_h__
-#define __brave_vpn_service_h__
+#ifndef __brave_vpn_service_idl_h__
+#define __brave_vpn_service_idl_h__
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1020)
 #pragma once

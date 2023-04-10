@@ -12,6 +12,7 @@
 #include "base/process/memory.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/win/process_startup_helper.h"
+#include "base/win/scoped_com_initializer.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_constants.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_main.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_utils.h"
@@ -38,13 +39,24 @@ int main(int argc, char* argv[]) {
   // The exit manager is in charge of calling the dtors of singletons.
   base::AtExitManager exit_manager;
   // Make sure the process exits cleanly on unexpected errors.
+  base::EnableTerminationOnHeapCorruption();
+  base::EnableTerminationOnOutOfMemory();
   base::win::RegisterInvalidParamHandler();
-
-  base::win::SetupCRT(*command_line);
+  base::win::SetupCRT(*base::CommandLine::ForCurrentProcess());
   install_static::InitializeProductDetailsForPrimaryModule();
+
+  // Initialize COM for the current thread.
+  base::win::ScopedCOMInitializer com_initializer(
+      base::win::ScopedCOMInitializer::kMTA);
+  if (!com_initializer.Succeeded()) {
+    PLOG(ERROR) << "Failed to initialize COM";
+    return -1;
+  }
+
   // Register vpn helper service in the system.
   if (command_line->HasSwitch(brave_vpn::kBraveWgServiceInstall)) {
-    auto success = brave_vpn::ConfigureService(brave_vpn::GetVpnServiceName());
+    auto success =
+        brave_vpn::ConfigureService(brave_vpn::GetBraveVpnServiceName());
     return success ? 0 : 1;
   }
 

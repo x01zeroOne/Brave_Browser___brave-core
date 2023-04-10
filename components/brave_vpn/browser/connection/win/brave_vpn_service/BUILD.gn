@@ -11,7 +11,7 @@ import("//chrome/process_version_rc_template.gni")
 assert(is_win)
 
 midl("brave_vpn_service_idl") {
-  sources = [ "brave_vpn_service.idl" ]
+  sources = [ "brave_vpn_service_idl.idl" ]
 
   writes_tlb = true
 }
@@ -35,18 +35,28 @@ config("winver") {
 }
 
 source_set("common") {
-  sources = [ "scoped_sc_handle.h" ]
+  sources = [
+    "scoped_sc_handle.h",
+    "service_constants.cc",
+    "service_constants.h",
+  ]
 
-  deps = [ "//base" ]
+  deps = [
+    "//base",
+    "//chrome/install_static:install_static_util",
+  ]
 }
 
 executable("brave_vpn_service") {
   configs -= [ "//build/config/win:winver" ]
   configs += [ ":winver" ]
   sources = [
+    "brave_vpn_service.cc",
+    "brave_vpn_service.h",
     "brave_vpn_service.rc",
     "main.cc",
     "service_main.cc",
+    "service_main.h",
     "service_main.h",
     "service_utils.cc",
     "service_utils.h",
@@ -58,7 +68,6 @@ executable("brave_vpn_service") {
     "//base",
     "//base:base_static",
     "//build/win:default_exe_manifest",
-    "//chrome/install_static:install_static_util",
     "//components/version_info:channel",
   ]
   public_deps = [ ":brave_vpn_service_idl" ]

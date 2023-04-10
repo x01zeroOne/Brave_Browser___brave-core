@@ -3,13 +3,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#include <windows.h>
-#include <string>
+#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/brave_vpn_service.h"
+
+#include "base/logging.h"
 
 namespace brave_vpn {
 
-bool ConfigureService(const std::wstring& service_name);
+HRESULT BraveVpnService::EnableVpn(const wchar_t* crx_path) {
+  LOG(ERROR) << __func__;
+  return S_OK;
+}
 
-bool SetServiceFailActions(SC_HANDLE service);
-
-}  // namespace brave_vpn
+} // namespace brave

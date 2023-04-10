@@ -10,7 +10,6 @@
 #include "base/logging.h"
 #include "base/path_service.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/scoped_sc_handle.h"
-#include "chrome/install_static/install_util.h"
 
 namespace brave_vpn {
 
@@ -22,17 +21,6 @@ HRESULT HRESULTFromLastError() {
 }
 
 }  // namespace
-
-std::wstring GetVpnServiceDisplayName() {
-  static constexpr wchar_t kBraveVpnServiceDisplayName[] = L" Vpn WG Service";
-  return install_static::GetBaseAppName() + kBraveVpnServiceDisplayName;
-}
-
-std::wstring GetVpnServiceName() {
-  std::wstring name = GetVpnServiceDisplayName();
-  name.erase(std::remove_if(name.begin(), name.end(), isspace), name.end());
-  return name;
-}
 
 bool ConfigureService(const std::wstring& service_name) {
   ScopedScHandle scm(::OpenSCManager(nullptr, nullptr, SC_MANAGER_ALL_ACCESS));
