@@ -32,17 +32,23 @@
 #if BUILDFLAG(ENABLE_BRAVE_VPN)
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_helper/brave_vpn_helper_constants.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_helper/brave_vpn_helper_state.h"
+#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_constants.h"
 
 namespace {
 
-base::FilePath GetBraveVPNServicePath(const base::FilePath& target_path,
-                                      const base::Version& version) {
+base::FilePath GetBraveVPNHelperPath(const base::FilePath& target_path,
+                                     const base::Version& version) {
   return target_path.AppendASCII(version.GetString())
       .Append(brave_vpn::kBraveVPNHelperExecutable);
 }
+base::FilePath GetBraveVPNServicePath(const base::FilePath& target_path,
+                                      const base::Version& version) {
+  return target_path.AppendASCII(version.GetString())
+      .Append(brave_vpn::kBraveVPNServiceExecutable);
+}
 
-bool ConfigureBraveVPNServiceAutoRestart(const base::FilePath& exe_path,
-                                         const CallbackWorkItem&) {
+bool ConfigureBraveVPNHelperAutoRestart(const base::FilePath& exe_path,
+                                        const CallbackWorkItem&) {
   if (!base::PathExists(exe_path)) {
     return false;
   }
@@ -57,6 +63,29 @@ bool ConfigureBraveVPNServiceAutoRestart(const base::FilePath& exe_path,
 // system level installs.
 void AddBraveVPNHelperServiceWorkItems(const base::FilePath& vpn_service_path,
                                        WorkItemList* list) {
+
+  DCHECK(::IsUserAnAdmin());
+
+  if (vpn_helper_path.empty()) {
+    VLOG(1) << "The path to brave_vpn_helper.exe is invalid.";
+    return;
+  }
+  WorkItem* install_service_work_item = new installer::InstallServiceWorkItem(
+      brave_vpn::GetVpnHelperName(), brave_vpn::GetVpnHelperDisplayName(),
+      SERVICE_DEMAND_START, base::CommandLine(vpn_helper_path),
+      base::CommandLine(base::CommandLine::NO_PROGRAM),
+      brave_vpn::kBraveVpnHelperRegistryStoragePath, {}, {});
+  install_service_work_item->set_best_effort(true);
+  list->AddWorkItem(install_service_work_item);
+  list->AddCallbackWorkItem(
+      base::BindOnce(&ConfigureBraveVPNHelperAutoRestart, vpn_helper_path),
+      base::NullCallback());
+}
+
+// Adds work items to register the Vpn Service with Windows. Only for
+// system level installs.
+void AddBraveVPNServiceWorkItems(const base::FilePath& vpn_service_path,
+                                 WorkItemList* list) {
   DCHECK(::IsUserAnAdmin());
 
   if (vpn_service_path.empty()) {
@@ -64,21 +93,22 @@ void AddBraveVPNHelperServiceWorkItems(const base::FilePath& vpn_service_path,
     return;
   }
   WorkItem* install_service_work_item = new installer::InstallServiceWorkItem(
-      brave_vpn::GetVpnHelperName(), brave_vpn::GetVpnHelperDisplayName(),
+      brave_vpn::GetVpnServiceName(), brave_vpn::GetVpnServiceDisplayName(),
       SERVICE_DEMAND_START, base::CommandLine(vpn_service_path),
       base::CommandLine(base::CommandLine::NO_PROGRAM),
       brave_vpn::kBraveVpnHelperRegistryStoragePath, {}, {});
   install_service_work_item->set_best_effort(true);
   list->AddWorkItem(install_service_work_item);
   list->AddCallbackWorkItem(
-      base::BindOnce(&ConfigureBraveVPNServiceAutoRestart, vpn_service_path),
+      base::BindOnce(&ConfigureBraveVPNHelperAutoRestart, vpn_service_path),
       base::NullCallback());
 }
 
 }  // namespace
 
 #define GetElevationServicePath GetElevationServicePath(target_path, new_version), install_list); \
-  AddBraveVPNHelperServiceWorkItems(GetBraveVPNServicePath
+  AddBraveVPNHelperServiceWorkItems(GetBraveVPNHelperPath), install_list);                               \
+  AddBraveVPNServiceWorkItems(GetBraveVPNServicePath),
 #endif  // BUILDFLAG(ENABLE_BRAVE_VPN)
 #include "src/chrome/installer/setup/install_worker.cc"
 #if BUILDFLAG(ENABLE_BRAVE_VPN)

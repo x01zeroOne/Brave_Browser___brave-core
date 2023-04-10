@@ -13,6 +13,7 @@
 
 namespace brave_vpn {
 
+constexpr wchar_t kBraveVPNServiceExecutable[] = L"brave_vpn_service.exe";
 constexpr char kBraveWgServiceInstall[] = "install";
 // Returns the Brave Vpn Service CLSID, IID, Name, and Display Name
 // respectively.
