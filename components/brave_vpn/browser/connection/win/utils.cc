@@ -581,18 +581,25 @@ CheckConnectionResult CheckConnection(const std::wstring& entry_name) {
 }
 
 absl::optional<std::string> CreateWireguardConfig(
-        const std::string& client_private_key,
-        const std::string& server_public_key,
-        const std::string& vpn_server_hostname,
-        const std::string& mapped_ipv4_address,
-        const std::string& dns_servers) {
-  if (client_private_key.empty() || server_public_key.empty() || vpn_server_hostname.empty() || mapped_ipv4_address.empty() || dns_servers.empty())
+    const std::string& client_private_key,
+    const std::string& server_public_key,
+    const std::string& vpn_server_hostname,
+    const std::string& mapped_ipv4_address,
+    const std::string& dns_servers) {
+  if (client_private_key.empty() || server_public_key.empty() ||
+      vpn_server_hostname.empty() || mapped_ipv4_address.empty() ||
+      dns_servers.empty()) {
     return absl::nullopt;
+  }
   std::string config = kWireguardConfigTemplate;
-  base::ReplaceSubstringsAfterOffset(&config, 0, "{client_private_key}", client_private_key);
-  base::ReplaceSubstringsAfterOffset(&config, 0, "{server_public_key}", server_public_key);
-  base::ReplaceSubstringsAfterOffset(&config, 0, "{vpn_server_hostname}", vpn_server_hostname);
-  base::ReplaceSubstringsAfterOffset(&config, 0, "{mapped_ipv4_address}", mapped_ipv4_address);
+  base::ReplaceSubstringsAfterOffset(&config, 0, "{client_private_key}",
+                                     client_private_key);
+  base::ReplaceSubstringsAfterOffset(&config, 0, "{server_public_key}",
+                                     server_public_key);
+  base::ReplaceSubstringsAfterOffset(&config, 0, "{vpn_server_hostname}",
+                                     vpn_server_hostname);
+  base::ReplaceSubstringsAfterOffset(&config, 0, "{mapped_ipv4_address}",
+                                     mapped_ipv4_address);
   base::ReplaceSubstringsAfterOffset(&config, 0, "{dns_servers}", dns_servers);
   return config;
 }

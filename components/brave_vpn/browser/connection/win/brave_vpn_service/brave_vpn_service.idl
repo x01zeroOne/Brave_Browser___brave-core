@@ -1,0 +1,25 @@
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+  object,
+  oleautomation,
+  uuid(A949CB4E-C4F9-44C4-B213-6BF8AA9AC69C),
+  helpstring("IBraveVpnService Interface"),
+  pointer_default(unique)
+]
+interface IBraveVpnService : IUnknown
+{
+  HRESULT EnableVpn([in, string] const WCHAR* config);
+};
+
+[
+  uuid(0014D784-7012-4A79-8AB6-ADDB8193A06E),
+  version(1.0),
+  helpstring("BraveVpnService 1.0 Type Library")
+]
+library BraveVpnServiceLib {
+  importlib("stdole2.tlb");
+
+  interface IElevator;
+};

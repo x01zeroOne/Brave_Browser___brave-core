@@ -43,11 +43,11 @@ CheckConnectionResult CheckConnection(const std::wstring& entry_name);
 bool WireGuardGenerateKeypair(std::string* public_key,
                               std::string* private_key);
 absl::optional<std::string> CreateWireguardConfig(
-        const std::string& client_private_key,
-        const std::string& server_public_key,
-        const std::string& vpn_server_hostname,
-        const std::string& mapped_ipv4_address,
-        const std::string& dns_servers);
+    const std::string& client_private_key,
+    const std::string& server_public_key,
+    const std::string& vpn_server_hostname,
+    const std::string& mapped_ipv4_address,
+    const std::string& dns_servers);
 }  // namespace internal
 
 }  // namespace brave_vpn

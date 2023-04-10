@@ -10,11 +10,28 @@ import("//chrome/process_version_rc_template.gni")
 
 assert(is_win)
 
+midl("brave_vpn_service_idl") {
+  sources = [ "brave_vpn_service.idl" ]
+
+  writes_tlb = true
+}
+
 # Must be in a config because of how GN orders flags (otherwise /W4 will appear
 # after this, and turn it back on).
 config("no-missing-braces") {
   # Macros invoked by WRL CoCreatableClass omit optional braces.
   cflags = [ "-Wno-missing-braces" ]
+}
+
+# This service needs to work with Windows 7, so explicitly setting the defines
+# to reflect this. Otherwise, WRL uses APIs that are only available in later
+# Windows versions.
+config("winver") {
+  defines = [
+    "NTDDI_VERSION=NTDDI_WIN7",
+    "_WIN32_WINNT=_WIN32_WINNT_WIN7",
+    "WINVER=_WIN32_WINNT_WIN7",
+  ]
 }
 
 source_set("common") {
@@ -24,7 +41,10 @@ source_set("common") {
 }
 
 executable("brave_vpn_service") {
+  configs -= [ "//build/config/win:winver" ]
+  configs += [ ":winver" ]
   sources = [
+    "brave_vpn_service.rc",
     "main.cc",
     "service_main.cc",
     "service_main.h",
@@ -41,6 +61,7 @@ executable("brave_vpn_service") {
     "//chrome/install_static:install_static_util",
     "//components/version_info:channel",
   ]
+  public_deps = [ ":brave_vpn_service_idl" ]
   libs = [
     "userenv.lib",  # For GetUserProfileDirectoryW()
   ]
