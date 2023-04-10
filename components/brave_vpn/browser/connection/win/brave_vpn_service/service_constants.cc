@@ -13,24 +13,25 @@
 namespace brave_vpn {
 
 namespace {
+// 053057AB-CF06-4E6C-BBAD-F8DA6436D933
+constexpr CLSID kBraveVpnServiceCLSID = {
+    0x053057ab,
+    0xcf06,
+    0x4e6c,
+    {0xbb, 0xad, 0xf8, 0xda, 0x64, 0x36, 0xd9, 0x33}};
+// 088C5F6E-B213-4A8E-98AD-9D64D8913968
+constexpr IID kBraveVpnServiceIID = {
+    0x088c5f6e,
+    0xb213,
+    0x4a8e,
+    {0x98, 0xad, 0x9d, 0x64, 0xd8, 0x91, 0x39, 0x68}};
 
-constexpr CLSID kBraveVpnServiceCLSID = {0x576b31af,
-          0x6369,
-          0x4b6b,
-          {0x85, 0x60, 0xe4, 0xb2, 0x3, 0xa9, 0x7a,
-          0x8b}};
-
-constexpr IID kBraveVpnServiceIID = {0xb7965c30,
-                         0x7d58,
-                         0x4d86,
-                         {0x9e, 0x18, 0x47, 0x94, 0x25, 0x64, 0x9, 0xee}};
-
-} // namespace
+}  // namespace
 
 // Returns the Brave Vpn Service CLSID, IID, Name, and Display Name
 // respectively.
 const CLSID& GetBraveVpnServiceClsid() {
-return  kBraveVpnServiceCLSID;
+  return kBraveVpnServiceCLSID;
 }
 
 const IID& GetBraveVpnServiceIid() {

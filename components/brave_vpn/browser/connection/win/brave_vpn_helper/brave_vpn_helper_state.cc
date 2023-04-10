@@ -32,13 +32,12 @@ bool IsBraveVPNHelperServiceInstalled() {
   ScopedScHandle scm(::OpenSCManager(nullptr, nullptr, SC_MANAGER_CONNECT));
   if (!scm.IsValid()) {
     VLOG(1) << "::OpenSCManager failed. service_name: "
-            << brave_vpn::GetBraveVpnHelperServiceName()
-            << ", error: " << std::hex << HRESULTFromLastError();
+            << brave_vpn::GetVpnHelperName() << ", error: " << std::hex
+            << HRESULTFromLastError();
     return false;
   }
   ScopedScHandle service(::OpenService(
-      scm.Get(), brave_vpn::GetBraveVpnHelperServiceName().c_str(),
-      SERVICE_QUERY_STATUS));
+      scm.Get(), brave_vpn::GetVpnHelperName().c_str(), SERVICE_QUERY_STATUS));
 
   // Service registered and has not exceeded the number of auto-configured
   // restarts.
@@ -49,13 +48,12 @@ bool IsBraveVPNHelperServiceRunning() {
   ScopedScHandle scm(::OpenSCManager(nullptr, nullptr, SC_MANAGER_CONNECT));
   if (!scm.IsValid()) {
     VLOG(1) << "::OpenSCManager failed. service_name: "
-            << brave_vpn::GetBraveVpnHelperServiceName()
-            << ", error: " << std::hex << HRESULTFromLastError();
+            << brave_vpn::GetVpnHelperName() << ", error: " << std::hex
+            << HRESULTFromLastError();
     return false;
   }
   ScopedScHandle service(::OpenService(
-      scm.Get(), brave_vpn::GetBraveVpnHelperServiceName().c_str(),
-      SERVICE_QUERY_STATUS));
+      scm.Get(), brave_vpn::GetVpnHelperName().c_str(), SERVICE_QUERY_STATUS));
 
   // Service registered and has not exceeded the number of auto-configured
   // restarts.
@@ -74,13 +72,13 @@ std::wstring GetBraveVPNConnectionName() {
       brave_vpn::GetBraveVPNEntryName(install_static::GetChromeChannel()));
 }
 
-std::wstring GetBraveVpnHelperServiceName() {
-  std::wstring name = GetBraveVpnHelperServiceDisplayName();
+std::wstring GetVpnHelperName() {
+  std::wstring name = GetVpnHelperDisplayName();
   name.erase(std::remove_if(name.begin(), name.end(), isspace), name.end());
   return name;
 }
 
-std::wstring GetBraveVpnHelperServiceDisplayName() {
+std::wstring GetVpnHelperDisplayName() {
   static constexpr wchar_t kBraveVpnServiceDisplayName[] = L" Vpn Service";
   return install_static::GetBaseAppName() + kBraveVpnServiceDisplayName;
 }
@@ -111,7 +109,11 @@ base::FilePath GetVpnHelperServiceProfileDir() {
   }
   return base::FilePath(base::UTF8ToWide(program_data))
       .Append(install_static::kCompanyPathName)
+<<<<<<< HEAD
       .Append(brave_vpn::GetBraveVpnHelperServiceName());
+=======
+      .Append(brave_vpn::GetVpnHelperName());
+>>>>>>> dfaf9a2910 (Renaming some methods of VPN helper)
 }
 
 }  // namespace brave_vpn

@@ -14,4 +14,4 @@ HRESULT BraveVpnService::EnableVpn(const wchar_t* crx_path) {
   return S_OK;
 }
 
-} // namespace brave
+}  // namespace brave_vpn

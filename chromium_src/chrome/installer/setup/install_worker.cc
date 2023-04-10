@@ -64,9 +64,8 @@ void AddBraveVPNHelperServiceWorkItems(const base::FilePath& vpn_service_path,
     return;
   }
   WorkItem* install_service_work_item = new installer::InstallServiceWorkItem(
-      brave_vpn::GetBraveVpnHelperServiceName(),
-      brave_vpn::GetBraveVpnHelperServiceDisplayName(), SERVICE_DEMAND_START,
-      base::CommandLine(vpn_service_path),
+      brave_vpn::GetVpnHelperName(), brave_vpn::GetVpnHelperDisplayName(),
+      SERVICE_DEMAND_START, base::CommandLine(vpn_service_path),
       base::CommandLine(base::CommandLine::NO_PROGRAM),
       brave_vpn::kBraveVpnHelperRegistryStoragePath, {}, {});
   install_service_work_item->set_best_effort(true);

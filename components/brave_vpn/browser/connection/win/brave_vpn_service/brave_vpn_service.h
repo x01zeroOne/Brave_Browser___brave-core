@@ -27,7 +27,8 @@ constexpr IID kTestBraveVpnServiceClsid = {
      0x57}};  // Elevator Test CLSID. {416C51AC-4DEF-43CA-96E8-E735210AB257}
 
 namespace switches {
-constexpr char kBraveVpnServiceClsIdForTestingSwitch[] = "elevator-clsid-for-testing";
+constexpr char kBraveVpnServiceClsIdForTestingSwitch[] =
+    "elevator-clsid-for-testing";
 }  // namespace switches
 
 class BraveVpnService
@@ -59,9 +60,8 @@ class BraveVpnService
 
  private:
   ~BraveVpnService() override = default;
-
 };
 
-}  // namespace brave
+}  // namespace brave_vpn
 
 #endif  // BRAVE_COMPONENTS_BRAVE_VPN_BROWSER_CONNECTION_WIN_BRAVE_VPN_SERVICE_CONNECTION_MANAGER_H_

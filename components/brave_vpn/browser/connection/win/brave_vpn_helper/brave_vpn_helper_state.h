@@ -18,9 +18,9 @@ bool IsBraveVPNHelperServiceInstalled();
 bool IsBraveVPNHelperServiceRunning();
 bool IsNetworkFiltersInstalled();
 std::wstring GetBraveVPNConnectionName();
-std::wstring GetBraveVpnHelperServiceName();
-std::wstring GetBraveVpnHelperServiceDisplayName();
-base::FilePath GetVpnHelperServiceProfileDir();
+std::wstring GetVpnHelperName();
+std::wstring GetVpnHelperDisplayName();
+base::FilePath GetVpnHelperProfileDir();
 }  // namespace brave_vpn
 
 #endif  // BRAVE_COMPONENTS_BRAVE_VPN_BROWSER_CONNECTION_WIN_BRAVE_VPN_HELPER_BRAVE_VPN_HELPER_STATE_H_

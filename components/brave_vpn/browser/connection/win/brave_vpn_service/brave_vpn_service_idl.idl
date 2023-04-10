@@ -4,7 +4,7 @@ import "ocidl.idl";
 [
   object,
   oleautomation,
-  uuid(A949CB4E-C4F9-44C4-B213-6BF8AA9AC69C),
+  uuid(088C5F6E-B213-4A8E-98AD-9D64D8913968),
   helpstring("IBraveVpnService Interface"),
   pointer_default(unique)
 ]
@@ -14,7 +14,7 @@ interface IBraveVpnService : IUnknown
 };
 
 [
-  uuid(0014D784-7012-4A79-8AB6-ADDB8193A06E),
+  uuid(A0575AC4-E934-4055-B210-655CCCB40535),
   version(1.0),
   helpstring("BraveVpnService 1.0 Type Library")
 ]
