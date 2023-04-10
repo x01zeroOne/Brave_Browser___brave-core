@@ -57,8 +57,7 @@ void BraveVPNHelperCrashReporterClient::InitializeCrashReportingForProcess(
 
   crash_reporter::InitializeCrashpadWithEmbeddedHandler(
       true, kBraveVPNHelperProcessType,
-      install_static::WideToUTF8(
-          brave_vpn::GetVpnHelperServiceProfileDir().value()),
+      install_static::WideToUTF8(brave_vpn::GetVpnHelperProfileDir().value()),
       base::FilePath());
 }
 
@@ -78,7 +77,7 @@ void BraveVPNHelperCrashReporterClient::GetProductNameAndVersion(
     std::wstring* version,
     std::wstring* special_build,
     std::wstring* channel_name) {
-  *product_name = brave_vpn::GetBraveVpnHelperServiceName();
+  *product_name = brave_vpn::GetVpnHelperName();
   std::unique_ptr<FileVersionInfo> version_info(
       FileVersionInfo::CreateFileVersionInfo(base::FilePath(exe_path)));
   if (version_info) {
@@ -124,14 +123,14 @@ int BraveVPNHelperCrashReporterClient::GetResultCodeRespawnFailed() {
 
 bool BraveVPNHelperCrashReporterClient::GetCrashDumpLocation(
     std::wstring* crash_dir) {
-  auto profile_dir = brave_vpn::GetVpnHelperServiceProfileDir();
+  auto profile_dir = brave_vpn::GetVpnHelperProfileDir();
   *crash_dir = (profile_dir.Append(L"Crashpad")).value();
   return !profile_dir.empty();
 }
 
 bool BraveVPNHelperCrashReporterClient::GetCrashMetricsLocation(
     std::wstring* metrics_dir) {
-  *metrics_dir = brave_vpn::GetVpnHelperServiceProfileDir().value();
+  *metrics_dir = brave_vpn::GetVpnHelperProfileDir().value();
   return !metrics_dir->empty();
 }
 

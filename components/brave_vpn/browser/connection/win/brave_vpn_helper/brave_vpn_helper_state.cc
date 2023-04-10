@@ -79,8 +79,9 @@ std::wstring GetVpnHelperName() {
 }
 
 std::wstring GetVpnHelperDisplayName() {
-  static constexpr wchar_t kBraveVpnServiceDisplayName[] = L" Vpn Service";
-  return install_static::GetBaseAppName() + kBraveVpnServiceDisplayName;
+  static constexpr wchar_t kBraveVpnHelperDisplayName[] =
+      L" Vpn Helper Service";
+  return install_static::GetBaseAppName() + kBraveVpnHelperDisplayName;
 }
 
 bool IsNetworkFiltersInstalled() {
@@ -102,18 +103,14 @@ bool IsNetworkFiltersInstalled() {
 
 // The service starts under sytem user so we save crashes to
 // %PROGRAMDATA%\BraveSoftware\{service name}\Crashpad
-base::FilePath GetVpnHelperServiceProfileDir() {
+base::FilePath GetVpnHelperProfileDir() {
   auto program_data = install_static::GetEnvironmentString("PROGRAMDATA");
   if (program_data.empty()) {
     return base::FilePath();
   }
   return base::FilePath(base::UTF8ToWide(program_data))
       .Append(install_static::kCompanyPathName)
-<<<<<<< HEAD
-      .Append(brave_vpn::GetBraveVpnHelperServiceName());
-=======
       .Append(brave_vpn::GetVpnHelperName());
->>>>>>> dfaf9a2910 (Renaming some methods of VPN helper)
 }
 
 }  // namespace brave_vpn

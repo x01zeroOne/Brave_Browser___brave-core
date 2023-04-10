@@ -8,6 +8,7 @@
 #if BUILDFLAG(ENABLE_BRAVE_VPN)
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_helper/brave_vpn_helper_constants.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_helper/brave_vpn_helper_state.h"
+#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_constants.h"
 #endif
 #define UninstallProduct UninstallProduct_ChromiumImpl
 
@@ -63,14 +64,22 @@ InstallStatus UninstallProduct(const ModifyParams& modify_params,
        ShellUtil::QuickIsChromeRegisteredInHKLM(chrome_exe, suffix))) {
     DeleteBraveFileKeys(HKEY_LOCAL_MACHINE);
   }
+#if BUILDFLAG(ENABLE_BRAVE_VPN)
   if (installer_state->system_install()) {
     if (!InstallServiceWorkItem::DeleteService(
-            brave_vpn::GetBraveVpnHelperServiceName(),
+            brave_vpn::GetVpnHelperName(),
             brave_vpn::kBraveVpnHelperRegistryStoragePath, {}, {})) {
-      LOG(WARNING) << "Failed to delete "
-                   << brave_vpn::GetBraveVpnHelperServiceName();
+      LOG(WARNING) << "Failed to delete " << brave_vpn::GetVpnHelperName();
     }
+    if (!InstallServiceWorkItem::DeleteService(
+            brave_vpn::GetBraveVpnServiceName(),
+            brave_vpn::kBraveVpnServiceRegistryStoragePath, {}, {})) {
+      LOG(WARNING) << "Failed to delete "
+                   << brave_vpn::GetBraveVpnServiceName();
+    }
+
   }
+#endif
   return UninstallProduct_ChromiumImpl(modify_params, remove_all,
                                        force_uninstall, cmd_line);
 }

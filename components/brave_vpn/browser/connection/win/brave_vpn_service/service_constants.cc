@@ -38,13 +38,13 @@ const IID& GetBraveVpnServiceIid() {
   return kBraveVpnServiceIID;
 }
 
-std::wstring GetVpnServiceDisplayName() {
+std::wstring GetBraveVpnServiceDisplayName() {
   static constexpr wchar_t kBraveVpnServiceDisplayName[] = L" Vpn WG Service";
   return install_static::GetBaseAppName() + kBraveVpnServiceDisplayName;
 }
 
 std::wstring GetBraveVpnServiceName() {
-  std::wstring name = GetVpnServiceDisplayName();
+  std::wstring name = GetBraveVpnServiceDisplayName();
   name.erase(std::remove_if(name.begin(), name.end(), isspace), name.end());
   return name;
 }
