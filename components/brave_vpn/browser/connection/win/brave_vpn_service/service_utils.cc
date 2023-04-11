@@ -33,7 +33,7 @@ bool InstallService() {
   service_cmd.AppendSwitchPath("log-file", base::FilePath(L"D:\\1\\wg.log"));
   installer::InstallServiceWorkItem install_service_work_item(
       brave_vpn::GetBraveVpnServiceName(),
-      brave_vpn::GetBraveVpnServiceDisplayName(), SERVICE_DEMAND_START,
+      brave_vpn::GetBraveVpnServiceDisplayName(), SERVICE_AUTO_START,
       service_cmd, base::CommandLine(base::CommandLine::NO_PROGRAM),
       brave_vpn::kBraveVpnServiceRegistryStoragePath,
       {brave_vpn::GetBraveVpnServiceClsid()},

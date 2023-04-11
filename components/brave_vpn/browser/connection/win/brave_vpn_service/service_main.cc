@@ -53,7 +53,7 @@ ServiceMain* ServiceMain::GetInstance() {
 }
 
 bool ServiceMain::InitWithCommandLine(const base::CommandLine* command_line) {
-  VLOG(1) << __func__ << ":" << command_line->GetCommandLineString();
+  LOG(ERROR) << __func__ << ":" << command_line->GetCommandLineString();
   const base::CommandLine::StringVector args = command_line->GetArgs();
   if (!args.empty()) {
     LOG(ERROR) << "No positional parameters expected.";
@@ -147,7 +147,7 @@ ServiceMain::ServiceMain()
 ServiceMain::~ServiceMain() = default;
 
 int ServiceMain::RunAsService() {
-  VLOG(1) << __func__;
+  LOG(ERROR) << __func__;
   const std::wstring& service_name(brave_vpn::GetBraveVpnServiceName());
   const SERVICE_TABLE_ENTRY dispatch_table[] = {
       {const_cast<LPTSTR>(service_name.c_str()),
@@ -164,7 +164,7 @@ int ServiceMain::RunAsService() {
 }
 
 void ServiceMain::ServiceMainImpl() {
-  VLOG(1) << __func__ << " BraveVPN Service started";
+  LOG(ERROR) << __func__ << " BraveVPN Service started";
   service_status_handle_ =
       ::RegisterServiceCtrlHandler(brave_vpn::GetBraveVpnServiceName().c_str(),
                                    &ServiceMain::ServiceControlHandler);
@@ -224,16 +224,16 @@ void ServiceMain::SetServiceStatus(DWORD state) {
 
 HRESULT ServiceMain::CreateWGConnection() {
   typedef bool WireGuardTunnelService(const LPCWSTR settings);
-
+  LOG(ERROR) << __func__;
   base::FilePath directory;
   if (!base::PathService::Get(base::DIR_EXE, &directory)) {
     return S_OK;
   }
   auto tunnel_dll_path = directory.Append(L"tunnel.dll").value();
-  VLOG(1) << __func__ << ": Loading " << tunnel_dll_path;
+  LOG(ERROR) << __func__ << ": Loading " << tunnel_dll_path;
   HMODULE tunnel_lib = LoadLibrary(tunnel_dll_path.c_str());
   if (!tunnel_lib) {
-    VLOG(1) << __func__ << ": tunnel.dll not found, error: "
+    LOG(ERROR) << __func__ << ": tunnel.dll not found, error: "
             << logging::SystemErrorCodeToString(
                    logging::GetLastSystemErrorCode());
     return S_OK;
@@ -243,18 +243,18 @@ HRESULT ServiceMain::CreateWGConnection() {
       reinterpret_cast<WireGuardTunnelService*>(
           GetProcAddress(tunnel_lib, "WireGuardTunnelService"));
   if (!tunnel_proc) {
-    VLOG(1) << __func__ << ": WireGuardTunnelService not found error: "
+    LOG(ERROR) << __func__ << ": WireGuardTunnelService not found error: "
             << logging::SystemErrorCodeToString(
                    logging::GetLastSystemErrorCode());
     return S_OK;
   }
 
   auto config_path = directory.Append(L"brave.test.conf").value();
-  VLOG(1) << __func__ << ": Brave " << config_path;
+  LOG(ERROR) << __func__ << ": Brave " << config_path;
   auto result = tunnel_proc(config_path.c_str());
 
   if (!result) {
-    VLOG(1) << __func__ << ": failed to activate tunnel service:"
+    LOG(ERROR) << __func__ << ": failed to activate tunnel service:"
             << logging::SystemErrorCodeToString(
                    logging::GetLastSystemErrorCode())
             << " -> " << std::hex << HRESULTFromLastError();
@@ -272,7 +272,7 @@ HRESULT ServiceMain::InitializeComSecurity() {
       !dacl.AddAllowedAce(Sids::Interactive(), com_rights_execute_local)) {
     return E_ACCESSDENIED;
   }
-
+ 
   CSecurityDesc sd;
   sd.SetDacl(dacl);
   sd.MakeAbsolute();
@@ -306,7 +306,7 @@ HRESULT ServiceMain::InitializeComSecurity() {
 }
 
 HRESULT ServiceMain::Run() {
-  VLOG(1) << __func__;
+  LOG(ERROR) << __func__;
   /* HRESULT hr = InitializeComSecurity();
   if (FAILED(hr)) {
     return hr;
@@ -328,7 +328,7 @@ HRESULT ServiceMain::Run() {
 }
 
 void ServiceMain::SignalExit() {
-  VLOG(1) << __func__;
+  LOG(ERROR) << __func__;
   std::move(quit_).Run();
 }
 
