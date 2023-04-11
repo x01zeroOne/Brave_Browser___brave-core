@@ -44,6 +44,7 @@ BraveVPNOSConnectionAPIBase::BraveVPNOSConnectionAPIBase(
       base::BindRepeating(&BraveVPNOSConnectionAPIBase::NotifyRegionDataReady,
                           base::Unretained(this)));
   net::NetworkChangeNotifier::AddNetworkChangeObserver(this);
+
 }
 
 BraveVPNOSConnectionAPIBase::~BraveVPNOSConnectionAPIBase() {

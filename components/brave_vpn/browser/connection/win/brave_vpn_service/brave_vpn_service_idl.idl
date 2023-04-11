@@ -4,7 +4,7 @@ import "ocidl.idl";
 [
   object,
   oleautomation,
-  uuid(088C5F6E-B213-4A8E-98AD-9D64D8913968),
+  uuid(053057AB-CF06-4E6C-BBAD-F8DA6436D933),
   helpstring("IBraveVpnService Interface"),
   pointer_default(unique)
 ]

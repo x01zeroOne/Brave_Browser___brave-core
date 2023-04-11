@@ -48,6 +48,7 @@ absl::optional<std::string> CreateWireguardConfig(
     const std::string& vpn_server_hostname,
     const std::string& mapped_ipv4_address,
     const std::string& dns_servers);
+void StartVpnWGService();
 }  // namespace internal
 
 }  // namespace brave_vpn

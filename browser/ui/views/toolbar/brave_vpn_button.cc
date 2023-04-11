@@ -218,6 +218,8 @@ bool BraveVPNButton::IsPurchased() const {
   return service_->is_purchased_user();
 }
 void BraveVPNButton::OnButtonPressed(const ui::Event& event) {
+
+  
   chrome::ExecuteCommand(browser_, IDC_SHOW_BRAVE_VPN_PANEL);
 }
 

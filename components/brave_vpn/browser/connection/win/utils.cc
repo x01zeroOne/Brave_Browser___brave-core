@@ -22,6 +22,12 @@
 #include "base/strings/utf_string_conversions.h"
 #include "brave/components/brave_vpn/browser/connection/brave_vpn_connection_info.h"
 #include "brave/components/brave_vpn/common/brave_vpn_constants.h"
+#include <objbase.h>
+#include <wrl/client.h>
+
+#include "base/win/com_init_util.h"
+#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/brave_vpn_service_idl.h"
+#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_constants.h"
 
 namespace brave_vpn {
 
@@ -649,6 +655,27 @@ bool WireGuardGenerateKeypair(std::string* public_key,
   LOG(ERROR) << private_key->size();
   LOG(ERROR) << public_key->size();
   return true;
+}
+
+void StartVpnWGService() {
+  base::win::AssertComInitialized();
+  Microsoft::WRL::ComPtr<IBraveVpnService> service;
+  HRESULT hr = CoCreateInstance(
+      brave_vpn::GetBraveVpnServiceClsid(), nullptr, CLSCTX_LOCAL_SERVER,
+      brave_vpn::GetBraveVpnServiceIid(), IID_PPV_ARGS_Helper(&service));
+  if (FAILED(hr))
+    return;
+
+  hr = CoSetProxyBlanket(
+      service.Get(), RPC_C_AUTHN_DEFAULT, RPC_C_AUTHZ_DEFAULT,
+      COLE_DEFAULT_PRINCIPAL, RPC_C_AUTHN_LEVEL_PKT_PRIVACY,
+      RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, EOAC_DYNAMIC_CLOAKING);
+  if (FAILED(hr))
+    return;
+
+  std::wstring config = L"test";
+  hr = service->EnableVpn(config.data());
+  LOG(ERROR) << hr;
 }
 
 }  // namespace internal
