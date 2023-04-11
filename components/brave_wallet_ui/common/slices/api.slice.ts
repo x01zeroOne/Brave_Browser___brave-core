@@ -129,7 +129,10 @@ import {
   PERSISTED_STATE_VERSION,
   persistVersionedReducer
 } from '../../utils/state-migration-utils'
-import { apiStatePersistorWhitelist } from '../constants/persisted-state-keys-whitelists'
+import {
+  apiStatePersistorWhitelist,
+  privacyAndSecurityTransform
+} from '../constants/persisted-state-keys-whitelists'
 
 export type AssetPriceById = BraveWallet.AssetPrice & {
   id: EntityId
@@ -3018,12 +3021,24 @@ export const {
   useUpdateUserTokenMutation,
 } = walletApi
 
+export type WalletApiEndpointName = keyof typeof walletApi['endpoints']
+
+export type WalletApiQueryEndpointName = Extract<
+  WalletApiEndpointName,
+  string
+> extends infer T
+  ? T extends `${'get'}${string}`
+    ? T
+    : never
+  : never
+
 export const persistedWalletApiReducer = persistVersionedReducer(
   walletApi.reducer,
   {
     key: walletApi.reducerPath,
     version: PERSISTED_STATE_VERSION,
-    whitelist: apiStatePersistorWhitelist
+    whitelist: apiStatePersistorWhitelist,
+    transforms: [privacyAndSecurityTransform]
   }
 )
 
