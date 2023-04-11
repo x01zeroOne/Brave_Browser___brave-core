@@ -12,6 +12,8 @@
 #include <raserror.h>
 #include <stdio.h>
 
+#include <objbase.h>
+#include <wrl/client.h>
 #include "base/base64.h"
 #include "base/files/file_util.h"
 #include "base/logging.h"
@@ -22,9 +24,9 @@
 #include "base/strings/utf_string_conversions.h"
 #include "brave/components/brave_vpn/browser/connection/brave_vpn_connection_info.h"
 #include "brave/components/brave_vpn/common/brave_vpn_constants.h"
-#include <objbase.h>
-#include <wrl/client.h>
 
+#include "base/task/single_thread_task_runner.h"
+#include "base/task/thread_pool.h"
 #include "base/win/com_init_util.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/brave_vpn_service_idl.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_constants.h"
@@ -657,27 +659,39 @@ bool WireGuardGenerateKeypair(std::string* public_key,
   return true;
 }
 
-void StartVpnWGService() {
+void StartVpnWGServiceImpl() {
   base::win::AssertComInitialized();
+  HRESULT hr = S_OK;
   Microsoft::WRL::ComPtr<IBraveVpnService> service;
-  HRESULT hr = CoCreateInstance(
-      brave_vpn::GetBraveVpnServiceClsid(), nullptr, CLSCTX_LOCAL_SERVER,
-      brave_vpn::GetBraveVpnServiceIid(), IID_PPV_ARGS_Helper(&service));
-  if (FAILED(hr))
+  CoCreateInstance(brave_vpn::GetBraveVpnServiceClsid(), nullptr,
+                   CLSCTX_LOCAL_SERVER, brave_vpn::GetBraveVpnServiceIid(),
+                   IID_PPV_ARGS_Helper(&service));
+  LOG(ERROR) << std::hex << hr;
+  if (FAILED(hr)) {
     return;
+  }
 
   hr = CoSetProxyBlanket(
       service.Get(), RPC_C_AUTHN_DEFAULT, RPC_C_AUTHZ_DEFAULT,
       COLE_DEFAULT_PRINCIPAL, RPC_C_AUTHN_LEVEL_PKT_PRIVACY,
       RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, EOAC_DYNAMIC_CLOAKING);
-  if (FAILED(hr))
+  if (FAILED(hr)) {
     return;
+  }
 
   std::wstring config = L"test";
   hr = service->EnableVpn(config.data());
   LOG(ERROR) << hr;
 }
 
+void StartVpnWGService() {
+  base::ThreadPool::CreateCOMSTATaskRunner(
+      {base::MayBlock(), base::WithBaseSyncPrimitives(),
+       base::TaskPriority::BEST_EFFORT,
+       base::TaskShutdownBehavior::CONTINUE_ON_SHUTDOWN},
+      base::SingleThreadTaskRunnerThreadMode::DEDICATED)
+      ->PostTask(FROM_HERE, base::BindOnce(&StartVpnWGServiceImpl));
+}
 }  // namespace internal
 
 }  // namespace brave_vpn

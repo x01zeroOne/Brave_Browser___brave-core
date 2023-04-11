@@ -14,13 +14,13 @@ namespace brave_vpn {
 
 namespace {
 // 053057AB-CF06-4E6C-BBAD-F8DA6436D933
-constexpr CLSID kBraveVpnServiceCLSID = {
+constexpr IID kBraveVpnServiceIID = {
     0x053057ab,
     0xcf06,
     0x4e6c,
     {0xbb, 0xad, 0xf8, 0xda, 0x64, 0x36, 0xd9, 0x33}};
 // 088C5F6E-B213-4A8E-98AD-9D64D8913968
-constexpr IID kBraveVpnServiceIID = {
+constexpr CLSID kBraveVpnServiceCLSID = {
     0x088c5f6e,
     0xb213,
     0x4a8e,

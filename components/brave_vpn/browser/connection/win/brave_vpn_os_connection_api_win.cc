@@ -55,7 +55,7 @@ BraveVPNOSConnectionAPIWin::BraveVPNOSConnectionAPIWin(
     version_info::Channel channel)
     : BraveVPNOSConnectionAPIBase(url_loader_factory, local_prefs, channel) {
   StartVPNConnectionChangeMonitoring();
-   brave_vpn::internal::StartVpnWGService();
+  brave_vpn::internal::StartVpnWGService();
 }
 
 BraveVPNOSConnectionAPIWin::~BraveVPNOSConnectionAPIWin() {

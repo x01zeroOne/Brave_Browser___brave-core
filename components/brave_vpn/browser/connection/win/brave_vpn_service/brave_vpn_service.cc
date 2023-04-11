@@ -9,8 +9,8 @@
 
 namespace brave_vpn {
 
-HRESULT BraveVpnService::EnableVpn(const wchar_t* crx_path) {
-  LOG(ERROR) << __func__;
+HRESULT BraveVpnService::EnableVpn(const wchar_t* config) {
+  LOG(ERROR) << __func__ << ":" << config;
   return S_OK;
 }
 

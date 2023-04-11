@@ -60,6 +60,13 @@ typedef interface IBraveVpnService IBraveVpnService;
 #endif 	/* __IBraveVpnService_FWD_DEFINED__ */
 
 
+#ifndef __IBraveVpnService_FWD_DEFINED__
+#define __IBraveVpnService_FWD_DEFINED__
+typedef interface IBraveVpnService IBraveVpnService;
+
+#endif 	/* __IBraveVpnService_FWD_DEFINED__ */
+
+
 /* header files for imported files */
 #include "oaidl.h"
 #include "ocidl.h"

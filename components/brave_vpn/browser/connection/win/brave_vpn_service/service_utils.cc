@@ -6,10 +6,13 @@
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_utils.h"
 
 #include "base/base_paths.h"
+#include "base/command_line.h"
 #include "base/files/file_path.h"
 #include "base/logging.h"
 #include "base/path_service.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/scoped_sc_handle.h"
+#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_constants.h"
+#include "chrome/installer/util/install_service_work_item.h"
 
 namespace brave_vpn {
 
@@ -21,6 +24,27 @@ HRESULT HRESULTFromLastError() {
 }
 
 }  // namespace
+
+bool InstallService() {
+  base::FilePath exe_dir;
+  base::PathService::Get(base::DIR_EXE, &exe_dir);
+  base::CommandLine service_cmd(
+      exe_dir.Append(brave_vpn::kBraveVPNServiceExecutable));
+  service_cmd.AppendSwitchPath("log-file", base::FilePath(L"D:\\1\\wg.log"));
+  installer::InstallServiceWorkItem install_service_work_item(
+      brave_vpn::GetBraveVpnServiceName(),
+      brave_vpn::GetBraveVpnServiceDisplayName(), SERVICE_DEMAND_START,
+      service_cmd, base::CommandLine(base::CommandLine::NO_PROGRAM),
+      brave_vpn::kBraveVpnServiceRegistryStoragePath,
+      {brave_vpn::GetBraveVpnServiceClsid()},
+      {brave_vpn::GetBraveVpnServiceIid()});
+  install_service_work_item.set_best_effort(true);
+  install_service_work_item.set_rollback_enabled(false);
+  if (install_service_work_item.Do()) {
+    return brave_vpn::ConfigureService(brave_vpn::GetBraveVpnServiceName());
+  }
+  return false;
+}
 
 bool ConfigureService(const std::wstring& service_name) {
   ScopedScHandle scm(::OpenSCManager(nullptr, nullptr, SC_MANAGER_ALL_ACCESS));

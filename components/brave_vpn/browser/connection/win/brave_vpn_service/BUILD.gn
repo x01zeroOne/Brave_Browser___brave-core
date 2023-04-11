@@ -68,6 +68,7 @@ executable("brave_vpn_service") {
     "//base",
     "//base:base_static",
     "//build/win:default_exe_manifest",
+    "//chrome/installer/util:with_no_strings",
     "//components/version_info:channel",
   ]
   public_deps = [ ":brave_vpn_service_idl" ]

@@ -17,8 +17,8 @@ source_set("utils") {
   deps = [
     "//base",
     "//brave/components/brave_vpn/browser/connection:common",
+    "//brave/components/brave_vpn/browser/connection/win/brave_vpn_service:common",
     "//brave/components/brave_vpn/common",
-    "//brave/components/brave_vpn/browser/connection/win/brave_vpn_service:common"
   ]
 }
 

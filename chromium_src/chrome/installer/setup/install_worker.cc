@@ -47,8 +47,8 @@ base::FilePath GetBraveVPNServicePath(const base::FilePath& target_path,
       .Append(brave_vpn::kBraveVPNServiceExecutable);
 }
 
-bool ConfigureBraveVPNHelperAutoRestart(const base::FilePath& exe_path,
-                                        const CallbackWorkItem&) {
+bool ConfigureBraveVPNAutoRestart(const base::FilePath& exe_path,
+                                  const CallbackWorkItem&) {
   if (!base::PathExists(exe_path)) {
     return false;
   }
@@ -77,7 +77,7 @@ void AddBraveVPNHelperWorkItems(const base::FilePath& vpn_helper_path,
   install_service_work_item->set_best_effort(true);
   list->AddWorkItem(install_service_work_item);
   list->AddCallbackWorkItem(
-      base::BindOnce(&ConfigureBraveVPNHelperAutoRestart, vpn_helper_path),
+      base::BindOnce(&ConfigureBraveVPNAutoRestart, vpn_helper_path),
       base::NullCallback());
 }
 
@@ -86,7 +86,8 @@ void AddBraveVPNHelperWorkItems(const base::FilePath& vpn_helper_path,
 void AddBraveVPNServiceWorkItems(const base::FilePath& vpn_service_path,
                                  WorkItemList* list) {
   DCHECK(::IsUserAnAdmin());
-  LOG(ERROR) << __func__ << ":" << vpn_service_path;
+  LOG(ERROR) << __func__ << ":" << vpn_service_path << " -> "
+             << brave_vpn::GetBraveVpnServiceName();
   if (vpn_service_path.empty()) {
     LOG(ERROR) << "The path to brave_vpn_helper.exe is invalid.";
     return;
@@ -101,6 +102,9 @@ void AddBraveVPNServiceWorkItems(const base::FilePath& vpn_service_path,
       {brave_vpn::GetBraveVpnServiceIid()});
   install_service_work_item->set_best_effort(true);
   list->AddWorkItem(install_service_work_item);
+  list->AddCallbackWorkItem(
+      base::BindOnce(&ConfigureBraveVPNAutoRestart, vpn_service_path),
+      base::NullCallback());
 }
 
 }  // namespace

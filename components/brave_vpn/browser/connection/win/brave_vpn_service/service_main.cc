@@ -119,7 +119,7 @@ HRESULT ServiceMain::RegisterClassObject() {
   hr = module.RegisterCOMObject(nullptr, class_ids, class_factories, cookies_,
                                 std::size(cookies_));
   if (FAILED(hr)) {
-    LOG(ERROR) << "RegisterCOMObject failed; hr: " << hr;
+    LOG(ERROR) << "RegisterCOMObject failed; hr: " << std::hex << hr;
     return hr;
   }
 
@@ -307,15 +307,20 @@ HRESULT ServiceMain::InitializeComSecurity() {
 
 HRESULT ServiceMain::Run() {
   VLOG(1) << __func__;
-  HRESULT hr = InitializeComSecurity();
+  /* HRESULT hr = InitializeComSecurity();
   if (FAILED(hr)) {
     return hr;
   }
-
+*/
   CreateWRLModule();
-  hr = RegisterClassObject();
+  HRESULT hr = RegisterClassObject();
   if (SUCCEEDED(hr)) {
-    CreateWGConnection();
+    // CreateWGConnection();
+    base::SingleThreadTaskExecutor service_task_executor(
+        base::MessagePumpType::UI);
+    base::RunLoop loop;
+    quit_ = loop.QuitClosure();
+    loop.Run();
     UnregisterClassObject();
   }
 
@@ -324,6 +329,7 @@ HRESULT ServiceMain::Run() {
 
 void ServiceMain::SignalExit() {
   VLOG(1) << __func__;
+  std::move(quit_).Run();
 }
 
 }  // namespace brave_vpn
