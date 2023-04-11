@@ -80,7 +80,7 @@ EXTERN_C const IID IID_IBraveVpnService;
 
 #if defined(__cplusplus) && !defined(CINTERFACE)
     
-    MIDL_INTERFACE("088C5F6E-B213-4A8E-98AD-9D64D8913968")
+    MIDL_INTERFACE("053057AB-CF06-4E6C-BBAD-F8DA6436D933")
     IBraveVpnService : public IUnknown
     {
     public:
