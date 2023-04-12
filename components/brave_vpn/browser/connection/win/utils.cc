@@ -679,7 +679,7 @@ void StartVpnWGServiceImpl() {
     return;
   }
 
-  std::wstring config = L"test";
+  std::wstring config = L"win.conf";
   hr = service->EnableVpn(config.data());
   LOG(ERROR) << hr;
 }

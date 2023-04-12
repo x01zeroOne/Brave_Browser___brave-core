@@ -13,6 +13,8 @@
 
 namespace brave_vpn {
 
+constexpr char kConnectWGSwitchName[] = "connect";
+constexpr char kLaunchWireguardServiceSwitchName[] = "launch-service";
 constexpr wchar_t kBraveVPNServiceExecutable[] = L"brave_vpn_service.exe";
 constexpr wchar_t kBraveVpnServiceRegistryStoragePath[] =
     L"Software\\BraveSoftware\\Brave\\Vpn\\BraveVpnServiceDevelopment";

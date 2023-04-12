@@ -37,11 +37,6 @@
 
 namespace brave_vpn {
 namespace {
-HRESULT HRESULTFromLastError() {
-  const auto error_code = ::GetLastError();
-  return (error_code != NO_ERROR) ? HRESULT_FROM_WIN32(error_code) : E_FAIL;
-}
-
 // Command line switch "--console" runs the service interactively for
 // debugging purposes.
 constexpr char kConsoleSwitchName[] = "console";
@@ -64,6 +59,7 @@ bool ServiceMain::InitWithCommandLine(const base::CommandLine* command_line) {
   if (command_line->HasSwitch(kConsoleSwitchName)) {
     run_routine_ = &ServiceMain::RunInteractive;
   }
+
   return true;
 }
 
@@ -222,46 +218,6 @@ void ServiceMain::SetServiceStatus(DWORD state) {
   ::SetServiceStatus(service_status_handle_, &service_status_);
 }
 
-HRESULT ServiceMain::CreateWGConnection() {
-  typedef bool WireGuardTunnelService(const LPCWSTR settings);
-  LOG(ERROR) << __func__;
-  base::FilePath directory;
-  if (!base::PathService::Get(base::DIR_EXE, &directory)) {
-    return S_OK;
-  }
-  auto tunnel_dll_path = directory.Append(L"tunnel.dll").value();
-  LOG(ERROR) << __func__ << ": Loading " << tunnel_dll_path;
-  HMODULE tunnel_lib = LoadLibrary(tunnel_dll_path.c_str());
-  if (!tunnel_lib) {
-    LOG(ERROR) << __func__ << ": tunnel.dll not found, error: "
-            << logging::SystemErrorCodeToString(
-                   logging::GetLastSystemErrorCode());
-    return S_OK;
-  }
-
-  WireGuardTunnelService* tunnel_proc =
-      reinterpret_cast<WireGuardTunnelService*>(
-          GetProcAddress(tunnel_lib, "WireGuardTunnelService"));
-  if (!tunnel_proc) {
-    LOG(ERROR) << __func__ << ": WireGuardTunnelService not found error: "
-            << logging::SystemErrorCodeToString(
-                   logging::GetLastSystemErrorCode());
-    return S_OK;
-  }
-
-  auto config_path = directory.Append(L"brave.test.conf").value();
-  LOG(ERROR) << __func__ << ": Brave " << config_path;
-  auto result = tunnel_proc(config_path.c_str());
-
-  if (!result) {
-    LOG(ERROR) << __func__ << ": failed to activate tunnel service:"
-            << logging::SystemErrorCodeToString(
-                   logging::GetLastSystemErrorCode())
-            << " -> " << std::hex << HRESULTFromLastError();
-  }
-  return S_OK;
-}
-
 // static
 HRESULT ServiceMain::InitializeComSecurity() {
   CDacl dacl;
@@ -272,7 +228,7 @@ HRESULT ServiceMain::InitializeComSecurity() {
       !dacl.AddAllowedAce(Sids::Interactive(), com_rights_execute_local)) {
     return E_ACCESSDENIED;
   }
- 
+
   CSecurityDesc sd;
   sd.SetDacl(dacl);
   sd.MakeAbsolute();
@@ -307,13 +263,13 @@ HRESULT ServiceMain::InitializeComSecurity() {
 
 HRESULT ServiceMain::Run() {
   LOG(ERROR) << __func__;
-  /* HRESULT hr = InitializeComSecurity();
+  HRESULT hr = InitializeComSecurity();
   if (FAILED(hr)) {
     return hr;
   }
-*/
+
   CreateWRLModule();
-  HRESULT hr = RegisterClassObject();
+  hr = RegisterClassObject();
   if (SUCCEEDED(hr)) {
     // CreateWGConnection();
     base::SingleThreadTaskExecutor service_task_executor(

@@ -16,6 +16,7 @@
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_constants.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_main.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_utils.h"
+#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/wireguard_tunnel_service.h"
 #include "chrome/install_static/product_install_details.h"
 
 namespace {
@@ -38,6 +39,16 @@ int main(int argc, char* argv[]) {
   logging::InitLogging(settings);
   // The exit manager is in charge of calling the dtors of singletons.
   base::AtExitManager exit_manager;
+
+  if (command_line->HasSwitch(brave_vpn::kConnectWGSwitchName)) {
+    return brave_vpn::wireguard::RunWireGuardTunnelService(
+        command_line->GetSwitchValuePath(brave_vpn::kConnectWGSwitchName));
+  }
+  if (command_line->HasSwitch(brave_vpn::kLaunchWireguardServiceSwitchName)) {
+    return brave_vpn::wireguard::LaunchService(command_line->GetSwitchValuePath(
+        brave_vpn::kLaunchWireguardServiceSwitchName));
+  }
+
   // Make sure the process exits cleanly on unexpected errors.
   base::EnableTerminationOnHeapCorruption();
   base::EnableTerminationOnOutOfMemory();

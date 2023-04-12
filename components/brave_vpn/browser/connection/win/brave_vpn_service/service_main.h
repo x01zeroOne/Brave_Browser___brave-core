@@ -39,7 +39,6 @@ class ServiceMain {
 
   // Unregisters the Service COM class factory object.
   void UnregisterClassObject();
-  HRESULT CreateWGConnection();
 
  private:
   friend class base::NoDestructor<ServiceMain>;
@@ -65,7 +64,7 @@ class ServiceMain {
 
   // The main service entry point.
   static void WINAPI ServiceMainEntry(DWORD argc, wchar_t* argv[]);
-  
+
   // Calls ::SetServiceStatus().
   void SetServiceStatus(DWORD state);
 
