@@ -18,6 +18,7 @@
 #include "brave/components/brave_vpn/browser/api/brave_vpn_api_request.h"
 #include "brave/components/brave_vpn/browser/connection/brave_vpn_connection_info.h"
 #include "brave/components/brave_vpn/browser/connection/brave_vpn_os_connection_api_base.h"
+#include "brave/components/brave_vpn/browser/connection/win/utils.h"
 #include "brave/components/brave_vpn/common/mojom/brave_vpn.mojom.h"
 #include "net/base/network_change_notifier.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
@@ -53,12 +54,14 @@ class BraveVPNOSConnectionAPIWireguard : public BraveVPNOSConnectionAPIBase {
   void CheckConnectionImpl(const std::string& name) override;
 
  protected:
-  void OnWireguardKeypairGenerated(bool success,
-                                   const std::string& public_key,
-                                   const std::string& private_key);
+  void OnWireguardKeypairGenerated(
+      brave_vpn::internal::WireguardKeyPair key_pair);
   // Subclass should add platform dependent impls.
-  void OnGetProfileCredentials(const std::string& profile_credential,
+  void OnGetProfileCredentials(const std::string& private_key,
+                               const std::string& profile_credential,
                                bool success);
+  void OnWireguardServiceLaunched(bool success);
+  void OnWireguardServiceRemoved(bool success);
 
  private:
   raw_ptr<PrefService> local_prefs_ = nullptr;

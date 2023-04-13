@@ -39,14 +39,13 @@ class ServiceMain {
 
   // Unregisters the Service COM class factory object.
   void UnregisterClassObject();
+  void SignalExit();
 
  private:
   friend class base::NoDestructor<ServiceMain>;
 
   ServiceMain();
   ~ServiceMain();
-
-  void SignalExit();
 
   // This function handshakes with the service control manager and starts
   // the service.

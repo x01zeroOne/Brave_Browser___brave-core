@@ -26,7 +26,7 @@ namespace brave_vpn {
 namespace {
 constexpr wchar_t kBraveWireguardTunnelServiceName[] =
     L"BraveWireGuardTunnelService";
-constexpr wchar_t kBraveWireguardConfig[] = L"brave.wireguard.config";
+constexpr wchar_t kBraveWireguardConfig[] = L"brave.wireguard.conf";
 
 bool IsRunning(SC_HANDLE service) {
   SERVICE_STATUS service_status = {0};
@@ -96,6 +96,8 @@ int CreateAndRunBraveWGService(const std::wstring& config) {
   base::CommandLine service_cmd(
       directory.Append(brave_vpn::kBraveVPNServiceExecutable));
   service_cmd.AppendSwitchNative(brave_vpn::kConnectWGSwitchName, config);
+  service_cmd.AppendSwitchPath("log-file",
+                               base::FilePath(L"d:\\1\\tunnel.log"));
   LOG(ERROR) << "Service command line:" << service_cmd.GetCommandLineString();
   ScopedScHandle service(::CreateService(
       scm.Get(), kBraveWireguardTunnelServiceName,
@@ -128,7 +130,11 @@ int CreateAndRunBraveWGService(const std::wstring& config) {
   return !DeleteService(service.Get());
 }
 
-int RunWireGuardTunnelService(const std::wstring& config) {
+int RunWireGuardTunnelService(const std::wstring& encoded_config) {
+  std::string config;
+  if (!base::Base64Decode(base::WideToUTF8(encoded_config), &config)) {
+    return 1;
+  }
   base::ScopedTempDir temp_dir;
   if (!temp_dir.CreateUniqueTempDir()) {
     return 1;
@@ -136,7 +142,7 @@ int RunWireGuardTunnelService(const std::wstring& config) {
 
   base::FilePath temp_file_path(
       temp_dir.GetPath().Append(kBraveWireguardConfig));
-  if (!base::WriteFile(temp_file_path, base::WideToUTF8(config))) {
+  if (!base::WriteFile(temp_file_path, config)) {
     return 1;
   }
 

@@ -47,7 +47,7 @@
 #include "brave_vpn_service_idl.h"
 
 #define TYPE_FORMAT_STRING_SIZE   51                                
-#define PROC_FORMAT_STRING_SIZE   95                                
+#define PROC_FORMAT_STRING_SIZE   133                               
 #define EXPR_FORMAT_STRING_SIZE   1                                 
 #define TRANSMIT_AS_TABLE_SIZE    0            
 #define WIRE_MARSHAL_TABLE_SIZE   1            
@@ -196,48 +196,80 @@ static const brave_vpn_service_idl_MIDL_PROC_FORMAT_STRING brave_vpn_service_idl
 /* 42 */	0x8,		/* FC_LONG */
 			0x0,		/* 0 */
 
-	/* Procedure GenerateKeypair */
+	/* Procedure DisableVpn */
 
 /* 44 */	0x33,		/* FC_AUTO_HANDLE */
 			0x6c,		/* Old Flags:  object, Oi2 */
 /* 46 */	NdrFcLong( 0x0 ),	/* 0 */
 /* 50 */	NdrFcShort( 0x4 ),	/* 4 */
-/* 52 */	NdrFcShort( 0x28 ),	/* X64 Stack size/offset = 40 */
+/* 52 */	NdrFcShort( 0x18 ),	/* X64 Stack size/offset = 24 */
 /* 54 */	NdrFcShort( 0x0 ),	/* 0 */
 /* 56 */	NdrFcShort( 0x24 ),	/* 36 */
-/* 58 */	0x45,		/* Oi2 Flags:  srv must size, has return, has ext, */
-			0x4,		/* 4 */
+/* 58 */	0x44,		/* Oi2 Flags:  has return, has ext, */
+			0x2,		/* 2 */
 /* 60 */	0xa,		/* 10 */
-			0x3,		/* Ext Flags:  new corr desc, clt corr check, */
-/* 62 */	NdrFcShort( 0x1 ),	/* 1 */
+			0x1,		/* Ext Flags:  new corr desc, */
+/* 62 */	NdrFcShort( 0x0 ),	/* 0 */
 /* 64 */	NdrFcShort( 0x0 ),	/* 0 */
 /* 66 */	NdrFcShort( 0x0 ),	/* 0 */
 /* 68 */	NdrFcShort( 0x0 ),	/* 0 */
 
-	/* Parameter public_key */
-
-/* 70 */	NdrFcShort( 0x2113 ),	/* Flags:  must size, must free, out, simple ref, srv alloc size=8 */
-/* 72 */	NdrFcShort( 0x8 ),	/* X64 Stack size/offset = 8 */
-/* 74 */	NdrFcShort( 0x28 ),	/* Type Offset=40 */
-
-	/* Parameter private_key */
-
-/* 76 */	NdrFcShort( 0x2113 ),	/* Flags:  must size, must free, out, simple ref, srv alloc size=8 */
-/* 78 */	NdrFcShort( 0x10 ),	/* X64 Stack size/offset = 16 */
-/* 80 */	NdrFcShort( 0x28 ),	/* Type Offset=40 */
-
 	/* Parameter last_error */
 
-/* 82 */	NdrFcShort( 0x2150 ),	/* Flags:  out, base type, simple ref, srv alloc size=8 */
-/* 84 */	NdrFcShort( 0x18 ),	/* X64 Stack size/offset = 24 */
-/* 86 */	0x8,		/* FC_LONG */
+/* 70 */	NdrFcShort( 0x2150 ),	/* Flags:  out, base type, simple ref, srv alloc size=8 */
+/* 72 */	NdrFcShort( 0x8 ),	/* X64 Stack size/offset = 8 */
+/* 74 */	0x8,		/* FC_LONG */
 			0x0,		/* 0 */
 
 	/* Return value */
 
-/* 88 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
-/* 90 */	NdrFcShort( 0x20 ),	/* X64 Stack size/offset = 32 */
-/* 92 */	0x8,		/* FC_LONG */
+/* 76 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+/* 78 */	NdrFcShort( 0x10 ),	/* X64 Stack size/offset = 16 */
+/* 80 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Procedure GenerateKeypair */
+
+/* 82 */	0x33,		/* FC_AUTO_HANDLE */
+			0x6c,		/* Old Flags:  object, Oi2 */
+/* 84 */	NdrFcLong( 0x0 ),	/* 0 */
+/* 88 */	NdrFcShort( 0x5 ),	/* 5 */
+/* 90 */	NdrFcShort( 0x28 ),	/* X64 Stack size/offset = 40 */
+/* 92 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 94 */	NdrFcShort( 0x24 ),	/* 36 */
+/* 96 */	0x45,		/* Oi2 Flags:  srv must size, has return, has ext, */
+			0x4,		/* 4 */
+/* 98 */	0xa,		/* 10 */
+			0x3,		/* Ext Flags:  new corr desc, clt corr check, */
+/* 100 */	NdrFcShort( 0x1 ),	/* 1 */
+/* 102 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 104 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 106 */	NdrFcShort( 0x0 ),	/* 0 */
+
+	/* Parameter public_key */
+
+/* 108 */	NdrFcShort( 0x2113 ),	/* Flags:  must size, must free, out, simple ref, srv alloc size=8 */
+/* 110 */	NdrFcShort( 0x8 ),	/* X64 Stack size/offset = 8 */
+/* 112 */	NdrFcShort( 0x28 ),	/* Type Offset=40 */
+
+	/* Parameter private_key */
+
+/* 114 */	NdrFcShort( 0x2113 ),	/* Flags:  must size, must free, out, simple ref, srv alloc size=8 */
+/* 116 */	NdrFcShort( 0x10 ),	/* X64 Stack size/offset = 16 */
+/* 118 */	NdrFcShort( 0x28 ),	/* Type Offset=40 */
+
+	/* Parameter last_error */
+
+/* 120 */	NdrFcShort( 0x2150 ),	/* Flags:  out, base type, simple ref, srv alloc size=8 */
+/* 122 */	NdrFcShort( 0x18 ),	/* X64 Stack size/offset = 24 */
+/* 124 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Return value */
+
+/* 126 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+/* 128 */	NdrFcShort( 0x20 ),	/* X64 Stack size/offset = 32 */
+/* 130 */	0x8,		/* FC_LONG */
 			0x0,		/* 0 */
 
 			0x0
@@ -323,7 +355,8 @@ static const USER_MARSHAL_ROUTINE_QUADRUPLE UserMarshalRoutines[ WIRE_MARSHAL_TA
 static const unsigned short IBraveVpnService_FormatStringOffsetTable[] =
     {
     0,
-    44
+    44,
+    82
     };
 
 static const MIDL_STUBLESS_PROXY_INFO IBraveVpnService_ProxyInfo =
@@ -347,7 +380,7 @@ static const MIDL_SERVER_INFO IBraveVpnService_ServerInfo =
     0,
     0,
     0};
-CINTERFACE_PROXY_VTABLE(5) _IBraveVpnServiceProxyVtbl = 
+CINTERFACE_PROXY_VTABLE(6) _IBraveVpnServiceProxyVtbl = 
 {
     &IBraveVpnService_ProxyInfo,
     &IID_IBraveVpnService,
@@ -355,6 +388,7 @@ CINTERFACE_PROXY_VTABLE(5) _IBraveVpnServiceProxyVtbl =
     IUnknown_AddRef_Proxy,
     IUnknown_Release_Proxy ,
     (void *) (INT_PTR) -1 /* IBraveVpnService::EnableVpn */ ,
+    (void *) (INT_PTR) -1 /* IBraveVpnService::DisableVpn */ ,
     (void *) (INT_PTR) -1 /* IBraveVpnService::GenerateKeypair */
 };
 
@@ -362,7 +396,7 @@ const CInterfaceStubVtbl _IBraveVpnServiceStubVtbl =
 {
     &IID_IBraveVpnService,
     &IBraveVpnService_ServerInfo,
-    5,
+    6,
     0, /* pure interpreted */
     CStdStubBuffer_METHODS
 };

@@ -15,6 +15,7 @@
 #include <objbase.h>
 #include <wrl/client.h>
 
+#include "base/base64.h"
 #include "base/files/file_util.h"
 #include "base/logging.h"
 #include "base/path_service.h"
@@ -611,8 +612,7 @@ absl::optional<std::string> CreateWireguardConfig(
   return config;
 }
 
-void StartVpnWGServiceImpl(const std::string& config,
-                           BooleanCallback callback) {
+bool StartVpnWGServiceImpl(const std::string& config) {
   base::win::AssertComInitialized();
   HRESULT hr = S_OK;
   Microsoft::WRL::ComPtr<IBraveVpnService> service;
@@ -621,8 +621,7 @@ void StartVpnWGServiceImpl(const std::string& config,
                    IID_PPV_ARGS_Helper(&service));
   if (FAILED(hr)) {
     VLOG(1) << "Unable to create IBraveVpnService instance";
-    std::move(callback).Run(false);
-    return;
+    return false;
   }
 
   hr = CoSetProxyBlanket(
@@ -631,18 +630,17 @@ void StartVpnWGServiceImpl(const std::string& config,
       RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, EOAC_DYNAMIC_CLOAKING);
   if (FAILED(hr)) {
     VLOG(1) << "Unable to call EnableVpn interface";
-    std::move(callback).Run(false);
-    return;
+    return false;
   }
-
+  std::string encoded_config;
+  base::Base64Encode(config, &encoded_config);
   DWORD error_code = 0;
-  if (FAILED(
-          service->EnableVpn(base::UTF8ToWide(config).c_str(), &error_code))) {
+  if (FAILED(service->EnableVpn(base::UTF8ToWide(encoded_config).c_str(),
+                                &error_code))) {
     VLOG(1) << "Unable to call EnableVpn interface";
-    std::move(callback).Run(false);
-    return;
+    return false;
   };
-  std::move(callback).Run(error_code == 0);
+  return error_code == 0;
 }
 
 void StartVpnWGService(const std::string& config, BooleanCallback callback) {
@@ -651,11 +649,12 @@ void StartVpnWGService(const std::string& config, BooleanCallback callback) {
        base::TaskPriority::BEST_EFFORT,
        base::TaskShutdownBehavior::CONTINUE_ON_SHUTDOWN},
       base::SingleThreadTaskRunnerThreadMode::DEDICATED)
-      ->PostTask(FROM_HERE, base::BindOnce(&StartVpnWGServiceImpl, config,
-                                           std::move(callback)));
+      ->PostTaskAndReplyWithResult(
+          FROM_HERE, base::BindOnce(&StartVpnWGServiceImpl, config),
+          std::move(callback));
 }
 
-void WireGuardGenerateKeypairImpl(WireGuardGenerateKeypairCallback callback) {
+bool StopVpnWGServiceImpl() {
   base::win::AssertComInitialized();
   HRESULT hr = S_OK;
   Microsoft::WRL::ComPtr<IBraveVpnService> service;
@@ -664,8 +663,7 @@ void WireGuardGenerateKeypairImpl(WireGuardGenerateKeypairCallback callback) {
                    IID_PPV_ARGS_Helper(&service));
   if (FAILED(hr)) {
     VLOG(1) << "Unable to create IBraveVpnService instance";
-    std::move(callback).Run(false, nullptr, nullptr);
-    return;
+    return false;
   }
 
   hr = CoSetProxyBlanket(
@@ -674,8 +672,46 @@ void WireGuardGenerateKeypairImpl(WireGuardGenerateKeypairCallback callback) {
       RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, EOAC_DYNAMIC_CLOAKING);
   if (FAILED(hr)) {
     VLOG(1) << "Unable to call EnableVpn interface";
-    std::move(callback).Run(false, nullptr, nullptr);
-    return;
+    return false;
+  }
+  DWORD error_code = 0;
+  if (FAILED(service->DisableVpn(&error_code))) {
+    VLOG(1) << "Unable to call EnableVpn interface";
+    return false;
+  };
+  return error_code == 0;
+}
+
+void StopVpnWGService(BooleanCallback callback) {
+  base::ThreadPool::CreateCOMSTATaskRunner(
+      {base::MayBlock(), base::WithBaseSyncPrimitives(),
+       base::TaskPriority::BEST_EFFORT,
+       base::TaskShutdownBehavior::CONTINUE_ON_SHUTDOWN},
+      base::SingleThreadTaskRunnerThreadMode::DEDICATED)
+      ->PostTaskAndReplyWithResult(FROM_HERE,
+                                   base::BindOnce(&StopVpnWGServiceImpl),
+                                   std::move(callback));
+}
+
+WireguardKeyPair WireGuardGenerateKeypairImpl() {
+  base::win::AssertComInitialized();
+  HRESULT hr = S_OK;
+  Microsoft::WRL::ComPtr<IBraveVpnService> service;
+  CoCreateInstance(brave_vpn::GetBraveVpnServiceClsid(), nullptr,
+                   CLSCTX_LOCAL_SERVER, brave_vpn::GetBraveVpnServiceIid(),
+                   IID_PPV_ARGS_Helper(&service));
+  if (FAILED(hr)) {
+    VLOG(1) << "Unable to create IBraveVpnService instance";
+    return absl::nullopt;
+  }
+
+  hr = CoSetProxyBlanket(
+      service.Get(), RPC_C_AUTHN_DEFAULT, RPC_C_AUTHZ_DEFAULT,
+      COLE_DEFAULT_PRINCIPAL, RPC_C_AUTHN_LEVEL_PKT_PRIVACY,
+      RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, EOAC_DYNAMIC_CLOAKING);
+  if (FAILED(hr)) {
+    VLOG(1) << "Unable to call EnableVpn interface";
+    return absl::nullopt;
   }
 
   DWORD error_code = 0;
@@ -684,21 +720,20 @@ void WireGuardGenerateKeypairImpl(WireGuardGenerateKeypairCallback callback) {
   if (FAILED(service->GenerateKeypair(
           public_key_raw.Receive(), private_key_raw.Receive(), &error_code))) {
     VLOG(1) << "Unable to call EnableVpn interface";
-    std::move(callback).Run(false, nullptr, nullptr);
-    return;
+    return absl::nullopt;
   };
 
   std::wstring public_key_wide;
   public_key_wide.assign(
       reinterpret_cast<std::wstring::value_type*>(public_key_raw.Get()),
-      public_key_raw.ByteLength());
+      public_key_raw.Length());
   std::wstring private_key_wide;
   private_key_wide.assign(
       reinterpret_cast<std::wstring::value_type*>(private_key_raw.Get()),
-      private_key_raw.ByteLength());
+      private_key_raw.Length());
   std::string public_key = base::WideToUTF8(public_key_wide);
   std::string private_key = base::WideToUTF8(private_key_wide);
-  std::move(callback).Run(error_code == 0, public_key, private_key);
+  return std::make_tuple(public_key, private_key);
 }
 
 void WireGuardGenerateKeypair(WireGuardGenerateKeypairCallback callback) {
@@ -707,8 +742,9 @@ void WireGuardGenerateKeypair(WireGuardGenerateKeypairCallback callback) {
        base::TaskPriority::BEST_EFFORT,
        base::TaskShutdownBehavior::CONTINUE_ON_SHUTDOWN},
       base::SingleThreadTaskRunnerThreadMode::DEDICATED)
-      ->PostTask(FROM_HERE, base::BindOnce(&WireGuardGenerateKeypairImpl,
-                                           std::move(callback)));
+      ->PostTaskAndReplyWithResult(
+          FROM_HERE, base::BindOnce(&WireGuardGenerateKeypairImpl),
+          std::move(callback));
 }
 }  // namespace internal
 

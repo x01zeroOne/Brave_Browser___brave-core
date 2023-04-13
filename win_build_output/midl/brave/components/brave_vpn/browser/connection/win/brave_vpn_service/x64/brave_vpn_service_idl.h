@@ -95,6 +95,9 @@ EXTERN_C const IID IID_IBraveVpnService;
             /* [string][in] */ const WCHAR *config,
             /* [out] */ DWORD *last_error) = 0;
         
+        virtual HRESULT STDMETHODCALLTYPE DisableVpn( 
+            /* [out] */ DWORD *last_error) = 0;
+        
         virtual HRESULT STDMETHODCALLTYPE GenerateKeypair( 
             /* [out] */ BSTR *public_key,
             /* [out] */ BSTR *private_key,
@@ -130,6 +133,11 @@ EXTERN_C const IID IID_IBraveVpnService;
             /* [string][in] */ const WCHAR *config,
             /* [out] */ DWORD *last_error);
         
+        DECLSPEC_XFGVIRT(IBraveVpnService, DisableVpn)
+        HRESULT ( STDMETHODCALLTYPE *DisableVpn )( 
+            IBraveVpnService * This,
+            /* [out] */ DWORD *last_error);
+        
         DECLSPEC_XFGVIRT(IBraveVpnService, GenerateKeypair)
         HRESULT ( STDMETHODCALLTYPE *GenerateKeypair )( 
             IBraveVpnService * This,
@@ -162,6 +170,9 @@ EXTERN_C const IID IID_IBraveVpnService;
 
 #define IBraveVpnService_EnableVpn(This,config,last_error)	\
     ( (This)->lpVtbl -> EnableVpn(This,config,last_error) ) 
+
+#define IBraveVpnService_DisableVpn(This,last_error)	\
+    ( (This)->lpVtbl -> DisableVpn(This,last_error) ) 
 
 #define IBraveVpnService_GenerateKeypair(This,public_key,private_key,last_error)	\
     ( (This)->lpVtbl -> GenerateKeypair(This,public_key,private_key,last_error) ) 

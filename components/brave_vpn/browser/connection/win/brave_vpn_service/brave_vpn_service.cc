@@ -25,6 +25,11 @@ HRESULT BraveVpnService::EnableVpn(const wchar_t* config, DWORD* last_error) {
   return S_OK;
 }
 
+HRESULT BraveVpnService::DisableVpn(DWORD* last_error) {
+  *last_error = !brave_vpn::wireguard::RemoveExistingWireguradService();
+  return S_OK;
+}
+
 HRESULT BraveVpnService::GenerateKeypair(BSTR* public_key,
                                          BSTR* private_key,
                                          DWORD* last_error) {

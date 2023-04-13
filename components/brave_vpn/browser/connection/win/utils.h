@@ -33,10 +33,9 @@ struct RasOperationResult {
 };
 
 using BooleanCallback = base::OnceCallback<void(bool)>;
+using WireguardKeyPair = absl::optional<std::tuple<std::string, std::string>>;
 using WireGuardGenerateKeypairCallback =
-    base::OnceCallback<void(bool success,
-                            const std::string& public_key,
-                            const std::string& private_key)>;
+    base::OnceCallback<void(WireguardKeyPair)>;
 // Returns human readable error description.
 std::string GetRasErrorMessage(DWORD error);
 std::wstring GetPhonebookPath(const std::wstring& entry_name);
@@ -54,6 +53,7 @@ absl::optional<std::string> CreateWireguardConfig(
     const std::string& mapped_ipv4_address,
     const std::string& dns_servers);
 void StartVpnWGService(const std::string& config, BooleanCallback callback);
+void StopVpnWGService(BooleanCallback callback);
 }  // namespace internal
 
 }  // namespace brave_vpn

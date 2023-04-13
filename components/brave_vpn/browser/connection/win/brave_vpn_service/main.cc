@@ -40,6 +40,13 @@ int main(int argc, char* argv[]) {
   // The exit manager is in charge of calling the dtors of singletons.
   base::AtExitManager exit_manager;
 
+  // Make sure the process exits cleanly on unexpected errors.
+  base::EnableTerminationOnHeapCorruption();
+  base::EnableTerminationOnOutOfMemory();
+  base::win::RegisterInvalidParamHandler();
+  base::win::SetupCRT(*base::CommandLine::ForCurrentProcess());
+  install_static::InitializeProductDetailsForPrimaryModule();
+
   if (command_line->HasSwitch(brave_vpn::kConnectWGSwitchName)) {
     return brave_vpn::wireguard::RunWireGuardTunnelService(
         command_line->GetSwitchValueNative(brave_vpn::kConnectWGSwitchName));
@@ -49,13 +56,6 @@ int main(int argc, char* argv[]) {
         command_line->GetSwitchValueNative(
             brave_vpn::kLaunchWireguardServiceSwitchName));
   }
-
-  // Make sure the process exits cleanly on unexpected errors.
-  base::EnableTerminationOnHeapCorruption();
-  base::EnableTerminationOnOutOfMemory();
-  base::win::RegisterInvalidParamHandler();
-  base::win::SetupCRT(*base::CommandLine::ForCurrentProcess());
-  install_static::InitializeProductDetailsForPrimaryModule();
 
   // Initialize COM for the current thread.
   base::win::ScopedCOMInitializer com_initializer(
