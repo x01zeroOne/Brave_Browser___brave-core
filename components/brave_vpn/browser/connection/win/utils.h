@@ -8,6 +8,7 @@
 
 #include <string>
 
+#include "base/functional/callback.h"
 #include "base/win/windows_types.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 
@@ -31,6 +32,11 @@ struct RasOperationResult {
   std::string error_description;
 };
 
+using BooleanCallback = base::OnceCallback<void(bool)>;
+using WireGuardGenerateKeypairCallback =
+    base::OnceCallback<void(bool success,
+                            const std::string& public_key,
+                            const std::string& private_key)>;
 // Returns human readable error description.
 std::string GetRasErrorMessage(DWORD error);
 std::wstring GetPhonebookPath(const std::wstring& entry_name);
@@ -40,15 +46,14 @@ RasOperationResult RemoveEntry(const std::wstring& entry_name);
 RasOperationResult DisconnectEntry(const std::wstring& entry_name);
 RasOperationResult ConnectEntry(const std::wstring& entry_name);
 CheckConnectionResult CheckConnection(const std::wstring& entry_name);
-bool WireGuardGenerateKeypair(std::string* public_key,
-                              std::string* private_key);
+void WireGuardGenerateKeypair(WireGuardGenerateKeypairCallback callback);
 absl::optional<std::string> CreateWireguardConfig(
     const std::string& client_private_key,
     const std::string& server_public_key,
     const std::string& vpn_server_hostname,
     const std::string& mapped_ipv4_address,
     const std::string& dns_servers);
-void StartVpnWGService();
+void StartVpnWGService(const std::string& config, BooleanCallback callback);
 }  // namespace internal
 
 }  // namespace brave_vpn

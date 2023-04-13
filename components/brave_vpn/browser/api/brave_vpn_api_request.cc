@@ -254,6 +254,7 @@ void BraveVpnAPIRequest::OnGetResponse(
   // NOTE: |api_request_helper_| uses JsonSanitizer to sanitize input made with
   // requests. |body| will be empty when the response from service is invalid
   // json.
+  LOG(ERROR) << "result.response_code:" << result.response_code();
   const bool success = result.response_code() == 200;
   std::move(callback).Run(result.body(), success);
 }

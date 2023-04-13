@@ -3,9 +3,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "base/test/bind.h"
 #include "brave/browser/ui/brave_browser.h"
+#include "brave/components/brave_vpn/browser/api/brave_vpn_api_request.h"
 #include "brave/components/constants/pref_names.h"
+#include "chrome/browser/browser_process.h"
 #include "chrome/browser/devtools/devtools_window_testing.h"
+#include "chrome/browser/net/system_network_context_manager.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/ui/browser_finder.h"
 #include "chrome/browser/ui/browser_tabstrip.h"
@@ -20,6 +24,9 @@
 #include "content/public/test/browser_test.h"
 #include "content/public/test/test_navigation_observer.h"
 #include "content/public/test/test_utils.h"
+#include "services/data_decoder/public/cpp/data_decoder.h"
+#include "services/network/public/cpp/weak_wrapper_shared_url_loader_factory.h"
+#include "services/network/test/test_url_loader_factory.h"
 
 using BraveBrowserBrowserTest = InProcessBrowserTest;
 
@@ -104,4 +111,24 @@ IN_PROC_BROWSER_TEST_F(BraveBrowserBrowserTest,
   tab_strip->GetActiveWebContents()->Close();
   base::RunLoop().RunUntilIdle();
   EXPECT_EQ(chrome::GetTotalBrowserCount(), 1u);
+}
+
+IN_PROC_BROWSER_TEST_F(BraveBrowserBrowserTest, JSON) {
+  ASSERT_TRUE(embedded_test_server()->Start());
+  auto page_url = embedded_test_server()->GetURL("/empty.html");
+  base::RunLoop loop;
+  auto quit = loop.QuitClosure();
+  brave_vpn::BraveVpnAPIRequest api_request(
+      g_browser_process->system_network_context_manager()
+          ->GetSharedURLLoaderFactory());
+
+  api_request.GetWireguardProfileCredentials(
+      base::BindLambdaForTesting(
+          [&quit](const std::string& profile_credential, bool success) {
+            LOG(ERROR) << profile_credential;
+            EXPECT_TRUE(success);
+            std::move(quit).Run();
+          }),
+      "subscriber", "public", page_url.spec());
+  loop.Run();
 }

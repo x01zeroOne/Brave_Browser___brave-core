@@ -14,22 +14,21 @@
 
 #include <objbase.h>
 #include <wrl/client.h>
-#include "base/base64.h"
+
 #include "base/files/file_util.h"
 #include "base/logging.h"
 #include "base/path_service.h"
 #include "base/strings/strcat.h"
 #include "base/strings/string_util.h"
-#include "base/strings/stringprintf.h"
 #include "base/strings/utf_string_conversions.h"
-#include "brave/components/brave_vpn/browser/connection/brave_vpn_connection_info.h"
-#include "brave/components/brave_vpn/common/brave_vpn_constants.h"
-
 #include "base/task/single_thread_task_runner.h"
 #include "base/task/thread_pool.h"
 #include "base/win/com_init_util.h"
+#include "base/win/scoped_bstr.h"
+#include "brave/components/brave_vpn/browser/connection/brave_vpn_connection_info.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/brave_vpn_service_idl.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_constants.h"
+#include "brave/components/brave_vpn/common/brave_vpn_constants.h"
 
 namespace brave_vpn {
 
@@ -612,62 +611,17 @@ absl::optional<std::string> CreateWireguardConfig(
   return config;
 }
 
-bool WireGuardGenerateKeypair(std::string* public_key,
-                              std::string* private_key) {
-  base::FilePath directory;
-  if (!base::PathService::Get(base::DIR_EXE, &directory)) {
-    VLOG(1) << __func__ << ": executable path not found, error: "
-            << logging::SystemErrorCodeToString(
-                   logging::GetLastSystemErrorCode());
-    return false;
-  }
-  auto tunnel_dll_path = directory.Append(L"tunnel.dll").value();
-  VLOG(1) << __func__ << ": Loading " << tunnel_dll_path;
-  HMODULE tunnel_lib = LoadLibrary(tunnel_dll_path.c_str());
-  if (!tunnel_lib) {
-    VLOG(1) << __func__ << ": tunnel.dll not found, error: "
-            << logging::SystemErrorCodeToString(
-                   logging::GetLastSystemErrorCode());
-    return false;
-  }
-
-  typedef bool WireGuardGenerateKeypair(uint8_t[32], uint8_t[32]);
-  std::vector<uint8_t> public_key_bytes(32);
-  std::vector<uint8_t> private_key_bytes(32);
-  WireGuardGenerateKeypair* generate_proc =
-      reinterpret_cast<WireGuardGenerateKeypair*>(
-          GetProcAddress(tunnel_lib, "WireGuardGenerateKeypair"));
-  if (!generate_proc) {
-    VLOG(ERROR) << __func__ << ": WireGuardGenerateKeypair not found error: "
-                << logging::SystemErrorCodeToString(
-                       logging::GetLastSystemErrorCode());
-    return false;
-  }
-  auto result =
-      generate_proc(public_key_bytes.data(), private_key_bytes.data());
-
-  if (result) {
-    return false;
-  }
-
-  *public_key = base::Base64Encode(base::span<const uint8_t>(public_key_bytes));
-  *private_key =
-      base::Base64Encode(base::span<const uint8_t>(private_key_bytes));
-  LOG(ERROR) << "public_key:" << *public_key << " private_key:" << *private_key;
-  LOG(ERROR) << private_key->size();
-  LOG(ERROR) << public_key->size();
-  return true;
-}
-
-void StartVpnWGServiceImpl() {
+void StartVpnWGServiceImpl(const std::string& config,
+                           BooleanCallback callback) {
   base::win::AssertComInitialized();
   HRESULT hr = S_OK;
   Microsoft::WRL::ComPtr<IBraveVpnService> service;
   CoCreateInstance(brave_vpn::GetBraveVpnServiceClsid(), nullptr,
                    CLSCTX_LOCAL_SERVER, brave_vpn::GetBraveVpnServiceIid(),
                    IID_PPV_ARGS_Helper(&service));
-  LOG(ERROR) << std::hex << hr;
   if (FAILED(hr)) {
+    VLOG(1) << "Unable to create IBraveVpnService instance";
+    std::move(callback).Run(false);
     return;
   }
 
@@ -676,21 +630,85 @@ void StartVpnWGServiceImpl() {
       COLE_DEFAULT_PRINCIPAL, RPC_C_AUTHN_LEVEL_PKT_PRIVACY,
       RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, EOAC_DYNAMIC_CLOAKING);
   if (FAILED(hr)) {
+    VLOG(1) << "Unable to call EnableVpn interface";
+    std::move(callback).Run(false);
     return;
   }
 
-  std::wstring config = L"win.conf";
-  hr = service->EnableVpn(config.data());
-  LOG(ERROR) << hr;
+  DWORD error_code = 0;
+  if (FAILED(
+          service->EnableVpn(base::UTF8ToWide(config).c_str(), &error_code))) {
+    VLOG(1) << "Unable to call EnableVpn interface";
+    std::move(callback).Run(false);
+    return;
+  };
+  std::move(callback).Run(error_code == 0);
 }
 
-void StartVpnWGService() {
+void StartVpnWGService(const std::string& config, BooleanCallback callback) {
   base::ThreadPool::CreateCOMSTATaskRunner(
       {base::MayBlock(), base::WithBaseSyncPrimitives(),
        base::TaskPriority::BEST_EFFORT,
        base::TaskShutdownBehavior::CONTINUE_ON_SHUTDOWN},
       base::SingleThreadTaskRunnerThreadMode::DEDICATED)
-      ->PostTask(FROM_HERE, base::BindOnce(&StartVpnWGServiceImpl));
+      ->PostTask(FROM_HERE, base::BindOnce(&StartVpnWGServiceImpl, config,
+                                           std::move(callback)));
+}
+
+void WireGuardGenerateKeypairImpl(WireGuardGenerateKeypairCallback callback) {
+  base::win::AssertComInitialized();
+  HRESULT hr = S_OK;
+  Microsoft::WRL::ComPtr<IBraveVpnService> service;
+  CoCreateInstance(brave_vpn::GetBraveVpnServiceClsid(), nullptr,
+                   CLSCTX_LOCAL_SERVER, brave_vpn::GetBraveVpnServiceIid(),
+                   IID_PPV_ARGS_Helper(&service));
+  if (FAILED(hr)) {
+    VLOG(1) << "Unable to create IBraveVpnService instance";
+    std::move(callback).Run(false, nullptr, nullptr);
+    return;
+  }
+
+  hr = CoSetProxyBlanket(
+      service.Get(), RPC_C_AUTHN_DEFAULT, RPC_C_AUTHZ_DEFAULT,
+      COLE_DEFAULT_PRINCIPAL, RPC_C_AUTHN_LEVEL_PKT_PRIVACY,
+      RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, EOAC_DYNAMIC_CLOAKING);
+  if (FAILED(hr)) {
+    VLOG(1) << "Unable to call EnableVpn interface";
+    std::move(callback).Run(false, nullptr, nullptr);
+    return;
+  }
+
+  DWORD error_code = 0;
+  base::win::ScopedBstr public_key_raw;
+  base::win::ScopedBstr private_key_raw;
+  if (FAILED(service->GenerateKeypair(
+          public_key_raw.Receive(), private_key_raw.Receive(), &error_code))) {
+    VLOG(1) << "Unable to call EnableVpn interface";
+    std::move(callback).Run(false, nullptr, nullptr);
+    return;
+  };
+
+  std::wstring public_key_wide;
+  public_key_wide.assign(
+      reinterpret_cast<std::wstring::value_type*>(public_key_raw.Get()),
+      public_key_raw.ByteLength());
+  std::wstring private_key_wide;
+  private_key_wide.assign(
+      reinterpret_cast<std::wstring::value_type*>(private_key_raw.Get()),
+      private_key_raw.ByteLength());
+  std::string public_key = base::WideToUTF8(public_key_wide);
+  std::string private_key = base::WideToUTF8(private_key_wide);
+  std::move(callback).Run(error_code == 0, public_key, private_key);
+}
+
+void WireGuardGenerateKeypair(WireGuardGenerateKeypairCallback callback) {
+  base::ThreadPool::CreateCOMSTATaskRunner(
+      {base::MayBlock(), base::WithBaseSyncPrimitives(),
+       base::TaskPriority::BEST_EFFORT,
+       base::TaskShutdownBehavior::CONTINUE_ON_SHUTDOWN},
+      base::SingleThreadTaskRunnerThreadMode::DEDICATED)
+      ->PostTask(FROM_HERE, base::BindOnce(&WireGuardGenerateKeypairImpl,
+                                           std::move(callback)));
 }
 }  // namespace internal
 

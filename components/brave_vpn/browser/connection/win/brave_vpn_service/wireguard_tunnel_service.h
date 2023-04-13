@@ -12,11 +12,13 @@
 namespace brave_vpn {
 
 namespace wireguard {
-int LaunchService(const base::FilePath& config_path);
+int LaunchService(const std::wstring& config);
 bool RemoveExistingWireguradService();
-int CreateAndRunBraveWGService(const base::FilePath& config_path);
+int CreateAndRunBraveWGService(const std::wstring& config);
 
-int RunWireGuardTunnelService(const base::FilePath& config_path);
+int RunWireGuardTunnelService(const std::wstring& config);
+bool WireGuardGenerateKeypair(std::string* public_key,
+                              std::string* private_key);
 }  // namespace wireguard
 
 }  // namespace brave_vpn

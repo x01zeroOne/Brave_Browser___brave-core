@@ -42,11 +42,12 @@ int main(int argc, char* argv[]) {
 
   if (command_line->HasSwitch(brave_vpn::kConnectWGSwitchName)) {
     return brave_vpn::wireguard::RunWireGuardTunnelService(
-        command_line->GetSwitchValuePath(brave_vpn::kConnectWGSwitchName));
+        command_line->GetSwitchValueNative(brave_vpn::kConnectWGSwitchName));
   }
   if (command_line->HasSwitch(brave_vpn::kLaunchWireguardServiceSwitchName)) {
-    return brave_vpn::wireguard::LaunchService(command_line->GetSwitchValuePath(
-        brave_vpn::kLaunchWireguardServiceSwitchName));
+    return brave_vpn::wireguard::LaunchService(
+        command_line->GetSwitchValueNative(
+            brave_vpn::kLaunchWireguardServiceSwitchName));
   }
 
   // Make sure the process exits cleanly on unexpected errors.

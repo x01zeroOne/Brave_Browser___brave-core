@@ -46,11 +46,11 @@
 
 #include "brave_vpn_service_idl.h"
 
-#define TYPE_FORMAT_STRING_SIZE   7                                 
-#define PROC_FORMAT_STRING_SIZE   39                                
+#define TYPE_FORMAT_STRING_SIZE   51                                
+#define PROC_FORMAT_STRING_SIZE   95                                
 #define EXPR_FORMAT_STRING_SIZE   1                                 
 #define TRANSMIT_AS_TABLE_SIZE    0            
-#define WIRE_MARSHAL_TABLE_SIZE   0            
+#define WIRE_MARSHAL_TABLE_SIZE   1            
 
 typedef struct _brave_vpn_service_idl_MIDL_TYPE_FORMAT_STRING
     {
@@ -147,6 +147,7 @@ extern const MIDL_SERVER_INFO IBraveVpnService_ServerInfo;
 extern const MIDL_STUBLESS_PROXY_INFO IBraveVpnService_ProxyInfo;
 
 
+extern const USER_MARSHAL_ROUTINE_QUADRUPLE UserMarshalRoutines[ WIRE_MARSHAL_TABLE_SIZE ];
 
 #if !defined(__RPC_WIN64__)
 #error  Invalid build platform for this stub.
@@ -163,11 +164,11 @@ static const brave_vpn_service_idl_MIDL_PROC_FORMAT_STRING brave_vpn_service_idl
 			0x6c,		/* Old Flags:  object, Oi2 */
 /*  2 */	NdrFcLong( 0x0 ),	/* 0 */
 /*  6 */	NdrFcShort( 0x3 ),	/* 3 */
-/*  8 */	NdrFcShort( 0x18 ),	/* X64 Stack size/offset = 24 */
+/*  8 */	NdrFcShort( 0x20 ),	/* X64 Stack size/offset = 32 */
 /* 10 */	NdrFcShort( 0x0 ),	/* 0 */
-/* 12 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 12 */	NdrFcShort( 0x24 ),	/* 36 */
 /* 14 */	0x46,		/* Oi2 Flags:  clt must size, has return, has ext, */
-			0x2,		/* 2 */
+			0x3,		/* 3 */
 /* 16 */	0xa,		/* 10 */
 			0x1,		/* Ext Flags:  new corr desc, */
 /* 18 */	NdrFcShort( 0x0 ),	/* 0 */
@@ -181,11 +182,62 @@ static const brave_vpn_service_idl_MIDL_PROC_FORMAT_STRING brave_vpn_service_idl
 /* 28 */	NdrFcShort( 0x8 ),	/* X64 Stack size/offset = 8 */
 /* 30 */	NdrFcShort( 0x4 ),	/* Type Offset=4 */
 
-	/* Return value */
+	/* Parameter last_error */
 
-/* 32 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+/* 32 */	NdrFcShort( 0x2150 ),	/* Flags:  out, base type, simple ref, srv alloc size=8 */
 /* 34 */	NdrFcShort( 0x10 ),	/* X64 Stack size/offset = 16 */
 /* 36 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Return value */
+
+/* 38 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+/* 40 */	NdrFcShort( 0x18 ),	/* X64 Stack size/offset = 24 */
+/* 42 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Procedure GenerateKeypair */
+
+/* 44 */	0x33,		/* FC_AUTO_HANDLE */
+			0x6c,		/* Old Flags:  object, Oi2 */
+/* 46 */	NdrFcLong( 0x0 ),	/* 0 */
+/* 50 */	NdrFcShort( 0x4 ),	/* 4 */
+/* 52 */	NdrFcShort( 0x28 ),	/* X64 Stack size/offset = 40 */
+/* 54 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 56 */	NdrFcShort( 0x24 ),	/* 36 */
+/* 58 */	0x45,		/* Oi2 Flags:  srv must size, has return, has ext, */
+			0x4,		/* 4 */
+/* 60 */	0xa,		/* 10 */
+			0x3,		/* Ext Flags:  new corr desc, clt corr check, */
+/* 62 */	NdrFcShort( 0x1 ),	/* 1 */
+/* 64 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 66 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 68 */	NdrFcShort( 0x0 ),	/* 0 */
+
+	/* Parameter public_key */
+
+/* 70 */	NdrFcShort( 0x2113 ),	/* Flags:  must size, must free, out, simple ref, srv alloc size=8 */
+/* 72 */	NdrFcShort( 0x8 ),	/* X64 Stack size/offset = 8 */
+/* 74 */	NdrFcShort( 0x28 ),	/* Type Offset=40 */
+
+	/* Parameter private_key */
+
+/* 76 */	NdrFcShort( 0x2113 ),	/* Flags:  must size, must free, out, simple ref, srv alloc size=8 */
+/* 78 */	NdrFcShort( 0x10 ),	/* X64 Stack size/offset = 16 */
+/* 80 */	NdrFcShort( 0x28 ),	/* Type Offset=40 */
+
+	/* Parameter last_error */
+
+/* 82 */	NdrFcShort( 0x2150 ),	/* Flags:  out, base type, simple ref, srv alloc size=8 */
+/* 84 */	NdrFcShort( 0x18 ),	/* X64 Stack size/offset = 24 */
+/* 86 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Return value */
+
+/* 88 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+/* 90 */	NdrFcShort( 0x20 ),	/* X64 Stack size/offset = 32 */
+/* 92 */	0x8,		/* FC_LONG */
 			0x0,		/* 0 */
 
 			0x0
@@ -202,10 +254,62 @@ static const brave_vpn_service_idl_MIDL_TYPE_FORMAT_STRING brave_vpn_service_idl
 /*  4 */	
 			0x25,		/* FC_C_WSTRING */
 			0x5c,		/* FC_PAD */
+/*  6 */	
+			0x11, 0xc,	/* FC_RP [alloced_on_stack] [simple_pointer] */
+/*  8 */	0x8,		/* FC_LONG */
+			0x5c,		/* FC_PAD */
+/* 10 */	
+			0x11, 0x4,	/* FC_RP [alloced_on_stack] */
+/* 12 */	NdrFcShort( 0x1c ),	/* Offset= 28 (40) */
+/* 14 */	
+			0x13, 0x0,	/* FC_OP */
+/* 16 */	NdrFcShort( 0xe ),	/* Offset= 14 (30) */
+/* 18 */	
+			0x1b,		/* FC_CARRAY */
+			0x1,		/* 1 */
+/* 20 */	NdrFcShort( 0x2 ),	/* 2 */
+/* 22 */	0x9,		/* Corr desc: FC_ULONG */
+			0x0,		/*  */
+/* 24 */	NdrFcShort( 0xfffc ),	/* -4 */
+/* 26 */	NdrFcShort( 0x1 ),	/* Corr flags:  early, */
+/* 28 */	0x6,		/* FC_SHORT */
+			0x5b,		/* FC_END */
+/* 30 */	
+			0x17,		/* FC_CSTRUCT */
+			0x3,		/* 3 */
+/* 32 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 34 */	NdrFcShort( 0xfff0 ),	/* Offset= -16 (18) */
+/* 36 */	0x8,		/* FC_LONG */
+			0x8,		/* FC_LONG */
+/* 38 */	0x5c,		/* FC_PAD */
+			0x5b,		/* FC_END */
+/* 40 */	0xb4,		/* FC_USER_MARSHAL */
+			0x83,		/* 131 */
+/* 42 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 44 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 46 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 48 */	NdrFcShort( 0xffde ),	/* Offset= -34 (14) */
 
 			0x0
         }
     };
+
+XFG_TRAMPOLINES(BSTR)
+
+static const USER_MARSHAL_ROUTINE_QUADRUPLE UserMarshalRoutines[ WIRE_MARSHAL_TABLE_SIZE ] = 
+        {
+            
+            {
+            (USER_MARSHAL_SIZING_ROUTINE)XFG_TRAMPOLINE_FPTR(BSTR_UserSize)
+            ,(USER_MARSHAL_MARSHALLING_ROUTINE)XFG_TRAMPOLINE_FPTR(BSTR_UserMarshal)
+            ,(USER_MARSHAL_UNMARSHALLING_ROUTINE)XFG_TRAMPOLINE_FPTR(BSTR_UserUnmarshal)
+            ,(USER_MARSHAL_FREEING_ROUTINE)XFG_TRAMPOLINE_FPTR(BSTR_UserFree)
+            
+            }
+            
+
+        };
+
 
 
 /* Object interface: IUnknown, ver. 0.0,
@@ -218,7 +322,8 @@ static const brave_vpn_service_idl_MIDL_TYPE_FORMAT_STRING brave_vpn_service_idl
 #pragma code_seg(".orpc")
 static const unsigned short IBraveVpnService_FormatStringOffsetTable[] =
     {
-    0
+    0,
+    44
     };
 
 static const MIDL_STUBLESS_PROXY_INFO IBraveVpnService_ProxyInfo =
@@ -242,21 +347,22 @@ static const MIDL_SERVER_INFO IBraveVpnService_ServerInfo =
     0,
     0,
     0};
-CINTERFACE_PROXY_VTABLE(4) _IBraveVpnServiceProxyVtbl = 
+CINTERFACE_PROXY_VTABLE(5) _IBraveVpnServiceProxyVtbl = 
 {
     &IBraveVpnService_ProxyInfo,
     &IID_IBraveVpnService,
     IUnknown_QueryInterface_Proxy,
     IUnknown_AddRef_Proxy,
     IUnknown_Release_Proxy ,
-    (void *) (INT_PTR) -1 /* IBraveVpnService::EnableVpn */
+    (void *) (INT_PTR) -1 /* IBraveVpnService::EnableVpn */ ,
+    (void *) (INT_PTR) -1 /* IBraveVpnService::GenerateKeypair */
 };
 
 const CInterfaceStubVtbl _IBraveVpnServiceStubVtbl =
 {
     &IID_IBraveVpnService,
     &IBraveVpnService_ServerInfo,
-    4,
+    5,
     0, /* pure interpreted */
     CStdStubBuffer_METHODS
 };
@@ -280,7 +386,7 @@ static const MIDL_STUB_DESC Object_StubDesc =
     0,
     0x8010274, /* MIDL Version 8.1.628 */
     0,
-    0,
+    UserMarshalRoutines,
     0,  /* notify & notify_flag routine table */
     0x1, /* MIDL flag */
     0, /* cs routines */

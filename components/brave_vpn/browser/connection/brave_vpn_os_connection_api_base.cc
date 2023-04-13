@@ -19,6 +19,8 @@
 #include "brave/components/brave_vpn/common/brave_vpn_utils.h"
 #include "brave/components/brave_vpn/common/pref_names.h"
 #include "components/prefs/pref_service.h"
+#include "content/public/browser/browser_task_traits.h"
+#include "content/public/browser/browser_thread.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 
 namespace brave_vpn {
@@ -427,7 +429,13 @@ void BraveVPNOSConnectionAPIBase::ParseAndCacheHostnames(
     UpdateAndNotifyConnectionStateChange(ConnectionState::CONNECT_FAILED);
     return;
   }
+  content::GetUIThreadTaskRunner({})->PostTask(
+      FROM_HERE,
+      base::BindOnce(&BraveVPNOSConnectionAPIBase::FetchProfileCredentials,
+                     base::Unretained(this)));
+}
 
+void BraveVPNOSConnectionAPIBase::FetchProfileCredentials() {
   VLOG(2) << __func__ << " : Picked " << hostname_->hostname << ", "
           << hostname_->display_name << ", " << hostname_->is_offline << ", "
           << hostname_->capacity_score;
@@ -441,16 +449,10 @@ void BraveVPNOSConnectionAPIBase::ParseAndCacheHostnames(
   VLOG(2) << __func__ << " : request profile credential:"
           << GetBraveVPNPaymentsEnv(GetCurrentEnvironment());
 
-  std::string private_key;
-  std::string public_key;
-  LOG(ERROR) << brave_vpn::internal::WireGuardGenerateKeypair(&public_key,
-                                                              &private_key);
-  LOG(ERROR) << "public_key:" << public_key << " private_key:" << private_key;
-
-  GetAPIRequest()->GetWireguardProfileCredentials(
+  GetAPIRequest()->GetProfileCredentials(
       base::BindOnce(&BraveVPNOSConnectionAPIBase::OnGetProfileCredentials,
                      base::Unretained(this)),
-      GetSubscriberCredential(local_prefs_), public_key, hostname_->hostname);
+      GetSubscriberCredential(local_prefs_), hostname_->hostname);
 }
 
 void BraveVPNOSConnectionAPIBase::OnGetProfileCredentials(

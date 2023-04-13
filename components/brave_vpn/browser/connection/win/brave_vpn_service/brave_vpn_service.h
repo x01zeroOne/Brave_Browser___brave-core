@@ -56,7 +56,10 @@ class BraveVpnService
   BraveVpnService(const BraveVpnService&) = delete;
   BraveVpnService& operator=(const BraveVpnService&) = delete;
 
-  IFACEMETHODIMP EnableVpn(const wchar_t* crx_path) override;
+  IFACEMETHODIMP EnableVpn(const wchar_t* config, DWORD* last_error) override;
+  IFACEMETHODIMP GenerateKeypair(BSTR* public_key,
+                                 BSTR* private_key,
+                                 DWORD* last_error) override;
 
  private:
   ~BraveVpnService() override = default;

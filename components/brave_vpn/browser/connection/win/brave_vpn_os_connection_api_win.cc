@@ -15,6 +15,7 @@
 #include "base/notreached.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/task/thread_pool.h"
+#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_os_connection_api_wg.h"
 #include "brave/components/brave_vpn/browser/connection/win/utils.h"
 #include "brave/components/brave_vpn/common/brave_vpn_constants.h"
 
@@ -45,8 +46,8 @@ std::unique_ptr<BraveVPNOSConnectionAPI> CreateBraveVPNOSConnectionAPI(
     scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
     PrefService* local_prefs,
     version_info::Channel channel) {
-  return std::make_unique<BraveVPNOSConnectionAPIWin>(url_loader_factory,
-                                                      local_prefs, channel);
+  return std::make_unique<BraveVPNOSConnectionAPIWireguard>(
+      url_loader_factory, local_prefs, channel);
 }
 
 BraveVPNOSConnectionAPIWin::BraveVPNOSConnectionAPIWin(
@@ -55,7 +56,6 @@ BraveVPNOSConnectionAPIWin::BraveVPNOSConnectionAPIWin(
     version_info::Channel channel)
     : BraveVPNOSConnectionAPIBase(url_loader_factory, local_prefs, channel) {
   StartVPNConnectionChangeMonitoring();
-  brave_vpn::internal::StartVpnWGService();
 }
 
 BraveVPNOSConnectionAPIWin::~BraveVPNOSConnectionAPIWin() {

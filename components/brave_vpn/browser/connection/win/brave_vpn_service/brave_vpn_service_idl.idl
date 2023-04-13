@@ -10,7 +10,11 @@ import "ocidl.idl";
 ]
 interface IBraveVpnService : IUnknown
 {
-  HRESULT EnableVpn([in, string] const WCHAR* config);
+  HRESULT EnableVpn([in, string] const WCHAR* config,
+    [out] DWORD* last_error);
+  HRESULT GenerateKeypair([out] BSTR* public_key,
+      [out] BSTR* private_key,
+    [out] DWORD* last_error);
 };
 
 [

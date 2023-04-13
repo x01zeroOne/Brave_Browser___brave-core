@@ -5,24 +5,42 @@
 
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/brave_vpn_service.h"
 
-#include "base/command_line.h"
+#include <windows.h>
+
 #include "base/logging.h"
-#include "base/path_service.h"
-#include "base/process/launch.h"
+#include "base/strings/utf_string_conversions.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_constants.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/service_main.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_service/wireguard_tunnel_service.h"
 
 namespace brave_vpn {
 
-HRESULT BraveVpnService::EnableVpn(const wchar_t* config) {
+HRESULT BraveVpnService::EnableVpn(const wchar_t* config, DWORD* last_error) {
   LOG(ERROR) << __func__ << ":" << config;
+  if (!config || !last_error) {
+    VLOG(1) << "Invalid parameters";
+    return E_FAIL;
+  }
+  *last_error = brave_vpn::wireguard::LaunchService(config);
+  return S_OK;
+}
 
-  base::FilePath directory;
-  if (!base::PathService::Get(base::DIR_EXE, &directory)) {
+HRESULT BraveVpnService::GenerateKeypair(BSTR* public_key,
+                                         BSTR* private_key,
+                                         DWORD* last_error) {
+  std::string public_key_raw;
+  std::string private_key_raw;
+  if (!brave_vpn::wireguard::WireGuardGenerateKeypair(&public_key_raw,
+                                                      &private_key_raw)) {
+    *last_error = 1;
     return S_OK;
   }
-  brave_vpn::wireguard::LaunchService(directory.Append(config));
+  LOG(ERROR) << "public_key_raw:" << public_key_raw;
+  LOG(ERROR) << "private_key_raw:" << private_key_raw;
+
+  *public_key = ::SysAllocString(base::UTF8ToWide(public_key_raw).c_str());
+  *private_key = ::SysAllocString(base::UTF8ToWide(private_key_raw).c_str());
+  *last_error = 0;
   return S_OK;
 }
 

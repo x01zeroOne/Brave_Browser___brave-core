@@ -92,7 +92,13 @@ EXTERN_C const IID IID_IBraveVpnService;
     {
     public:
         virtual HRESULT STDMETHODCALLTYPE EnableVpn( 
-            /* [string][in] */ const WCHAR *config) = 0;
+            /* [string][in] */ const WCHAR *config,
+            /* [out] */ DWORD *last_error) = 0;
+        
+        virtual HRESULT STDMETHODCALLTYPE GenerateKeypair( 
+            /* [out] */ BSTR *public_key,
+            /* [out] */ BSTR *private_key,
+            /* [out] */ DWORD *last_error) = 0;
         
     };
     
@@ -121,7 +127,15 @@ EXTERN_C const IID IID_IBraveVpnService;
         DECLSPEC_XFGVIRT(IBraveVpnService, EnableVpn)
         HRESULT ( STDMETHODCALLTYPE *EnableVpn )( 
             IBraveVpnService * This,
-            /* [string][in] */ const WCHAR *config);
+            /* [string][in] */ const WCHAR *config,
+            /* [out] */ DWORD *last_error);
+        
+        DECLSPEC_XFGVIRT(IBraveVpnService, GenerateKeypair)
+        HRESULT ( STDMETHODCALLTYPE *GenerateKeypair )( 
+            IBraveVpnService * This,
+            /* [out] */ BSTR *public_key,
+            /* [out] */ BSTR *private_key,
+            /* [out] */ DWORD *last_error);
         
         END_INTERFACE
     } IBraveVpnServiceVtbl;
@@ -146,8 +160,11 @@ EXTERN_C const IID IID_IBraveVpnService;
     ( (This)->lpVtbl -> Release(This) ) 
 
 
-#define IBraveVpnService_EnableVpn(This,config)	\
-    ( (This)->lpVtbl -> EnableVpn(This,config) ) 
+#define IBraveVpnService_EnableVpn(This,config,last_error)	\
+    ( (This)->lpVtbl -> EnableVpn(This,config,last_error) ) 
+
+#define IBraveVpnService_GenerateKeypair(This,public_key,private_key,last_error)	\
+    ( (This)->lpVtbl -> GenerateKeypair(This,public_key,private_key,last_error) ) 
 
 #endif /* COBJMACROS */
 
@@ -173,6 +190,11 @@ EXTERN_C const IID LIBID_BraveVpnServiceLib;
 #endif /* __BraveVpnServiceLib_LIBRARY_DEFINED__ */
 
 /* Additional Prototypes for ALL interfaces */
+
+unsigned long             __RPC_USER  BSTR_UserSize(     unsigned long *, unsigned long            , BSTR * ); 
+unsigned char * __RPC_USER  BSTR_UserMarshal(  unsigned long *, unsigned char *, BSTR * ); 
+unsigned char * __RPC_USER  BSTR_UserUnmarshal(unsigned long *, unsigned char *, BSTR * ); 
+void                      __RPC_USER  BSTR_UserFree(     unsigned long *, BSTR * ); 
 
 /* end of Additional Prototypes */
 
