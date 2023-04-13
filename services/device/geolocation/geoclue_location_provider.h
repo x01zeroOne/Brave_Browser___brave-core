@@ -13,8 +13,6 @@
 #include "services/device/public/cpp/geolocation/location_provider.h"
 #include "services/device/public/mojom/geoposition.mojom.h"
 
-class GClueSimple;
-
 namespace device {
 
 class GeoClueProvider : public LocationProvider {

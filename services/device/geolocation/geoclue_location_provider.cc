@@ -3,7 +3,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "/usr/include/libgeoclue-2.0/gclue-simple.h"
+#include </usr/include/libgeoclue-2.0/gclue-simple.h>
 
 #include <gio/gcancellable.h>
 
@@ -11,12 +11,6 @@
 #include "brave/services/device/geolocation/geoclue_location_provider.h"
 #include "services/device/public/mojom/geoposition.mojom.h"
 namespace device {
-
-namespace {
-  static void gclue_simple_new_result_func(GObject* obj, GAsyncResult* result, gpointer user_data) {
-
-  }
-}
 
 GeoClueProvider::GeoClueProvider() = default;
 GeoClueProvider::~GeoClueProvider() = default;
