@@ -8,12 +8,22 @@
 #include <gio/gcancellable.h>
 
 #include "base/functional/bind.h"
+#include "base/sequence_checker.h"
 #include "brave/services/device/geolocation/geoclue_location_provider.h"
 #include "services/device/public/mojom/geoposition.mojom.h"
 namespace device {
 
-GeoClueProvider::GeoClueProvider() = default;
-GeoClueProvider::~GeoClueProvider() = default;
+namespace {
+  constexpr char kGeoClueInterfaceName[] = "org.freedesktop.GeoClue2.Manager";
+}
+
+GeoClueProvider::GeoClueProvider() {
+  DETACH_FROM_SEQUENCE(sequence_checker_);
+}
+GeoClueProvider::~GeoClueProvider() {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+  UnsubscribeSignalHandlers();
+}
 
 void GeoClueProvider::SetUpdateCallback(
     const LocationProviderUpdateCallback& callback) {}
@@ -22,11 +32,7 @@ void GeoClueProvider::StartProvider(bool high_accuracy) {
   auto accuracy = high_accuracy ? GCLUE_ACCURACY_LEVEL_EXACT
                                 : GCLUE_ACCURACY_LEVEL_NEIGHBORHOOD;
 
-  GError* error = nullptr;                                
-  gclue_simple_ = gclue_simple_new_sync("brave.desktop",
-    accuracy,
-    nullptr, 
-    &error);
+  GError* error = nullptr;
 
   CHECK(!error);
 
@@ -37,7 +43,7 @@ void GeoClueProvider::StartProvider(bool high_accuracy) {
   last_position_.latitude = gclue_location_get_latitude(location);
   last_position_.longitude = gclue_location_get_longitude(location);
   last_position_.speed = gclue_location_get_speed(location);
-  
+
   // TODO: Work out how to get this from a GVariant.
   last_position_.timestamp = base::Time::Now();
 }
@@ -48,5 +54,21 @@ const mojom::Geoposition& GeoClueProvider::GetPosition() {
 }
 
 void GeoClueProvider::OnPermissionGranted() {}
+
+void GeoClueProvider::SubscribeSignalHandlers() {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+
+  location_changed_signal_id_ = g_dbus_connection_signal_subscribe(connection_, const gchar *sender, const gchar *interface_name, const gchar *member, const gchar *object_path, const gchar *arg0, GDBusSignalFlags flags, GDBusSignalCallback callback, gpointer user_data, GDestroyNotify user_data_free_func)
+}
+
+void GeoClueProvider::UnsubscribeSignalHandlers() {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+
+  if (location_changed_signal_id_) {
+    g_dbus_connection_signal_unsubscribe(connection_,
+                                         location_changed_signal_id_);
+    location_changed_signal_id_ = 0;
+  }
+}
 
 }  // namespace device

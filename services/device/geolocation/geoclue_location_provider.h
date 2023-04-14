@@ -7,8 +7,13 @@
 #define BRAVE_SERVICES_DEVICE_GEOLOCATION_GEOCLUE_LOCATION_PROVIDER_H_
 
 #include <gio/gio.h>
+#include <cstddef>
+#include <string>
 
+#include "base/allocator/partition_allocator/pointers/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
+#include "base/sequence_checker.h"
+#include "base/thread_annotations.h"
 #include "services/device/public/cpp/geolocation/geolocation_manager.h"
 #include "services/device/public/cpp/geolocation/location_provider.h"
 #include "services/device/public/mojom/geoposition.mojom.h"
@@ -32,13 +37,29 @@ class GeoClueProvider : public LocationProvider {
   const mojom::Geoposition& GetPosition() override;
   void OnPermissionGranted() override;
 
- protected:
-  void OnGeoClueInstanceReady(GObject* source,
-                                GAsyncResult* result,
-                                gpointer user_data);
-
  private:
-  GClueSimple* gclue_simple_;
+  void SubscribeSignalHandlers();
+  void UnsubscribeSignalHandlers();
+
+  static void OnLocationChangedSignal(GDBusConnection* connection,
+                                      const char* sender_name,
+                                      const char* object_path,
+                                      const char* interface_name,
+                                      const char* signal_name,
+                                      GVariant* parameters,
+                                      gpointer user_data);
+
+  SEQUENCE_CHECKER(sequence_checker_);
+
+  raw_ptr<GDBusConnection> connection_ GUARDED_BY_CONTEXT(sequence_checker_) =
+      nullptr;
+  raw_ptr<GDBusProxy> proxy_ GUARDED_BY_CONTEXT(sequence_checker_) = nullptr;
+  raw_ptr<GCancellable> cancellable_ GUARDED_BY_CONTEXT(sequence_checker_) =
+      nullptr;
+
+  std::string session_handle_ GUARDED_BY_CONTEXT(sequence_checker_);
+  
+  guint location_changed_signal_id_ = 0;
 
   mojom::Geoposition last_position_;
   LocationProviderUpdateCallback location_update_callback_;
