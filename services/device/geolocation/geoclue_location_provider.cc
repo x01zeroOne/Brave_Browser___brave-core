@@ -13,6 +13,7 @@
 #include "base/memory/scoped_refptr.h"
 #include "base/sequence_checker.h"
 #include "base/strings/string_util.h"
+#include "base/time/time.h"
 #include "brave/services/device/geolocation/geoclue_location_provider.h"
 #include "components/dbus/thread_linux/dbus_thread_linux.h"
 #include "dbus/bus.h"
@@ -20,6 +21,7 @@
 #include "dbus/object_path.h"
 #include "dbus/object_proxy.h"
 #include "dbus/property.h"
+#include "services/device/public/cpp/geolocation/geoposition.h"
 #include "services/device/public/mojom/geoposition.mojom.h"
 
 namespace device {
@@ -88,18 +90,8 @@ void GeoClueProvider::StartProvider(bool high_accuracy) {
   proxy->CallMethod(&call, 1000,
                     base::BindOnce(&GeoClueProvider::OnGetClientCompleted,
                                    weak_ptr_factory_.GetWeakPtr()));
-
-  // auto* location = gclue_simple_get_location(gclue_simple_);
-  // last_position_.accuracy = gclue_location_get_accuracy(location);
-  // last_position_.altitude = gclue_location_get_altitude(location);
-  // last_position_.heading = gclue_location_get_heading(location);
-  // last_position_.latitude = gclue_location_get_latitude(location);
-  // last_position_.longitude = gclue_location_get_longitude(location);
-  // last_position_.speed = gclue_location_get_speed(location);
-
-  // // TODO: Work out how to get this from a GVariant.
-  // last_position_.timestamp = base::Time::Now();
 }
+
 void GeoClueProvider::StopProvider() {
   if (!started_) {
     LOG(ERROR) << "Stop: Not started!";
@@ -121,6 +113,30 @@ void GeoClueProvider::OnPermissionGranted() {}
 
 void GeoClueProvider::OnLocationChanged(const std::string& property_name) {
   LOG(ERROR) << "LocationChanged: " << property_name;
+  last_position_ = mojom::Geoposition();
+  last_position_.latitude = gclue_location_properties_->latitude.value();
+  last_position_.longitude = gclue_location_properties_->longitude.value();
+  last_position_.accuracy = gclue_location_properties_->accuracy.value();
+  last_position_.altitude = gclue_location_properties_->altitude.value();
+  last_position_.heading = gclue_location_properties_->heading.value();
+  last_position_.speed = gclue_location_properties_->speed.value();
+  last_position_.error_code = mojom::Geoposition::ErrorCode::NONE;
+
+  LOG(ERROR) << "Lat: " << last_position_.latitude
+             << ", Lng: " << last_position_.longitude
+             << ", Accuracy: " << last_position_.accuracy
+             << ", TS: " << last_position_.timestamp.ToJsTime();
+
+  // We should get this from the service too, as soon as I know what to do with
+  // a variant...
+  last_position_.timestamp = base::Time::Now();
+  if (!device::ValidateGeoposition(last_position_)
+    // SuperHacky: Don't read until we have a few values. Really, we should wait for the complete struct before we fire this event.
+    || last_position_.longitude == 0) {
+    // We might not have received everything yet..
+    return;
+  }
+  location_update_callback_.Run(this, last_position_);
 }
 
 void GeoClueProvider::OnGetClientCompleted(dbus::Response* response) {
@@ -158,17 +174,6 @@ void GeoClueProvider::OnSetDesktopId(bool success) {
 
 void GeoClueProvider::OnStarted(dbus::Response* response) {
   LOG(ERROR) << "Started";
-  // gclue_client_->ConnectToSignal(
-  //     "org.freedesktop.GeoClue2.Client", "LocationUpdated",
-  //     base::BindRepeating(&GeoClueProvider::OnLocationChangedSignal,
-  //                         weak_ptr_factory_.GetWeakPtr()),
-  //     base::BindOnce([](const std::string& interface, const std::string&
-  //     signal,
-  //                       bool success) {
-  //       LOG(ERROR) << "Signal " << signal << " connected to "
-  //                  << interface << ", Success: " << success;
-  //     }));
-
   gclue_client_properties_->location.Get(
       base::BindOnce(&GeoClueProvider::OnGetLocationObjectPath,
                      weak_ptr_factory_.GetWeakPtr()));
