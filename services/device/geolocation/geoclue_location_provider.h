@@ -8,17 +8,48 @@
 
 #include <gio/gio.h>
 #include <cstddef>
+#include <memory>
 #include <string>
 
 #include "base/allocator/partition_allocator/pointers/raw_ptr.h"
+#include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/sequence_checker.h"
 #include "base/thread_annotations.h"
+#include "dbus/bus.h"
+#include "dbus/message.h"
+#include "dbus/object_path.h"
+#include "dbus/object_proxy.h"
+#include "dbus/property.h"
 #include "services/device/public/cpp/geolocation/geolocation_manager.h"
 #include "services/device/public/cpp/geolocation/location_provider.h"
 #include "services/device/public/mojom/geoposition.mojom.h"
 
 namespace device {
+
+struct GeoClueProperties : public dbus::PropertySet {
+  dbus::Property<std::string> desktop_id;
+  dbus::Property<dbus::ObjectPath> location;
+
+  GeoClueProperties(dbus::ObjectProxy* proxy,
+                    const std::string& interface_name,
+                    const PropertyChangedCallback& callback);
+  ~GeoClueProperties() override;
+};
+
+struct GeoClueLocationProperties : public dbus::PropertySet {
+  dbus::Property<double> latitude;
+  dbus::Property<double> longitude;
+  dbus::Property<double> accuracy;
+  dbus::Property<double> altitude;
+  dbus::Property<double> speed;
+  dbus::Property<double> heading;
+
+  GeoClueLocationProperties(dbus::ObjectProxy* proxy,
+                            const std::string& interface_name,
+                            const PropertyChangedCallback& callback);
+  ~GeoClueLocationProperties() override;
+};
 
 class GeoClueProvider : public LocationProvider {
  public:
@@ -38,28 +69,22 @@ class GeoClueProvider : public LocationProvider {
   void OnPermissionGranted() override;
 
  private:
-  void SubscribeSignalHandlers();
-  void UnsubscribeSignalHandlers();
+  void OnGetClientCompleted(dbus::Response* response);
+  void OnSetDesktopId(bool success);
+  void OnStarted(dbus::Response* response);
+  void OnGetLocationObjectPath(bool success);
 
-  static void OnLocationChangedSignal(GDBusConnection* connection,
-                                      const char* sender_name,
-                                      const char* object_path,
-                                      const char* interface_name,
-                                      const char* signal_name,
-                                      GVariant* parameters,
-                                      gpointer user_data);
+  void OnLocationChanged(const std::string& property_name);
 
   SEQUENCE_CHECKER(sequence_checker_);
 
-  raw_ptr<GDBusConnection> connection_ GUARDED_BY_CONTEXT(sequence_checker_) =
-      nullptr;
-  raw_ptr<GDBusProxy> proxy_ GUARDED_BY_CONTEXT(sequence_checker_) = nullptr;
-  raw_ptr<GCancellable> cancellable_ GUARDED_BY_CONTEXT(sequence_checker_) =
-      nullptr;
+  bool started_ = false;
 
-  std::string session_handle_ GUARDED_BY_CONTEXT(sequence_checker_);
-  
-  guint location_changed_signal_id_ = 0;
+  scoped_refptr<dbus::Bus> bus_;
+  scoped_refptr<dbus::ObjectProxy> gclue_client_;
+  std::unique_ptr<GeoClueProperties> gclue_client_properties_;
+
+  std::unique_ptr<GeoClueLocationProperties> gclue_location_properties_;
 
   mojom::Geoposition last_position_;
   LocationProviderUpdateCallback location_update_callback_;
