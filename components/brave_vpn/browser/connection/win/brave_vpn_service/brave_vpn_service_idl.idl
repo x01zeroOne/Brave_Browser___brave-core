@@ -30,4 +30,3 @@ library BraveVpnServiceLib {
 
   interface IBraveVpnService;
 };
-  
