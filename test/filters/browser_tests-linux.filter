@@ -25,6 +25,7 @@
 -ConditionalFocusBrowserTest.*
 -ContextMenuIncognitoFilterBrowserTest.*
 -DomainReliabilityPrefetchProxyBrowserTest.*
+-ExtensionApiTestWithSwitch.ExtensionTracing
 -ExtensionDialogTest.*
 -ExtensionStartupTest.*
 -ExternalProtocolHandlerSandboxBrowserTest.*
@@ -63,6 +64,9 @@
 -TabCaptureApiTest.*
 -WebAppIntegrationBrowserTestMacWinLinux.*
 -WebAppOpaqueBrowserFrameViewTest.*
+-WebAppTagWebAppTest.TabNavigatedAwayNotWebAppTask
+-WebAppTagWebAppTest.WebAppTaskCreatedForStandalone
+-WebAppTagWebAppTest.WebAppTaskCreatedForTab
 -WebAuthnCableSecondFactor.*
 -WebRtcBrowserTest.*
 -WebRtcDisableEncryptionFlagBrowserTest.*
