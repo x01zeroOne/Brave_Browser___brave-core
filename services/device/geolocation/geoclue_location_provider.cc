@@ -87,7 +87,7 @@ void GeoClueProvider::StartProvider(bool high_accuracy) {
       dbus::ObjectPath("/org/freedesktop/GeoClue2/Manager"));
 
   dbus::MethodCall call("org.freedesktop.GeoClue2.Manager", "GetClient");
-  proxy->CallMethod(&call, 1000,
+  proxy->CallMethod(&call, dbus::ObjectProxy::TIMEOUT_USE_DEFAULT,
                     base::BindOnce(&GeoClueProvider::OnGetClientCompleted,
                                    weak_ptr_factory_.GetWeakPtr()));
 }
@@ -100,9 +100,9 @@ void GeoClueProvider::StopProvider() {
 
   started_ = false;
   dbus::MethodCall stop("org.freedesktop.GeoClue2.Client", "Stop");
-  gclue_client_->CallMethod(&stop, 1000, base::BindOnce([](dbus::Response* r) {
-    LOG(ERROR) << "Stopped!";
-  }));
+  gclue_client_->CallMethod(
+      &stop, dbus::ObjectProxy::TIMEOUT_USE_DEFAULT,
+      base::BindOnce([](dbus::Response* r) { LOG(ERROR) << "Stopped!"; }));
 }
 
 const mojom::Geoposition& GeoClueProvider::GetPosition() {
@@ -131,8 +131,9 @@ void GeoClueProvider::OnLocationChanged(const std::string& property_name) {
   // a variant...
   last_position_.timestamp = base::Time::Now();
   if (!device::ValidateGeoposition(last_position_)
-    // SuperHacky: Don't read until we have a few values. Really, we should wait for the complete struct before we fire this event.
-    || last_position_.longitude == 0) {
+      // SuperHacky: Don't read until we have a few values. Really, we should
+      // wait for the complete struct before we fire this event.
+      || last_position_.longitude == 0) {
     // We might not have received everything yet..
     return;
   }
@@ -164,10 +165,13 @@ void GeoClueProvider::OnGetClientCompleted(dbus::Response* response) {
 }
 
 void GeoClueProvider::OnSetDesktopId(bool success) {
-  LOG(ERROR) << "Set DesktopId " << success << ". Starting";
-
+  if (!success) {
+    LOG(ERROR) << "Failed to set desktop id. GeoClue2 location provider will "
+                  "not work properly";
+    return;
+  }
   dbus::MethodCall start("org.freedesktop.GeoClue2.Client", "Start");
-  gclue_client_->CallMethod(&start, 1000,
+  gclue_client_->CallMethod(&start, dbus::ObjectProxy::TIMEOUT_USE_DEFAULT,
                             base::BindOnce(&GeoClueProvider::OnStarted,
                                            weak_ptr_factory_.GetWeakPtr()));
 }
