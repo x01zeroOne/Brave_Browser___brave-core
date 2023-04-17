@@ -16,7 +16,7 @@
 namespace brave_vpn {
 
 HRESULT BraveVpnService::EnableVpn(const wchar_t* config, DWORD* last_error) {
-  LOG(ERROR) << __func__ << ":" << config;
+  VLOG(1) << __func__ << ":" << config;
   if (!config || !last_error) {
     VLOG(1) << "Invalid parameters";
     return E_FAIL;
@@ -33,15 +33,15 @@ HRESULT BraveVpnService::DisableVpn(DWORD* last_error) {
 HRESULT BraveVpnService::GenerateKeypair(BSTR* public_key,
                                          BSTR* private_key,
                                          DWORD* last_error) {
+  VLOG(1) << __func__;
   std::string public_key_raw;
   std::string private_key_raw;
   if (!brave_vpn::wireguard::WireGuardGenerateKeypair(&public_key_raw,
                                                       &private_key_raw)) {
+    VLOG(1) << __func__ << ": unable to generate keys";
     *last_error = 1;
     return S_OK;
   }
-  LOG(ERROR) << "public_key_raw:" << public_key_raw;
-  LOG(ERROR) << "private_key_raw:" << private_key_raw;
 
   *public_key = ::SysAllocString(base::UTF8ToWide(public_key_raw).c_str());
   *private_key = ::SysAllocString(base::UTF8ToWide(private_key_raw).c_str());

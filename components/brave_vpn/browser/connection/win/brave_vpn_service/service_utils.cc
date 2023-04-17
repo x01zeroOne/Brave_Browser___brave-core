@@ -58,10 +58,8 @@ bool ConfigureService(const std::wstring& service_name) {
     return S_OK;
   }
 
-  ScopedScHandle service(::CreateService(
-      scm.Get(), service_name.c_str(), service_name.c_str(), SERVICE_ALL_ACCESS,
-      SERVICE_WIN32_OWN_PROCESS, SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL,
-      exe_path.value().c_str(), NULL, NULL, L"Nsi\0TcpIp\0", NULL, NULL));
+  ScopedScHandle service(::OpenService(
+      scm.Get(), service_name.c_str(), SERVICE_ALL_ACCESS));
   if (!service.IsValid()) {
     LOG(ERROR) << "Failed to create service_name: " << service_name
                << ", error: " << std::hex << HRESULTFromLastError();

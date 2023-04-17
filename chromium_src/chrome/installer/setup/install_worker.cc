@@ -89,19 +89,9 @@ void AddBraveVPNServiceWorkItems(const base::FilePath& vpn_service_path,
   LOG(ERROR) << __func__ << ":" << vpn_service_path << " -> "
              << brave_vpn::GetBraveVpnServiceName();
   if (vpn_service_path.empty()) {
-    LOG(ERROR) << "The path to brave_vpn_helper.exe is invalid.";
+    LOG(ERROR) << "The path to brave_vpn_service.exe is invalid.";
     return;
   }
-  WorkItem* install_service_work_item = new installer::InstallServiceWorkItem(
-      brave_vpn::GetBraveVpnServiceName(),
-      brave_vpn::GetBraveVpnServiceDisplayName(), SERVICE_DEMAND_START,
-      base::CommandLine(vpn_service_path),
-      base::CommandLine(base::CommandLine::NO_PROGRAM),
-      brave_vpn::kBraveVpnServiceRegistryStoragePath,
-      {brave_vpn::GetBraveVpnServiceClsid()},
-      {brave_vpn::GetBraveVpnServiceIid()});
-  install_service_work_item->set_best_effort(true);
-  list->AddWorkItem(install_service_work_item);
   list->AddCallbackWorkItem(
       base::BindOnce(&ConfigureBraveVPNAutoRestart, vpn_service_path),
       base::NullCallback());
