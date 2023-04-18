@@ -12,6 +12,7 @@
 #include <string>
 
 #include "base/allocator/partition_allocator/pointers/raw_ptr.h"
+#include "base/functional/callback_forward.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/sequence_checker.h"
@@ -47,8 +48,14 @@ struct GeoClueLocationProperties : public dbus::PropertySet {
 
   GeoClueLocationProperties(dbus::ObjectProxy* proxy,
                             const std::string& interface_name,
-                            const PropertyChangedCallback& callback);
+                            base::OnceCallback<void()> on_got_initial_values);
   ~GeoClueLocationProperties() override;
+
+  // dbus::PropertySet:
+  void OnGetAll(dbus::Response* response) override;
+
+ private:
+  base::OnceCallback<void()> on_got_initial_values_;
 };
 
 class GeoClueProvider : public LocationProvider {
@@ -74,7 +81,8 @@ class GeoClueProvider : public LocationProvider {
   void OnStarted(dbus::Response* response);
   void OnGetLocationObjectPath(bool success);
 
-  void OnLocationChanged(const std::string& property_name);
+  void OnLocationChanged();
+  void SetLocationPath(const dbus::ObjectPath& path);
 
   SEQUENCE_CHECKER(sequence_checker_);
 
