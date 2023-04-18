@@ -155,8 +155,12 @@ TestingBraveBrowserProcess::brave_farbling_service() {
 #if BUILDFLAG(ENABLE_BRAVE_VPN)
 brave_vpn::BraveVPNOSConnectionAPI*
 TestingBraveBrowserProcess::brave_vpn_os_connection_api() {
-  NOTREACHED();
-  return nullptr;
+  if (brave_vpn_os_connection_api_)
+    return brave_vpn_os_connection_api_.get();
+
+  brave_vpn_os_connection_api_ = std::make_unique<brave_vpn::BraveVPNOSConnectionAPISim>(
+        shared_url_loader_factory_, local_state_);
+  return brave_vpn_os_connection_api_.get();
 }
 #endif
 
@@ -179,4 +183,12 @@ TestingBraveBrowserProcessInitializer::TestingBraveBrowserProcessInitializer() {
 TestingBraveBrowserProcessInitializer::
     ~TestingBraveBrowserProcessInitializer() {
   TestingBraveBrowserProcess::DeleteInstance();
+}
+
+void TestingBraveBrowserProcess::SetLocalState(PrefService* local_state) {
+  local_state_ = local_state;
+}
+void TestingBraveBrowserProcess::SetSharedURLLoaderFactory(
+    scoped_refptr<network::SharedURLLoaderFactory> shared_url_loader_factory) {
+  shared_url_loader_factory_ = shared_url_loader_factory;
 }

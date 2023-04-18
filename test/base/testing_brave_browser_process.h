@@ -17,6 +17,12 @@
 #include <string>
 
 #include "brave/browser/brave_browser_process.h"
+#include "brave/components/brave_vpn/common/buildflags/buildflags.h"
+
+#if BUILDFLAG(ENABLE_BRAVE_VPN)
+#include "brave/components/brave_vpn/browser/connection/brave_vpn_os_connection_api_sim.h"
+#endif
+
 
 namespace brave_shields {
 class AdBlockService;
@@ -81,11 +87,22 @@ class TestingBraveBrowserProcess : public BraveBrowserProcess {
   // Populate the mock process with services. Consumer is responsible for
   // cleaning these up after completion of a test.
   void SetAdBlockService(std::unique_ptr<brave_shields::AdBlockService>);
+  void SetLocalState(PrefService* local_state);
+  void SetSharedURLLoaderFactory(
+      scoped_refptr<network::SharedURLLoaderFactory> shared_url_loader_factory);
 
  private:
   // See CreateInstance() and DestroyInstance() above.
   TestingBraveBrowserProcess();
   ~TestingBraveBrowserProcess() override;
+
+
+#if BUILDFLAG(ENABLE_BRAVE_VPN)
+  std::unique_ptr<brave_vpn::BraveVPNOSConnectionAPI>
+      brave_vpn_os_connection_api_;
+#endif
+  raw_ptr<PrefService> local_state_ = nullptr;
+  scoped_refptr<network::SharedURLLoaderFactory> shared_url_loader_factory_;
 
   std::unique_ptr<brave_shields::AdBlockService> ad_block_service_;
 };

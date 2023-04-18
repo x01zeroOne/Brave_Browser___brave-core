@@ -24,7 +24,9 @@
 #include "chrome/test/base/testing_profile.h"
 #include "components/bookmarks/browser/bookmark_model.h"
 #include "components/bookmarks/test/bookmark_test_helpers.h"
+#include "services/network/test/test_url_loader_factory.h"
 #include "components/sync_preferences/testing_pref_service_syncable.h"
+#include "services/network/public/cpp/weak_wrapper_shared_url_loader_factory.h"
 #include "content/public/test/browser_task_environment.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -54,7 +56,9 @@ class TestSimpleMenuDelegate : public ui::SimpleMenuModel::Delegate {
 
 class BraveBookmarkSubMenuModelUnitTest : public testing::Test {
  public:
-  BraveBookmarkSubMenuModelUnitTest() {}
+  BraveBookmarkSubMenuModelUnitTest(): test_shared_url_loader_factory_(
+            base::MakeRefCounted<network::WeakWrapperSharedURLLoaderFactory>(
+                &test_url_loader_factory_)) {}
 
   void SetUp() override {
     TestingProfile::Builder builder;
@@ -66,6 +70,8 @@ class BraveBookmarkSubMenuModelUnitTest : public testing::Test {
 
     RegisterLocalState(test_local_state_.registry());
     TestingBrowserProcess::GetGlobal()->SetLocalState(&test_local_state_);
+    TestingBraveBrowserProcess::GetGlobal()->SetLocalState(&test_local_state_);
+    TestingBraveBrowserProcess::GetGlobal()->SetSharedURLLoaderFactory(test_shared_url_loader_factory_);
     builder.SetPrefService(std::move(prefs));
     profile_ = builder.Build();
     model_ = BookmarkModelFactory::GetForBrowserContext(profile_.get());
@@ -85,11 +91,15 @@ class BraveBookmarkSubMenuModelUnitTest : public testing::Test {
   }
   void TearDown() override {
     browser_.reset();
-    TestingBrowserProcess::GetGlobal()->SetLocalState(nullptr);
+    TestingBraveBrowserProcess::GetGlobal()->SetLocalState(nullptr);
   }
 
  protected:
   content::BrowserTaskEnvironment task_environment_;
+  network::TestURLLoaderFactory test_url_loader_factory_;
+  scoped_refptr<network::SharedURLLoaderFactory>
+      test_shared_url_loader_factory_;
+
   TestSimpleMenuDelegate delegate_;
   std::unique_ptr<Browser> browser_;
   std::unique_ptr<TestBrowserWindow> test_window_;
