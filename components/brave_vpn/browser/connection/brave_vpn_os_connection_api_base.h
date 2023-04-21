@@ -117,13 +117,9 @@ class BraveVPNOSConnectionAPIBase
       net::NetworkChangeNotifier::ConnectionType type) override;
 
   void CreateVPNConnection();
-<<<<<<< HEAD
-  std::string GetCurrentEnvironment() const;
-=======
   std::string GetSelectedRegion() const;
   std::string GetDeviceRegion() const;
 
->>>>>>> ef2b7e9b02 (wip)
   void FetchHostnamesForRegion(const std::string& name);
   void OnFetchHostnames(const std::string& region,
                         const std::string& hostnames,
