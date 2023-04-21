@@ -481,11 +481,16 @@ const util = {
   // So, we should copy our pre-installed files to overwrite upstream pre-installed files.
   // After checking, pre-installed files are copied to gen dir and they are used to compile.
   // So, this copying in every build doesn't affect compile performance.
-  updateOmahaMidlFiles: () => {
-    console.log('update omaha midl files...')
+  updateMidlFiles: () => {
+    console.log('update midl files...')
     const srcDir = path.join(config.braveCoreDir, 'win_build_output', 'midl', 'google_update')
     const dstDir = path.join(config.srcDir, 'third_party', 'win_build_output', 'midl', 'google_update')
     fs.copySync(srcDir, dstDir)
+
+    fs.copySync(
+      path.join(config.braveCoreDir, 'win_build_output', 'midl', 'brave'),
+      path.join(config.srcDir,
+                'third_party', 'win_build_output', 'midl', 'brave'))
   },
 
   // TODO(bridiver) - this should move to gn and windows should call signApp like other platforms
@@ -594,7 +599,7 @@ const util = {
     console.log('generating ninja files...')
 
     if (process.platform === 'win32') {
-      util.updateOmahaMidlFiles()
+      util.updateMidlFiles()
     }
     util.runGnGen(options)
   },

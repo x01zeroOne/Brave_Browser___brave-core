@@ -32,6 +32,7 @@ source_set("win") {
   deps = [
     ":utils",
     "brave_vpn_helper",
+    "brave_vpn_wireguard_service",
     "//base",
     "//brave/components/brave_vpn/browser/connection:common",
     "//brave/components/brave_vpn/common",
