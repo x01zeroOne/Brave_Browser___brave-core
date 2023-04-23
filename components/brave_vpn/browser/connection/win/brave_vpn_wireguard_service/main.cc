@@ -12,12 +12,19 @@
 #include "base/process/memory.h"
 #include "base/win/process_startup_helper.h"
 #include "base/win/scoped_com_initializer.h"
+#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_wireguard_service/brave_wireguard_service_crash_reporter_client.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_wireguard_service/service_constants.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_wireguard_service/service_main.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_wireguard_service/service_utils.h"
 #include "chrome/install_static/product_install_details.h"
+#include "components/crash/core/app/crash_switches.h"
+#include "components/crash/core/app/crashpad.h"
+#include "components/crash/core/app/fallback_crash_handling_win.h"
+#include "components/crash/core/app/run_as_crashpad_handler_win.h"
 
 namespace {
+const char kUserDataDir[] = "user-data-dir";
+const char kProcessType[] = "type";
 const char kLogFile[] = "log-file";
 }  // namespace
 
@@ -37,6 +44,23 @@ int main(int argc, char* argv[]) {
   logging::InitLogging(settings);
   // The exit manager is in charge of calling the dtors of singletons.
   base::AtExitManager exit_manager;
+  std::string process_type = command_line->GetSwitchValueASCII(kProcessType);
+
+  BraveWireguardCrashReporterClient::InitializeCrashReportingForProcess(
+      process_type);
+  if (process_type == crash_reporter::switches::kCrashpadHandler) {
+    crash_reporter::SetupFallbackCrashHandling(*command_line);
+    // The handler process must always be passed the user data dir on the
+    // command line.
+    DCHECK(command_line->HasSwitch(kUserDataDir));
+
+    base::FilePath user_data_dir =
+        command_line->GetSwitchValuePath(kUserDataDir);
+    int crashpad_status = crash_reporter::RunAsCrashpadHandler(
+        *base::CommandLine::ForCurrentProcess(), user_data_dir, kProcessType,
+        kUserDataDir);
+    return crashpad_status;
+  }
 
   // Make sure the process exits cleanly on unexpected errors.
   base::EnableTerminationOnHeapCorruption();
