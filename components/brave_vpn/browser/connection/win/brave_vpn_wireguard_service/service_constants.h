@@ -16,6 +16,7 @@ constexpr wchar_t kBraveWireguardServiceExecutable[] =
 constexpr wchar_t kBraveVpnServiceRegistryStoragePath[] =
     L"Software\\BraveSoftware\\Brave\\Vpn\\BraveWireguardService";
 constexpr char kBraveWgServiceInstall[] = "install";
+constexpr char kConnectWGSwitchName[] = "connect";
 
 const CLSID& GetBraveWireguardServiceClsid();
 const IID& GetBraveWireguardServiceIid();

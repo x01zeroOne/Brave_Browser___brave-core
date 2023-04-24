@@ -33,7 +33,7 @@ source_set("common") {
     "service_constants.cc",
     "service_constants.h",
   ]
-
+  public_deps = [ ":brave_wireguard_manager_idl" ]
   deps = [
     "//base",
     "//chrome/install_static:install_static_util",
@@ -55,6 +55,8 @@ executable("brave_vpn_wireguard_service") {
     "service_main.h",
     "service_utils.cc",
     "service_utils.h",
+    "wireguard_tunnel_service.cc",
+    "wireguard_tunnel_service.h",
   ]
 
   deps = [

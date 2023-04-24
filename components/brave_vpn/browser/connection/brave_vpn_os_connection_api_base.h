@@ -56,6 +56,7 @@ class BraveVPNOSConnectionAPIBase
   std::string GetLastConnectionError() const override;
   BraveVPNRegionDataManager& GetRegionDataManager() override;
   void SetSelectedRegion(const std::string& name) override;
+  virtual void FetchProfileCredentials();
 
  protected:
   BraveVPNOSConnectionAPIBase(
@@ -70,6 +71,11 @@ class BraveVPNOSConnectionAPIBase
   virtual void DisconnectImpl(const std::string& name) = 0;
   virtual void RemoveVPNConnectionImpl(const std::string& name) = 0;
   virtual void CheckConnectionImpl(const std::string& name) = 0;
+
+  BraveVpnAPIRequest* GetAPIRequest();
+  std::string GetCurrentEnvironment() const;
+  void UpdateAndNotifyConnectionStateChange(mojom::ConnectionState state);
+  bool IsCancelConnecting() const { return cancel_connecting_; }
 
   // Subclass should call below callbacks whenever corresponding event happens.
   void OnCreated();
@@ -110,7 +116,7 @@ class BraveVPNOSConnectionAPIBase
       net::NetworkChangeNotifier::ConnectionType type) override;
 
   void CreateVPNConnection();
-  std::string GetCurrentEnvironment() const;
+
   void FetchHostnamesForRegion(const std::string& name);
   void OnFetchHostnames(const std::string& region,
                         const std::string& hostnames,
@@ -119,8 +125,6 @@ class BraveVPNOSConnectionAPIBase
                               const base::Value::List& hostnames_value);
   void OnGetProfileCredentials(const std::string& profile_credential,
                                bool success);
-  void UpdateAndNotifyConnectionStateChange(mojom::ConnectionState state);
-  BraveVpnAPIRequest* GetAPIRequest();
 
   // True when do quick cancel.
   bool QuickCancelIfPossible();

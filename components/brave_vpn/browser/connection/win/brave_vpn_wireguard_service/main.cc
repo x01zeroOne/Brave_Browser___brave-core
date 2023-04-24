@@ -16,6 +16,7 @@
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_wireguard_service/service_constants.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_wireguard_service/service_main.h"
 #include "brave/components/brave_vpn/browser/connection/win/brave_vpn_wireguard_service/service_utils.h"
+#include "brave/components/brave_vpn/browser/connection/win/brave_vpn_wireguard_service/wireguard_tunnel_service.h"
 #include "chrome/install_static/product_install_details.h"
 #include "components/crash/core/app/crash_switches.h"
 #include "components/crash/core/app/crashpad.h"
@@ -68,6 +69,11 @@ int main(int argc, char* argv[]) {
   base::win::RegisterInvalidParamHandler();
   base::win::SetupCRT(*base::CommandLine::ForCurrentProcess());
   install_static::InitializeProductDetailsForPrimaryModule();
+
+  if (command_line->HasSwitch(brave_vpn::kConnectWGSwitchName)) {
+    return brave_vpn::wireguard::RunWireGuardTunnelService(
+        command_line->GetSwitchValueNative(brave_vpn::kConnectWGSwitchName));
+  }
 
   // Initialize COM for the current thread.
   base::win::ScopedCOMInitializer com_initializer(
