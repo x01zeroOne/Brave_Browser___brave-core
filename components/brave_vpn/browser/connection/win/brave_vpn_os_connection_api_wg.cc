@@ -48,7 +48,7 @@ void BraveVPNOSConnectionAPIWireguard::DisconnectImpl(const std::string& name) {
 
 void BraveVPNOSConnectionAPIWireguard::OnWireguardServiceRemoved(bool success) {
   if (!success) {
-    VLOG(2) << __func__ << " : failed to get correct credentials";
+    VLOG(1) << __func__ << " : failed to get correct credentials";
     BraveVPNOSConnectionAPIBase::OnConnectFailed();
     return;
   }
@@ -67,7 +67,7 @@ void BraveVPNOSConnectionAPIWireguard::FetchProfileCredentials() {
   }
 
   // Get profile credentials it to create OS VPN entry.
-  VLOG(2) << __func__ << " : request profile credential:"
+  VLOG(1) << __func__ << " : request profile credential:"
           << GetBraveVPNPaymentsEnv(GetCurrentEnvironment());
 
   brave_vpn::internal::WireGuardGenerateKeypair(base::BindOnce(
@@ -78,10 +78,12 @@ void BraveVPNOSConnectionAPIWireguard::FetchProfileCredentials() {
 void BraveVPNOSConnectionAPIWireguard::OnWireguardKeypairGenerated(
     brave_vpn::internal::WireguardKeyPair key_pair) {
   if (!key_pair.has_value()) {
+    VLOG(1) << __func__ << " : failed to get keypair";
+    UpdateAndNotifyConnectionStateChange(ConnectionState::CONNECT_FAILED);
     return;
   }
   const auto [public_key, private_key] = key_pair.value();
-  LOG(ERROR) << "public_key:" << public_key << " private_key:" << private_key;
+
   GetAPIRequest()->GetWireguardProfileCredentials(
       base::BindOnce(&BraveVPNOSConnectionAPIWireguard::OnGetProfileCredentials,
                      base::Unretained(this), private_key),
@@ -93,9 +95,8 @@ void BraveVPNOSConnectionAPIWireguard::OnGetProfileCredentials(
     const std::string& profile_credential,
     bool success) {
   DCHECK(!IsCancelConnecting());
-  LOG(ERROR) << profile_credential;
   if (!success) {
-    VLOG(2) << __func__ << " : failed to get profile credential";
+    VLOG(1) << __func__ << " : failed to get profile credential";
     UpdateAndNotifyConnectionStateChange(ConnectionState::CONNECT_FAILED);
     return;
   }
@@ -108,7 +109,7 @@ void BraveVPNOSConnectionAPIWireguard::OnGetProfileCredentials(
     auto* mapped_pi4_address =
         value->GetDict().FindStringByDottedPath("mapped-ipv4-address");
     if (!server_public_key || !mapped_pi4_address) {
-      VLOG(2) << __func__ << " : failed to get correct credentials";
+      VLOG(1) << __func__ << " : failed to get correct credentials";
       UpdateAndNotifyConnectionStateChange(ConnectionState::CONNECT_FAILED);
       return;
     }
@@ -118,7 +119,7 @@ void BraveVPNOSConnectionAPIWireguard::OnGetProfileCredentials(
         client_private_key, *server_public_key, vpn_server_hostname,
         *mapped_pi4_address, "1.1.1.1");
     if (!config.has_value()) {
-      VLOG(2) << __func__ << " : failed to get correct credentials";
+      VLOG(1) << __func__ << " : failed to get correct credentials";
       UpdateAndNotifyConnectionStateChange(ConnectionState::CONNECT_FAILED);
       return;
     }
@@ -133,7 +134,7 @@ void BraveVPNOSConnectionAPIWireguard::OnGetProfileCredentials(
 void BraveVPNOSConnectionAPIWireguard::OnWireguardServiceLaunched(
     bool success) {
   if (!success) {
-    VLOG(2) << __func__ << " : failed to get correct credentials";
+    VLOG(1) << __func__ << " : failed to get correct credentials";
     BraveVPNOSConnectionAPIBase::OnConnectFailed();
     return;
   }

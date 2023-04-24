@@ -170,8 +170,8 @@ WireguardKeyPair WireGuardGenerateKeypairImpl() {
   base::win::ScopedBstr public_key_raw;
   base::win::ScopedBstr private_key_raw;
   if (FAILED(service->GenerateKeypair(
-          public_key_raw.Receive(), private_key_raw.Receive(), &error_code))) {
-    VLOG(1) << "Unable to call EnableVpn interface";
+          public_key_raw.Receive(), private_key_raw.Receive(), &error_code)) || error_code) {
+    VLOG(1) << "Unable to generate keypair";
     return absl::nullopt;
   }
 
