@@ -6,13 +6,9 @@
 #ifndef BRAVE_SERVICES_DEVICE_GEOLOCATION_GEOCLUE_LOCATION_PROVIDER_H_
 #define BRAVE_SERVICES_DEVICE_GEOLOCATION_GEOCLUE_LOCATION_PROVIDER_H_
 
-#include <gio/gio.h>
-#include <cstddef>
 #include <memory>
 #include <string>
 
-#include "base/allocator/partition_allocator/pointers/raw_ptr.h"
-#include "base/functional/callback_forward.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
 #include "base/sequence_checker.h"
