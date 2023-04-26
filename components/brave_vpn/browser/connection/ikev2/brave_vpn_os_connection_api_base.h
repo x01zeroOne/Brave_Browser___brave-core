@@ -56,8 +56,9 @@ class BraveVPNOSConnectionAPIBase
   std::string GetLastConnectionError() const override;
   BraveVPNRegionDataManager& GetRegionDataManager() override;
   void SetSelectedRegion(const std::string& name) override;
-  virtual void FetchProfileCredentials();
+  void LoadSubscriberCredentials() override;
 
+  void LoadProfileCredentials();
  protected:
   BraveVPNOSConnectionAPIBase(
       scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,

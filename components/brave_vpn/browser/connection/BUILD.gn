@@ -15,6 +15,7 @@ source_set("api") {
 
   deps = [
     "//base",
+    "//brave/components/brave_vpn/common",
     "//brave/components/brave_vpn/common/mojom",
     "//services/network/public/cpp",
   ]
@@ -28,6 +29,7 @@ group("connection") {
   ]
   if (is_win) {
     deps += [ "ikev2/win" ]
+    deps += [ "wireguard/win" ]
   }
 
   if (is_mac) {

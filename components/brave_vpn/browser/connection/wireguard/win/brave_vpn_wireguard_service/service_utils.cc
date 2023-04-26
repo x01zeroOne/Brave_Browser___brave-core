@@ -3,15 +3,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#include "brave/components/brave_vpn/browser/connection/ikev2/win/brave_vpn_wireguard_service/service_utils.h"
+#include "brave/components/brave_vpn/browser/connection/wireguard/win/brave_vpn_wireguard_service/service_utils.h"
 
 #include "base/base_paths.h"
 #include "base/command_line.h"
 #include "base/files/file_path.h"
 #include "base/logging.h"
 #include "base/path_service.h"
-#include "brave/components/brave_vpn/browser/connection/ikev2/win/brave_vpn_wireguard_service/scoped_sc_handle.h"
-#include "brave/components/brave_vpn/browser/connection/ikev2/win/brave_vpn_wireguard_service/service_constants.h"
+#include "brave/components/brave_vpn/browser/connection/wireguard/win/brave_vpn_wireguard_service/scoped_sc_handle.h"
+#include "brave/components/brave_vpn/browser/connection/wireguard/win/brave_vpn_wireguard_service/service_constants.h"
 #include "chrome/installer/util/install_service_work_item.h"
 
 namespace brave_vpn {

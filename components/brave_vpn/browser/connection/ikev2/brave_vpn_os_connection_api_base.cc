@@ -426,10 +426,13 @@ void BraveVPNOSConnectionAPIBase::ParseAndCacheHostnames(
     UpdateAndNotifyConnectionStateChange(ConnectionState::CONNECT_FAILED);
     return;
   }
-  FetchProfileCredentials();
+  LoadProfileCredentials();
 }
 
-void BraveVPNOSConnectionAPIBase::FetchProfileCredentials() {
+void BraveVPNOSConnectionAPIBase::LoadSubscriberCredentials() {
+}
+
+void BraveVPNOSConnectionAPIBase::LoadProfileCredentials() {
   VLOG(2) << __func__ << " : Picked " << hostname_->hostname << ", "
           << hostname_->display_name << ", " << hostname_->is_offline << ", "
           << hostname_->capacity_score;

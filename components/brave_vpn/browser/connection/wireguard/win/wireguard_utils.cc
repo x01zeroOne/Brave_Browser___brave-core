@@ -3,7 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#include "brave/components/brave_vpn/browser/connection/ikev2/win/wireguard_utils.h"
+#include "brave/components/brave_vpn/browser/connection/wireguard/win/wireguard_utils.h"
 
 #include <objbase.h>
 #include <stdint.h>
@@ -18,8 +18,8 @@
 #include "base/task/thread_pool.h"
 #include "base/win/com_init_util.h"
 #include "base/win/scoped_bstr.h"
-#include "brave/components/brave_vpn/browser/connection/ikev2/win/brave_vpn_wireguard_service/brave_wireguard_manager_idl.h"
-#include "brave/components/brave_vpn/browser/connection/ikev2/win/brave_vpn_wireguard_service/service_constants.h"
+#include "brave/components/brave_vpn/browser/connection/wireguard/win/brave_vpn_wireguard_service/brave_wireguard_manager_idl.h"
+#include "brave/components/brave_vpn/browser/connection/wireguard/win/brave_vpn_wireguard_service/service_constants.h"
 
 namespace brave_vpn {
 
