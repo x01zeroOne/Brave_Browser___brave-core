@@ -18,7 +18,7 @@ source_set("mac") {
 
   deps = [
     "//base",
-    "//brave/components/brave_vpn/browser/connection:api",
+    "//brave/components/brave_vpn/browser/connection/ikev2",
     "//brave/components/brave_vpn/browser/connection:common",
     "//brave/components/brave_vpn/common",
     "//brave/components/brave_vpn/common/mojom",

@@ -3,7 +3,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#include "brave/components/brave_vpn/browser/connection/mac/brave_vpn_os_connection_api_mac.h"
+#include "brave/components/brave_vpn/browser/connection/ikev2/mac/brave_vpn_os_connection_api_mac.h"
 
 #include <memory>
 
@@ -158,7 +158,7 @@ NEVPNProtocolIKEv2* CreateProtocolConfig(const BraveVPNConnectionInfo& info) {
 
 }  // namespace
 
-std::unique_ptr<BraveVPNOSConnectionAPI> CreateBraveVPNOSConnectionAPI(
+std::unique_ptr<BraveVPNOSConnectionAPI> CreateBraveVPNIKEv2ConnectionAPI(
     scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory,
     PrefService* local_prefs,
     version_info::Channel channel) {
