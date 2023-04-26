@@ -78,6 +78,8 @@ class GeoClueProvider : public LocationProvider {
   void OnGetLocationObjectPath(bool success);
 
   void OnLocationChanged();
+  void SetLocation(const mojom::Geoposition& position);
+
   void SetLocationPath(const dbus::ObjectPath& path);
 
   SEQUENCE_CHECKER(sequence_checker_);

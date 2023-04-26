@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -28,12 +29,21 @@
 namespace device {
 
 namespace {
+
 constexpr char kServiceName[] = "org.freedesktop.GeoClue2";
 constexpr char kLocationInterfaceName[] = "org.freedesktop.GeoClue2.Location";
 constexpr char kClientInterfaceName[] = "org.freedesktop.GeoClue2.Client";
 constexpr char kManagerInterfaceName[] = "org.freedesktop.GeoClue2.Manager";
 constexpr char kManagerObjectPath[] = "/org/freedesktop/GeoClue2/Manager";
 constexpr char kBraveDesktopId[] = "com.brave.Browser";
+
+mojom::Geoposition GetErrorPosition() {
+  mojom::Geoposition response;
+  response.error_code = mojom::Geoposition_ErrorCode::POSITION_UNAVAILABLE;
+  response.error_message = "Unable to create instance of Geolocation API";
+  return response;
+}
+
 } // namespace
 
 GeoClueProperties::GeoClueProperties(dbus::ObjectProxy *proxy,
@@ -118,25 +128,32 @@ const mojom::Geoposition &GeoClueProvider::GetPosition() {
   return last_position_;
 }
 
-void GeoClueProvider::OnPermissionGranted() {}
+void GeoClueProvider::OnPermissionGranted() {
+  LOG(ERROR) << "OnPermissionGranted";
+}
 
 void GeoClueProvider::OnLocationChanged() {
-  last_position_ = mojom::Geoposition();
-  last_position_.latitude = gclue_location_properties_->latitude.value();
-  last_position_.longitude = gclue_location_properties_->longitude.value();
-  last_position_.accuracy = gclue_location_properties_->accuracy.value();
-  last_position_.altitude = gclue_location_properties_->altitude.value();
-  last_position_.heading = gclue_location_properties_->heading.value();
-  last_position_.speed = gclue_location_properties_->speed.value();
-  last_position_.error_code = mojom::Geoposition::ErrorCode::NONE;
+  mojom::Geoposition position;
+  position.latitude = gclue_location_properties_->latitude.value();
+  position.longitude = gclue_location_properties_->longitude.value();
+  position.accuracy = gclue_location_properties_->accuracy.value();
+  position.altitude = gclue_location_properties_->altitude.value();
+  position.heading = gclue_location_properties_->heading.value();
+  position.speed = gclue_location_properties_->speed.value();
+  position.error_code = mojom::Geoposition::ErrorCode::NONE;
 
-  LOG(ERROR) << "Lat: " << last_position_.latitude
-             << ", Lng: " << last_position_.longitude
-             << ", Accuracy: " << last_position_.accuracy
-             << ", TS: " << last_position_.timestamp.ToJsTime();
+  LOG(ERROR) << "Lat: " << position.latitude << ", Lng: " << position.longitude
+             << ", Accuracy: " << position.accuracy
+             << ", TS: " << position.timestamp.ToJsTime();
 
-  last_position_.timestamp = base::Time::Now();
-  if (!device::ValidateGeoposition(last_position_)) {
+  position.timestamp = base::Time::Now();
+  SetLocation(position);
+}
+
+void GeoClueProvider::SetLocation(const mojom::Geoposition &position) {
+  last_position_ = position;
+  if (last_position_.error_code == mojom::Geoposition_ErrorCode::NONE &&
+      !device::ValidateGeoposition(last_position_)) {
     return;
   }
   location_update_callback_.Run(this, last_position_);
@@ -144,12 +161,14 @@ void GeoClueProvider::OnLocationChanged() {
 
 void GeoClueProvider::OnGetClientCompleted(dbus::Response *response) {
   if (!response) {
+    SetLocation(GetErrorPosition());
     return;
   }
 
   dbus::MessageReader reader(response);
   dbus::ObjectPath path;
   if (!reader.PopObjectPath(&path)) {
+    SetLocation(GetErrorPosition());
     return;
   }
 
@@ -166,6 +185,7 @@ void GeoClueProvider::OnSetDesktopId(bool success) {
   if (!success) {
     LOG(ERROR) << "Failed to set desktop id. GeoClue2 location provider will "
                   "not work properly";
+    SetLocation(GetErrorPosition());
     return;
   }
   dbus::MethodCall start(kClientInterfaceName, "Start");
@@ -181,9 +201,13 @@ void GeoClueProvider::OnStarted(dbus::Response *response) {
           [](base::WeakPtr<GeoClueProvider> provider, dbus::Signal *signal) {
             dbus::MessageReader reader(signal);
             dbus::ObjectPath old_location;
-            reader.PopObjectPath(&old_location);
             dbus::ObjectPath new_location;
-            reader.PopObjectPath(&new_location);
+            if (!reader.PopObjectPath(&old_location) ||
+                !reader.PopObjectPath(&new_location)) {
+              if (provider)
+                provider->SetLocation(GetErrorPosition());
+              return;
+            }
 
             if (provider) {
               provider->SetLocationPath(new_location);
