@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "base/functional/bind.h"
+#include "base/functional/callback_helpers.h"
 #include "base/location.h"
 #include "base/memory/scoped_refptr.h"
 #include "base/memory/weak_ptr.h"
@@ -68,7 +69,6 @@ void GeoClueLocationProperties::OnGetAll(dbus::Response *response) {
 }
 
 GeoClueProvider::GeoClueProvider() {
-  LOG(ERROR) << "Creating!";
   DETACH_FROM_SEQUENCE(sequence_checker_);
 
   dbus::Bus::Options options;
@@ -80,8 +80,6 @@ GeoClueProvider::GeoClueProvider() {
 }
 GeoClueProvider::~GeoClueProvider() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-
-  LOG(ERROR) << "Shutting down!";
   dbus_thread_linux::GetTaskRunner()->PostTask(
       FROM_HERE, base::BindOnce(&dbus::Bus::ShutdownAndBlock, std::move(bus_)));
 }
@@ -95,7 +93,6 @@ void GeoClueProvider::StartProvider(bool high_accuracy) {
   if (started_) {
     return;
   }
-  LOG(ERROR) << "Starting: " << high_accuracy;
   started_ = true;
   dbus::ObjectProxy *proxy =
       bus_->GetObjectProxy(kServiceName, dbus::ObjectPath(kManagerObjectPath));
@@ -108,15 +105,13 @@ void GeoClueProvider::StartProvider(bool high_accuracy) {
 
 void GeoClueProvider::StopProvider() {
   if (!started_) {
-    LOG(ERROR) << "Stop: Not started!";
     return;
   }
 
   started_ = false;
   dbus::MethodCall stop(kClientInterfaceName, "Stop");
-  gclue_client_->CallMethod(
-      &stop, dbus::ObjectProxy::TIMEOUT_USE_DEFAULT,
-      base::BindOnce([](dbus::Response *r) { LOG(ERROR) << "Stopped!"; }));
+  gclue_client_->CallMethod(&stop, dbus::ObjectProxy::TIMEOUT_USE_DEFAULT,
+                            base::DoNothing());
 }
 
 const mojom::Geoposition &GeoClueProvider::GetPosition() {
@@ -149,18 +144,15 @@ void GeoClueProvider::OnLocationChanged() {
 
 void GeoClueProvider::OnGetClientCompleted(dbus::Response *response) {
   if (!response) {
-    LOG(ERROR) << "Failed to get GeoClue2 Client";
     return;
   }
 
   dbus::MessageReader reader(response);
   dbus::ObjectPath path;
   if (!reader.PopObjectPath(&path)) {
-    LOG(ERROR) << "Failed to parse client path from response";
     return;
   }
 
-  LOG(ERROR) << "Got Client: " << path.value();
   gclue_client_ = bus_->GetObjectProxy(kServiceName, path);
   gclue_client_properties_ = std::make_unique<GeoClueProperties>(
       gclue_client_.get(), kClientInterfaceName, base::NullCallback());
@@ -183,12 +175,10 @@ void GeoClueProvider::OnSetDesktopId(bool success) {
 }
 
 void GeoClueProvider::OnStarted(dbus::Response *response) {
-  LOG(ERROR) << "Started (connected to signal)";
   gclue_client_->ConnectToSignal(
       kClientInterfaceName, "LocationUpdated",
       base::BindRepeating(
           [](base::WeakPtr<GeoClueProvider> provider, dbus::Signal *signal) {
-            LOG(ERROR) << "Location Update :O";
             dbus::MessageReader reader(signal);
             dbus::ObjectPath old_location;
             reader.PopObjectPath(&old_location);
@@ -198,9 +188,6 @@ void GeoClueProvider::OnStarted(dbus::Response *response) {
             if (provider) {
               provider->SetLocationPath(new_location);
             }
-
-            LOG(ERROR) << "Old: " << old_location.value()
-                       << ", New: " << new_location.value();
           },
           weak_ptr_factory_.GetWeakPtr()),
       base::DoNothing());
@@ -217,7 +204,6 @@ void GeoClueProvider::OnGetLocationObjectPath(bool success) {
 void GeoClueProvider::SetLocationPath(const dbus::ObjectPath &location_path) {
   dbus::ObjectProxy *location_proxy =
       bus_->GetObjectProxy(kServiceName, location_path);
-  LOG(ERROR) << "Location Path: " << location_path.value();
   gclue_location_properties_ = std::make_unique<GeoClueLocationProperties>(
       location_proxy, kLocationInterfaceName,
       base::BindRepeating(&GeoClueProvider::OnLocationChanged,
