@@ -18,6 +18,7 @@ source_set("api") {
     "//brave/components/brave_vpn/common/mojom",
     "//services/network/public/cpp",
   ]
+
 }
 
 group("connection") {
@@ -26,25 +27,24 @@ group("connection") {
     ":common",
   ]
   if (is_win) {
-    deps += [ "win" ]
+    deps += [ "ikev2/win" ]
   }
 
   if (is_mac) {
-    deps += [ "mac" ]
+    deps += [ "ikev2/mac" ]
   }
+
+
 }
 
 source_set("common") {
   sources = [
     "brave_vpn_connection_info.cc",
     "brave_vpn_connection_info.h",
-    "brave_vpn_os_connection_api_base.cc",
-    "brave_vpn_os_connection_api_base.h",
     "brave_vpn_region_data_manager.cc",
     "brave_vpn_region_data_manager.h",
   ]
   deps = [
-    ":api",
     "//brave/components/api_request_helper",
     "//brave/components/brave_vpn/browser/api",
     "//brave/components/brave_vpn/common",
@@ -58,39 +58,3 @@ source_set("common") {
   ]
 }
 
-source_set("sim") {
-  testonly = true
-  sources = [
-    "brave_vpn_os_connection_api_sim.cc",
-    "brave_vpn_os_connection_api_sim.h",
-  ]
-
-  deps = [
-    ":api",
-    ":common",
-    "//base",
-    "//brave/components/brave_vpn/common",
-    "//components/version_info:channel",
-    "//third_party/icu",
-  ]
-}
-
-source_set("unit_tests") {
-  testonly = true
-
-  sources = [ "brave_vpn_os_connection_api_unittest.cc" ]
-
-  deps = [
-    ":api",
-    ":common",
-    ":sim",
-    "//brave/components/brave_vpn/browser",
-    "//brave/components/brave_vpn/common",
-    "//brave/components/brave_vpn/common/mojom",
-    "//components/sync_preferences:test_support",
-    "//content/test:test_support",
-    "//services/network:test_support",
-    "//testing/gtest",
-    "//third_party/abseil-cpp:absl",
-  ]
-}
