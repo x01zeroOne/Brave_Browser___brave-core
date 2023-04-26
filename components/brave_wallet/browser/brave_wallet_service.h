@@ -45,6 +45,7 @@ extern const char kBraveWalletLastUsageTimeHistogramName[];
 class KeyringService;
 class JsonRpcService;
 class TxService;
+class EthAllowanceManager;
 
 class BraveWalletService : public KeyedService,
                            public mojom::BraveWalletService,
@@ -237,10 +238,14 @@ class BraveWalletService : public KeyedService,
 
   void OnDiscoverAssetsCompleted(
       std::vector<mojom::BlockchainTokenPtr> discovered_assets);
+  void OnDiscoverEthAllowancesCompleted(
+      const std::vector<mojom::AllowanceInfoPtr>& allowances);
 
   // Resets things back to the original state of BraveWalletService.
   // To be used when the Wallet is reset / erased
   void Reset() override;
+
+  void DiscoverEthAllowances() override;
 
   void AddSignMessageRequest(mojom::SignMessageRequestPtr request,
                              SignMessageRequestCallback callback);
@@ -367,6 +372,7 @@ class BraveWalletService : public KeyedService,
   raw_ptr<PrefService> profile_prefs_ = nullptr;
   BraveWalletP3A brave_wallet_p3a_;
   std::unique_ptr<AssetDiscoveryManager> asset_discovery_manager_;
+  std::unique_ptr<EthAllowanceManager> eth_allowance_manager_;
   mojo::ReceiverSet<mojom::BraveWalletService> receivers_;
   PrefChangeRegistrar pref_change_registrar_;
   base::WeakPtrFactory<BraveWalletService> weak_ptr_factory_;

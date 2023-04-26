@@ -138,6 +138,8 @@ export class WalletApiProxy {
         store.dispatch(WalletActions.setAssetAutoDiscoveryCompleted(discoveredAssets))
       },
       onResetWallet: function () {
+      },
+      onDiscoverEthAllowancesCompleted: function (allowances) {
       }
     })
     this.braveWalletService.addObserver(braveWalletServiceObserverReceiver.$.bindNewPipeAndPassRemote())

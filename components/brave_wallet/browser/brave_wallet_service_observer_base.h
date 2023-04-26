@@ -28,6 +28,8 @@ class BraveWalletServiceObserverBase
   void OnDiscoverAssetsCompleted(
       std::vector<mojom::BlockchainTokenPtr> discovered_assets) override {}
   void OnResetWallet() override {}
+  void OnDiscoverEthAllowancesCompleted(
+      std::vector<mojom::AllowanceInfoPtr> allowances) override {}
 };
 
 }  // namespace brave_wallet

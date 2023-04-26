@@ -145,5 +145,4 @@ void AssetDiscoveryManager::AccountsAdded(
   account_addresses_map[coin] = std::move(addresses);
   DiscoverAssetsOnAllSupportedChains(account_addresses_map, true);
 }
-
 }  // namespace brave_wallet
