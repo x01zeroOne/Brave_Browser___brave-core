@@ -15,7 +15,6 @@ source_set("browser") {
   deps = [
     "//base",
     "//brave/components/brave_component_updater/browser",
-    "//brave/components/brave_shields/browser",
     "//brave/components/debounce/common:common",
     "//brave/extensions:common",
     "//components/prefs",
