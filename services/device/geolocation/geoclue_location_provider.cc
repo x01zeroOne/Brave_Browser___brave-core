@@ -128,9 +128,7 @@ const mojom::Geoposition &GeoClueProvider::GetPosition() {
   return last_position_;
 }
 
-void GeoClueProvider::OnPermissionGranted() {
-  LOG(ERROR) << "OnPermissionGranted";
-}
+void GeoClueProvider::OnPermissionGranted() {}
 
 void GeoClueProvider::OnLocationChanged() {
   mojom::Geoposition position;
@@ -141,11 +139,6 @@ void GeoClueProvider::OnLocationChanged() {
   position.heading = gclue_location_properties_->heading.value();
   position.speed = gclue_location_properties_->speed.value();
   position.error_code = mojom::Geoposition::ErrorCode::NONE;
-
-  LOG(ERROR) << "Lat: " << position.latitude << ", Lng: " << position.longitude
-             << ", Accuracy: " << position.accuracy
-             << ", TS: " << position.timestamp.ToJsTime();
-
   position.timestamp = base::Time::Now();
   SetLocation(position);
 }
