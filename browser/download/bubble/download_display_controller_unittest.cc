@@ -265,10 +265,8 @@ class DownloadDisplayControllerTest : public testing::Test {
     browser_ = std::unique_ptr<Browser>(Browser::Create(params));
     bubble_controller_ = std::make_unique<DownloadBubbleUIController>(
         browser_.get(), mock_update_service_.get());
-    bubble_controller_->set_manager_for_testing(manager_.get());
     controller_ = std::make_unique<DownloadDisplayController>(
         display_.get(), browser_.get(), bubble_controller_.get());
-    controller_->set_manager_for_testing(manager_.get());
     display_->SetController(controller_.get());
   }
 
