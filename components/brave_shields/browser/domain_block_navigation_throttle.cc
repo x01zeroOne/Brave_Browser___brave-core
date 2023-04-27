@@ -134,8 +134,9 @@ DomainBlockNavigationThrottle::WillStartRequest() {
   // If this URL is about to be debounced, don't show an interstitial.
   GURL debounced_url;
   if (debounce_service_ &&
-      debounce_service_->Debounce(request_url, &debounced_url))
+      debounce_service_->Debounce(request_url, &debounced_url)) {
     return content::NavigationThrottle::PROCEED;
+  }
 
   // Otherwise, call the ad block service on a task runner to determine whether
   // this domain should be blocked.
