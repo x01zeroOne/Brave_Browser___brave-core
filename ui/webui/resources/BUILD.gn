@@ -12,8 +12,6 @@ import("//ui/webui/resources/tools/generate_grd.gni")
 import("//ui/webui/webui_features.gni")
 import("./fonts/fonts.gni")
 import("./sources.gni")
-import("//brave/node_modules/@brave/leo/shared/sources.gni")
-import("//brave/node_modules/@brave/leo/web-components/sources.gni")
 
 # These targets add files to chrome://resources/brave
 # - Use build_cr_componesnrt or other methods to compile resources and generate GRDPs
@@ -100,14 +98,14 @@ generate_grd("static_grdp") {
                   # TODO(petemill): ethereum_remote_client_page.html does not need to be served from chrome://resources
                   # and should be put in to it's own resource package.
                   "ethereum_remote_client_page.html",
-                ] + rebase_path(leo_shared_sources, ".", "leo") + rebase_path(leo_web_components_sources, ".", "leo")
+                  "leo/bundle.js",
+                ]
   input_files_base_dir =
       rebase_path("$brave_resources_extra_grdps_path", root_build_dir)
   deps = [
+    ":copy_leo_bundle",
     ":ethereum_remote_client_html_copy",
     ":leo_static_copy",
-    ":copy_leo_shared",
-    ":copy_leo_web_components",
     ":static_copy",
   ]
 }
@@ -179,6 +177,7 @@ leo_icons = [
   "lock.svg",
   "safe.svg",
   "settings.svg",
+  "help-outline.svg",
   "launch.svg",
   "eye-off.svg",
   "eye-on.svg",
@@ -189,7 +188,6 @@ leo_icons = [
   "qr-code.svg",
   "key.svg",
   "trash.svg",
-  "help-outline.svg",
   "product-brave-wallet.svg",
   "browser-extensions.svg",
   "product-sync.svg",
@@ -203,7 +201,7 @@ leo_icons = [
   "list-4.svg",
   "product-translate.svg",
   "backward.svg",
-  "download.svg"
+  "download.svg",
 ]
 
 generate_grd("icons_grdp") {
@@ -242,14 +240,10 @@ copy("icons_copy") {
   outputs = [ "$brave_resources_extra_grdps_path/icons/{{source_file_part}}" ]
 }
 
-copy("copy_leo_shared") {
-  sources = rebase_path(leo_shared_sources, ".", "//brave/node_modules/@brave/leo")
-  outputs = ["$brave_resources_extra_grdps_path/tsc/leo/shared/{{source_file_part}}"]
-}
-
-copy("copy_leo_web_components") {
-  sources = rebase_path(leo_web_components_sources, ".", "//brave/node_modules/@brave/leo")
-  outputs = ["$brave_resources_extra_grdps_path/tsc/leo/web-components/{{source_file_part}}"]
+copy("copy_leo_bundle") {
+  sources = [ "$root_gen_dir/brave/web-ui-leo/leo.bundle.js" ]
+  outputs = [ "$brave_resources_extra_grdps_path/leo/bundle.js" ]
+  deps = [ "//brave/components/leo" ]
 }
 
 # Static files should be put relative to //ui/webui/resources main resources GRD.

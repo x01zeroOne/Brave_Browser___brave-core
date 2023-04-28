@@ -1,0 +1,12 @@
+diff --git a/ui/webui/resources/tools/optimize_webui.py b/ui/webui/resources/tools/optimize_webui.py
+index 6b5978eeb4145..1242551f785e7 100755
+--- a/ui/webui/resources/tools/optimize_webui.py
++++ b/ui/webui/resources/tools/optimize_webui.py
+@@ -32,6 +32,7 @@ for excluded_file in [
+     'resources/js/cr.js',  # This file relies on globals.
+     'resources/js/load_time_data.js',
+     'resources/ash/common/load_time_data.m.js',
++    'resources/brave/leo/bundle.js',
+ ]:
+   # Exclude both the chrome://resources form and the scheme-relative form for
+   # files used in Polymer 3.
