@@ -14,7 +14,7 @@ index 89da086564f98..290c720859a5e 100644
      "//services/device/public/mojom",
      "//services/network/public/cpp",
    ]
-+  sources += brave_services_device_geolocation_sources deps += brave_services_device_geolocation_deps
++  visibility += brave_services_device_geolocation_visibility sources += brave_services_device_geolocation_sources deps += brave_services_device_geolocation_deps
  
    if (is_android) {
      sources += [
