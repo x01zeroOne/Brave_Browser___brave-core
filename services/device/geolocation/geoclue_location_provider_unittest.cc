@@ -3,20 +3,22 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include "brave/services/device/geolocation/geoclue_location_provider.h"
+
 #include "testing/gtest/include/gtest/gtest.h"
 
-TEST(GeoclueLocationProviderTest, CanInitializeNewLocationProvider) {
-  
+namespace device {
+
+TEST(GeoclueLocationProviderTest,
+     CanInitializeNewLocationProvider) { // should not crash
+  auto provider = GeoClueProvider();
 }
 
-TEST(GeoclueLocationProviderTest, DBusErrorIsGeolocationError) {
-  
-}
+TEST(GeoclueLocationProviderTest, DBusErrorIsGeolocationError) {}
 
-TEST(GeoclueLocationProviderTest, CanStart) {
-  
-}
+TEST(GeoclueLocationProviderTest, CanStart) {}
+TEST(GeoclueLocationProviderTest, CanStop) {}
 
-TEST(GeoclueLocationProviderTest, NoLocationUntilPermissionGranted) {
-  
-}
+TEST(GeoclueLocationProviderTest, NoLocationUntilPermissionGranted) {}
+
+} // namespace device
