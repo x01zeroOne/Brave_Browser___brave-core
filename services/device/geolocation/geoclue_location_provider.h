@@ -71,14 +71,25 @@ public:
   void OnPermissionGranted() override;
 
 protected:
+  enum ClientState {
+    kStopped,
+    kInitializing,
+    kInitialized,
+    kStarting,
+    kStarted,
+  };
+
+  ClientState client_state_ = ClientState::kStopped;
+
   bool permission_granted_ = false;
-  bool started_ = false;
 
   void SetLocation(const mojom::Geoposition &position);
 
 private:
   void OnGetClientCompleted(dbus::Response *response);
   void OnSetDesktopId(bool success);
+
+  void StartClient();
   void OnStarted(dbus::Response *response);
   void OnGetLocationObjectPath(bool success);
 

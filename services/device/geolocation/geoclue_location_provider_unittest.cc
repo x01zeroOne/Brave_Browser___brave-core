@@ -5,6 +5,7 @@
 
 #include "brave/services/device/geolocation/geoclue_location_provider.h"
 
+#include <cmath>
 #include <memory>
 
 #include "base/functional/bind.h"
@@ -23,7 +24,7 @@ public:
 
   bool HasPermission() { return permission_granted_; }
 
-  bool Started() { return started_; }
+  bool Started() { return client_state_ != kStopped; }
 
   void SetPositionForTesting(const mojom::Geoposition &position) {
     SetLocation(position);
@@ -98,6 +99,44 @@ TEST_F(GeoclueLocationProviderTest, CanStop) {
   EXPECT_FALSE(provider_->Started());
 }
 
+TEST_F(GeoclueLocationProviderTest, CanStopPermissionGranted) {
+  InitializeProvider();
+  EXPECT_FALSE(provider_->Started());
+
+  provider_->OnPermissionGranted();
+  provider_->StopProvider();
+
+  EXPECT_FALSE(provider_->Started());
+  EXPECT_TRUE(provider_->HasPermission());
+}
+
+TEST_F(GeoclueLocationProviderTest, CanStopStartedAndPermissionGranted) {
+  InitializeProvider();
+
+  provider_->OnPermissionGranted();
+  provider_->StartProvider(false);
+
+  // Let everything initialize until we get a location
+  loop_.Run();
+
+  EXPECT_EQ(1, update_count_);
+  EXPECT_TRUE(provider_->Started());
+  EXPECT_TRUE(provider_->HasPermission());
+
+  // After stopping, further updates should no propagate.
+  provider_->StopProvider();
+
+  mojom::Geoposition fake_position;
+  fake_position.latitude = 0;
+  fake_position.longitude = 0;
+  fake_position.accuracy = 1;
+  fake_position.timestamp = base::Time::Now();
+  fake_position.error_code = mojom::Geoposition_ErrorCode::NONE;
+  provider_->SetPositionForTesting(fake_position);
+
+  EXPECT_EQ(1, update_count_);
+}
+
 TEST_F(GeoclueLocationProviderTest, NoLocationUntilPermissionGranted) {
   InitializeProvider();
   EXPECT_FALSE(provider_->Started());
@@ -120,11 +159,30 @@ TEST_F(GeoclueLocationProviderTest, NoLocationUntilPermissionGranted) {
   EXPECT_EQ(0, update_count_);
 
   provider_->OnPermissionGranted();
+
+  // Wait for the client to initialize.
+  loop_.Run();
   EXPECT_EQ(1, update_count_);
 
   fake_position.latitude = 1;
   provider_->SetPositionForTesting(fake_position);
   EXPECT_EQ(2, update_count_);
+}
+
+TEST_F(GeoclueLocationProviderTest, GetsLocation) {
+  InitializeProvider();
+  provider_->StartProvider(false);
+  provider_->OnPermissionGranted();
+
+  loop_.Run();
+  EXPECT_EQ(1, update_count_);
+
+  EXPECT_LE(provider_->GetPosition().latitude, 90);
+  EXPECT_GE(provider_->GetPosition().latitude, -90);
+  EXPECT_LE(provider_->GetPosition().longitude, 180);
+  EXPECT_GE(provider_->GetPosition().longitude, -180);
+  EXPECT_GE(provider_->GetPosition().accuracy, 0);
+  EXPECT_FALSE(provider_->GetPosition().timestamp.is_null());
 }
 
 } // namespace device

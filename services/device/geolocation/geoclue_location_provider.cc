@@ -100,10 +100,11 @@ void GeoClueProvider::SetUpdateCallback(
 }
 
 void GeoClueProvider::StartProvider(bool high_accuracy) {
-  if (started_) {
+  if (client_state_ != kStopped) {
     return;
   }
-  started_ = true;
+  client_state_ = kInitializing;
+
   dbus::ObjectProxy *proxy =
       bus_->GetObjectProxy(kServiceName, dbus::ObjectPath(kManagerObjectPath));
 
@@ -114,11 +115,11 @@ void GeoClueProvider::StartProvider(bool high_accuracy) {
 }
 
 void GeoClueProvider::StopProvider() {
-  if (!started_) {
+  if (client_state_ == kStopped) {
     return;
   }
 
-  started_ = false;
+  client_state_ = kStopped;
 
   // Stop can be called before the gclue_client_ has resolved.
   if (!gclue_client_) {
@@ -134,11 +135,9 @@ const mojom::Geoposition &GeoClueProvider::GetPosition() {
   return last_position_;
 }
 
-void GeoClueProvider::OnPermissionGranted() { 
+void GeoClueProvider::OnPermissionGranted() {
   permission_granted_ = true;
-
-  // TODO: Don't request location until permission is granted.
-  SetLocation(last_position_);
+  StartClient();
 }
 
 void GeoClueProvider::OnLocationChanged() {
@@ -157,8 +156,7 @@ void GeoClueProvider::OnLocationChanged() {
 void GeoClueProvider::SetLocation(const mojom::Geoposition &position) {
   last_position_ = position;
 
-  // TODO: Don't request location until permission is granted.
-  if (!permission_granted_) {
+  if (client_state_ != kStarted) {
     return;
   }
 
@@ -198,6 +196,18 @@ void GeoClueProvider::OnSetDesktopId(bool success) {
     SetLocation(GetErrorPosition());
     return;
   }
+
+  client_state_ = kInitialized;
+  StartClient();
+}
+
+void GeoClueProvider::StartClient() {
+  if (!gclue_client_ || !permission_granted_ || client_state_ != kInitialized) {
+    return;
+  }
+
+  client_state_ = kStarting;
+
   dbus::MethodCall start(kClientInterfaceName, "Start");
   gclue_client_->CallMethod(&start, dbus::ObjectProxy::TIMEOUT_USE_DEFAULT,
                             base::BindOnce(&GeoClueProvider::OnStarted,
@@ -205,6 +215,8 @@ void GeoClueProvider::OnSetDesktopId(bool success) {
 }
 
 void GeoClueProvider::OnStarted(dbus::Response *response) {
+  client_state_ = kStarted;
+
   gclue_client_->ConnectToSignal(
       kClientInterfaceName, "LocationUpdated",
       base::BindRepeating(
