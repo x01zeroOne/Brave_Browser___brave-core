@@ -46,7 +46,7 @@ class BraveBookmarkManagerMediator
 
     // Overridden Chromium's BookmarkManagerMediator.mContext
     private Context mContext;
-    private static final String TAG = "BraveBookmarkManagerMediator";
+    private static final String TAG = "BraveBookmarkManager";
 
     BraveBookmarkManagerMediator(Context context, BookmarkModel bookmarkModel,
             BookmarkOpener bookmarkOpener, SelectableListLayout<BookmarkId> selectableListLayout,
