@@ -3,17 +3,16 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "base/functional/bind.h"
-#include "base/run_loop.h"
-#include "base/task/single_thread_task_runner.h"
-#include "base/test/task_environment.h"
 #include "brave/services/device/geolocation/geoclue_location_provider.h"
 
+#include <memory>
+
+#include "base/functional/bind.h"
+#include "base/run_loop.h"
 #include "content/public/test/browser_task_environment.h"
 #include "services/device/public/mojom/geoposition.mojom.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "gtest/gtest.h"
-#include <memory>
 
 namespace device {
 
@@ -43,13 +42,17 @@ public:
     provider_ = std::make_unique<TestGeoclueLocationProvider>();
     provider_->SetUpdateCallback(base::BindRepeating(
         [](GeoclueLocationProviderTest *test, const LocationProvider *provider,
-           const mojom::Geoposition &position) { test->loop_.Quit(); },
+           const mojom::Geoposition &position) {
+          test->loop_.Quit();
+          test->update_count_++;
+        },
         base::Unretained(this)));
   }
 
 protected:
   content::BrowserTaskEnvironment task_environment_;
   base::RunLoop loop_;
+  int update_count_ = 0;
 
   std::unique_ptr<TestGeoclueLocationProvider> provider_;
 };
@@ -95,6 +98,33 @@ TEST_F(GeoclueLocationProviderTest, CanStop) {
   EXPECT_FALSE(provider_->Started());
 }
 
-TEST_F(GeoclueLocationProviderTest, NoLocationUntilPermissionGranted) {}
+TEST_F(GeoclueLocationProviderTest, NoLocationUntilPermissionGranted) {
+  InitializeProvider();
+  EXPECT_FALSE(provider_->Started());
+  EXPECT_FALSE(provider_->HasPermission());
+  EXPECT_EQ(0, update_count_);
+
+  provider_->StartProvider(false);
+  EXPECT_TRUE(provider_->Started());
+  EXPECT_FALSE(provider_->HasPermission());
+  EXPECT_EQ(0, update_count_);
+
+  mojom::Geoposition fake_position;
+  fake_position.latitude = 0;
+  fake_position.longitude = 0;
+  fake_position.accuracy = 1;
+  fake_position.timestamp = base::Time::Now();
+  fake_position.error_code = mojom::Geoposition_ErrorCode::NONE;
+
+  provider_->SetPositionForTesting(fake_position);
+  EXPECT_EQ(0, update_count_);
+
+  provider_->OnPermissionGranted();
+  EXPECT_EQ(1, update_count_);
+
+  fake_position.latitude = 1;
+  provider_->SetPositionForTesting(fake_position);
+  EXPECT_EQ(2, update_count_);
+}
 
 } // namespace device

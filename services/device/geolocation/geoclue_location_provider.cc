@@ -134,7 +134,12 @@ const mojom::Geoposition &GeoClueProvider::GetPosition() {
   return last_position_;
 }
 
-void GeoClueProvider::OnPermissionGranted() { permission_granted_ = true; }
+void GeoClueProvider::OnPermissionGranted() { 
+  permission_granted_ = true;
+
+  // TODO: Don't request location until permission is granted.
+  SetLocation(last_position_);
+}
 
 void GeoClueProvider::OnLocationChanged() {
   mojom::Geoposition position;
@@ -151,6 +156,12 @@ void GeoClueProvider::OnLocationChanged() {
 
 void GeoClueProvider::SetLocation(const mojom::Geoposition &position) {
   last_position_ = position;
+
+  // TODO: Don't request location until permission is granted.
+  if (!permission_granted_) {
+    return;
+  }
+
   if (last_position_.error_code == mojom::Geoposition_ErrorCode::NONE &&
       !device::ValidateGeoposition(last_position_)) {
     return;
