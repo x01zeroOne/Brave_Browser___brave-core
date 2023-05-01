@@ -44,15 +44,20 @@ public:
     provider_->SetUpdateCallback(base::BindRepeating(
         [](GeoclueLocationProviderTest *test, const LocationProvider *provider,
            const mojom::Geoposition &position) {
-          test->loop_.Quit();
+          test->loop_->Quit();
           test->update_count_++;
         },
         base::Unretained(this)));
   }
 
+  void WaitForUpdate() {
+    loop_ = std::make_unique<base::RunLoop>();
+    loop_->Run();
+  }
+
 protected:
   content::BrowserTaskEnvironment task_environment_;
-  base::RunLoop loop_;
+  std::unique_ptr<base::RunLoop> loop_;
   int update_count_ = 0;
 
   std::unique_ptr<TestGeoclueLocationProvider> provider_;
@@ -117,7 +122,7 @@ TEST_F(GeoclueLocationProviderTest, CanStopStartedAndPermissionGranted) {
   provider_->StartProvider(false);
 
   // Let everything initialize until we get a location
-  loop_.Run();
+  WaitForUpdate();
 
   EXPECT_EQ(1, update_count_);
   EXPECT_TRUE(provider_->Started());
@@ -135,6 +140,25 @@ TEST_F(GeoclueLocationProviderTest, CanStopStartedAndPermissionGranted) {
   provider_->SetPositionForTesting(fake_position);
 
   EXPECT_EQ(1, update_count_);
+}
+
+TEST_F(GeoclueLocationProviderTest, CanRestartProvider) {
+  InitializeProvider();
+
+  provider_->OnPermissionGranted();
+  provider_->StartProvider(true);
+  EXPECT_TRUE(provider_->Started());
+
+  WaitForUpdate();
+  EXPECT_EQ(1, update_count_);
+
+  provider_->StopProvider();
+  EXPECT_FALSE(provider_->Started());
+
+  provider_->StartProvider(true);
+
+  WaitForUpdate();
+  EXPECT_EQ(2, update_count_);
 }
 
 TEST_F(GeoclueLocationProviderTest, NoLocationUntilPermissionGranted) {
@@ -161,7 +185,7 @@ TEST_F(GeoclueLocationProviderTest, NoLocationUntilPermissionGranted) {
   provider_->OnPermissionGranted();
 
   // Wait for the client to initialize.
-  loop_.Run();
+  WaitForUpdate();
   EXPECT_EQ(1, update_count_);
 
   fake_position.latitude = 1;
@@ -174,7 +198,7 @@ TEST_F(GeoclueLocationProviderTest, GetsLocation) {
   provider_->StartProvider(false);
   provider_->OnPermissionGranted();
 
-  loop_.Run();
+  WaitForUpdate();
   EXPECT_EQ(1, update_count_);
 
   EXPECT_LE(provider_->GetPosition().latitude, 90);
