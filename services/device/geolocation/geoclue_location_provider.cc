@@ -119,6 +119,12 @@ void GeoClueProvider::StopProvider() {
   }
 
   started_ = false;
+
+  // Stop can be called before the gclue_client_ has resolved.
+  if (!gclue_client_) {
+    return;
+  }
+
   dbus::MethodCall stop(kClientInterfaceName, "Stop");
   gclue_client_->CallMethod(&stop, dbus::ObjectProxy::TIMEOUT_USE_DEFAULT,
                             base::DoNothing());
@@ -128,7 +134,7 @@ const mojom::Geoposition &GeoClueProvider::GetPosition() {
   return last_position_;
 }
 
-void GeoClueProvider::OnPermissionGranted() {}
+void GeoClueProvider::OnPermissionGranted() { permission_granted_ = true; }
 
 void GeoClueProvider::OnLocationChanged() {
   mojom::Geoposition position;

@@ -12,6 +12,7 @@ source_set("unit_tests") {
 
   deps = [
     "//testing/gtest",
-    "//services/device/geolocation"
+    "//services/device/geolocation",
+    "//dbus",
   ]
 }

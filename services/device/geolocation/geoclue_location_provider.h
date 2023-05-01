@@ -28,9 +28,8 @@ struct GeoClueProperties : public dbus::PropertySet {
   dbus::Property<std::string> desktop_id;
   dbus::Property<dbus::ObjectPath> location;
 
-  GeoClueProperties(dbus::ObjectProxy* proxy,
-                    const std::string& interface_name,
-                    const PropertyChangedCallback& callback);
+  GeoClueProperties(dbus::ObjectProxy *proxy, const std::string &interface_name,
+                    const PropertyChangedCallback &callback);
   ~GeoClueProperties() override;
 };
 
@@ -42,49 +41,52 @@ struct GeoClueLocationProperties : public dbus::PropertySet {
   dbus::Property<double> speed;
   dbus::Property<double> heading;
 
-  GeoClueLocationProperties(dbus::ObjectProxy* proxy,
-                            const std::string& interface_name,
+  GeoClueLocationProperties(dbus::ObjectProxy *proxy,
+                            const std::string &interface_name,
                             base::OnceCallback<void()> on_got_initial_values);
   ~GeoClueLocationProperties() override;
 
   // dbus::PropertySet:
-  void OnGetAll(dbus::Response* response) override;
+  void OnGetAll(dbus::Response *response) override;
 
- private:
+private:
   base::OnceCallback<void()> on_got_initial_values_;
 };
 
 class GeoClueProvider : public LocationProvider {
- public:
+public:
   GeoClueProvider();
 
-  GeoClueProvider(const GeoClueProvider&) = delete;
-  GeoClueProvider& operator=(const GeoClueProvider&) = delete;
+  GeoClueProvider(const GeoClueProvider &) = delete;
+  GeoClueProvider &operator=(const GeoClueProvider &) = delete;
 
   ~GeoClueProvider() override;
 
   // LocationProvider:
-  void SetUpdateCallback(
-      const LocationProviderUpdateCallback& callback) override;
+  void
+  SetUpdateCallback(const LocationProviderUpdateCallback &callback) override;
   void StartProvider(bool high_accuracy) override;
   void StopProvider() override;
-  const mojom::Geoposition& GetPosition() override;
+  const mojom::Geoposition &GetPosition() override;
   void OnPermissionGranted() override;
 
- private:
-  void OnGetClientCompleted(dbus::Response* response);
+protected:
+  bool permission_granted_ = false;
+  bool started_ = false;
+
+  void SetLocation(const mojom::Geoposition &position);
+
+private:
+  void OnGetClientCompleted(dbus::Response *response);
   void OnSetDesktopId(bool success);
-  void OnStarted(dbus::Response* response);
+  void OnStarted(dbus::Response *response);
   void OnGetLocationObjectPath(bool success);
 
   void OnLocationChanged();
-  void SetLocation(const mojom::Geoposition& position);
 
-  void SetLocationPath(const dbus::ObjectPath& path);
+  void SetLocationPath(const dbus::ObjectPath &path);
 
   SEQUENCE_CHECKER(sequence_checker_);
-
-  bool started_ = false;
 
   scoped_refptr<dbus::Bus> bus_;
   scoped_refptr<dbus::ObjectProxy> gclue_client_;
@@ -98,6 +100,6 @@ class GeoClueProvider : public LocationProvider {
   base::WeakPtrFactory<GeoClueProvider> weak_ptr_factory_{this};
 };
 
-}  // namespace device
+} // namespace device
 
-#endif  // BRAVE_SERVICES_DEVICE_GEOLOCATION_GEOCLUE_LOCATION_PROVIDER_H_
+#endif // BRAVE_SERVICES_DEVICE_GEOLOCATION_GEOCLUE_LOCATION_PROVIDER_H_
