@@ -11,14 +11,14 @@
 #include "base/functional/bind.h"
 #include "base/run_loop.h"
 #include "content/public/test/browser_task_environment.h"
+#include "gtest/gtest.h"
 #include "services/device/public/mojom/geoposition.mojom.h"
 #include "testing/gtest/include/gtest/gtest.h"
-#include "gtest/gtest.h"
 
 namespace device {
 
 class TestGeoclueLocationProvider : public GeoClueProvider {
-public:
+ public:
   TestGeoclueLocationProvider() = default;
   ~TestGeoclueLocationProvider() override = default;
 
@@ -26,24 +26,24 @@ public:
 
   bool Started() { return client_state_ != kStopped; }
 
-  void SetPositionForTesting(const mojom::Geoposition &position) {
+  void SetPositionForTesting(const mojom::Geoposition& position) {
     SetLocation(position);
   }
 
-private:
+ private:
   mojom::Geoposition position_;
 };
 
 class GeoclueLocationProviderTest : public testing::Test {
-public:
+ public:
   GeoclueLocationProviderTest() = default;
   ~GeoclueLocationProviderTest() override = default;
 
   void InitializeProvider() {
     provider_ = std::make_unique<TestGeoclueLocationProvider>();
     provider_->SetUpdateCallback(base::BindRepeating(
-        [](GeoclueLocationProviderTest *test, const LocationProvider *provider,
-           const mojom::Geoposition &position) {
+        [](GeoclueLocationProviderTest* test, const LocationProvider* provider,
+           const mojom::Geoposition& position) {
           test->loop_->Quit();
           test->update_count_++;
         },
@@ -55,7 +55,7 @@ public:
     loop_->Run();
   }
 
-protected:
+ protected:
   content::BrowserTaskEnvironment task_environment_;
   std::unique_ptr<base::RunLoop> loop_;
   int update_count_ = 0;
@@ -64,7 +64,7 @@ protected:
 };
 
 TEST_F(GeoclueLocationProviderTest,
-       CreateDestroy) { // should not crash
+       CreateDestroy) {  // should not crash
   InitializeProvider();
   EXPECT_TRUE(provider_);
   provider_.reset();
@@ -209,4 +209,4 @@ TEST_F(GeoclueLocationProviderTest, GetsLocation) {
   EXPECT_FALSE(provider_->GetPosition().timestamp.is_null());
 }
 
-} // namespace device
+}  // namespace device

@@ -6,13 +6,12 @@
 source_set("unit_tests") {
   testonly = true
 
-  sources = [
-    "geoclue_location_provider_unittest.cc"
-  ]
+  sources = [ "geoclue_location_provider_unittest.cc" ]
 
   deps = [
-    "//testing/gtest",
-    "//services/device/geolocation",
+    "//content/test:test_support",
     "//dbus",
+    "//services/device/geolocation",
+    "//testing/gtest",
   ]
 }

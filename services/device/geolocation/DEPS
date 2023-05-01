@@ -1,5 +1,11 @@
 include_rules = [
   "+components/dbus",
   "+dbus",
-  "+services/device"
+  "+services/device",
 ]
+
+specific_include_rules = {
+  ".*_unittest.cc": [
+    "+gtest"
+  ]
+}
