@@ -8,20 +8,19 @@ package org.chromium.chrome.browser.bookmarks;
 import android.content.ComponentName;
 
 import org.chromium.chrome.browser.app.BraveActivity;
-import org.chromium.chrome.browser.bookmarks.BookmarkManager;
 import org.chromium.chrome.browser.ui.messages.snackbar.SnackbarManager;
 import org.chromium.chrome.browser.ui.native_page.NativePageHost;
 
 public class BraveBookmarkPage extends BookmarkPage {
     // Overridden Chromium's BookmarkPage.mManager
-    private BookmarkManager mManager;
+    private BookmarkManagerCoordinator mBookmarkManagerCoordinator;
 
     public BraveBookmarkPage(ComponentName componentName, SnackbarManager snackbarManager,
             boolean isIncognito, NativePageHost host) {
         super(componentName, snackbarManager, isIncognito, host);
-        if (mManager != null && mManager instanceof BraveBookmarkManager
+        if (mBookmarkManagerCoordinator instanceof BraveBookmarkManagerCoordinator
                 && BraveActivity.getChromeTabbedActivity() != null) {
-            ((BraveBookmarkManager) mManager)
+            ((BraveBookmarkManagerCoordinator) mBookmarkManagerCoordinator)
                     .setWindow(BraveActivity.getChromeTabbedActivity().getWindowAndroid());
         }
     }

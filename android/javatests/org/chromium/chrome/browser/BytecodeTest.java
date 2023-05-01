@@ -772,13 +772,27 @@ public class BytecodeTest {
                 AppMenuDelegate.class, StatusBarColorProvider.class, ObservableSupplierImpl.class,
                 IntentRequestTracker.class, int.class, Supplier.class, Function.class,
                 OneshotSupplier.class, boolean.class, BackPressManager.class));
-        Assert.assertTrue(
-                constructorsMatch("org/chromium/chrome/browser/bookmarks/BookmarkActionBar",
-                        "org/chromium/chrome/browser/bookmarks/BraveBookmarkActionBar",
-                        Context.class, AttributeSet.class));
-        Assert.assertTrue(constructorsMatch("org/chromium/chrome/browser/bookmarks/BookmarkManager",
-                "org/chromium/chrome/browser/bookmarks/BraveBookmarkManager", Context.class,
-                ComponentName.class, boolean.class, boolean.class, SnackbarManager.class));
+        Assert.assertTrue(constructorsMatch("org/chromium/chrome/browser/bookmarks/BookmarkToolbar",
+                "org/chromium/chrome/browser/bookmarks/BraveBookmarkToolbar", Context.class,
+                AttributeSet.class));
+        Assert.assertTrue(constructorsMatch(
+                "org/chromium/chrome/browser/bookmarks/BookmarkToolbarCoordinator",
+                "org/chromium/chrome/browser/bookmarks/BraveBookmarkToolbarCoordinator",
+                SelectableListLayout.class, SelectionDelegate.class, SearchDelegate.class,
+                BookmarkItemsAdapter.class, boolean.class, OneshotSupplier.class,
+                BookmarkModel.class.BookmarkOpener.class));
+        Assert.assertTrue(constructorsMatch(
+                "org/chromium/chrome/browser/bookmarks/BookmarkManagerCoordinator",
+                "org/chromium/chrome/browser/bookmarks/BraveBookmarkManagerCoordinator",
+                Context.class, ComponentName.class, boolean.class, boolean.class,
+                SnackbarManager.class, Profile.class));
+        Assert.assertTrue(constructorsMatch(
+                "org/chromium/chrome/browser/bookmarks/BookmarkManagerMediator",
+                "org/chromium/chrome/browser/bookmarks/BraveBookmarkManagerMediator", Context.class,
+                BookmarkModel.class, BookmarkOpener.class, SelectableListLayout.class,
+                SelectionDelegate.class, RecyclerView.class, BookmarkItemsAdapter.class,
+                LargeIconBridge.class, boolean.class, boolean.class, ObservableSupplierImpl.class,
+                Profile.class, BookmarkUndoController.class));
         Assert.assertTrue(constructorsMatch("org/chromium/chrome/browser/bookmarks/BookmarkBridge",
                 "org/chromium/chrome/browser/bookmarks/BraveBookmarkBridge", long.class));
         Assert.assertTrue(constructorsMatch("org/chromium/chrome/browser/bookmarks/BookmarkModel",
@@ -992,16 +1006,18 @@ public class BytecodeTest {
         Assert.assertTrue(fieldExists(
                 "org/chromium/chrome/browser/incognito/reauth/IncognitoReauthCoordinatorBase",
                 "mIncognitoReauthView"));
+        Assert.assertTrue(fieldExists("org/chromium/chrome/browser/app/bookmarks/BookmarkActivity",
+                "mBookmarkManagerCoordinator"));
         Assert.assertTrue(fieldExists(
-                "org/chromium/chrome/browser/bookmarks/BookmarkActionBar", "mDelegate"));
+                "org/chromium/chrome/browser/bookmarks/BookmarkManagerCoordinator", "mMediator"));
         Assert.assertTrue(fieldExists(
-                "org/chromium/chrome/browser/app/bookmarks/BookmarkActivity", "mBookmarkManager"));
+                "org/chromium/chrome/browser/bookmarks/BookmarkManagerMediator", "mBookmarkModel"));
         Assert.assertTrue(fieldExists(
-                "org/chromium/chrome/browser/bookmarks/BookmarkManager", "mBookmarkModel"));
-        Assert.assertTrue(
-                fieldExists("org/chromium/chrome/browser/bookmarks/BookmarkManager", "mContext"));
-        Assert.assertTrue(
-                fieldExists("org/chromium/chrome/browser/bookmarks/BookmarkPage", "mManager"));
+                "org/chromium/chrome/browser/bookmarks/BookmarkManagerMediator", "mContext"));
+        Assert.assertTrue(fieldExists(
+                "org/chromium/chrome/browser/bookmarks/BookmarkToolbarCoordinator", "mToolbar"));
+        Assert.assertTrue(fieldExists("org/chromium/chrome/browser/bookmarks/BookmarkPage",
+                "mBookmarkManagerCoordinator"));
     }
 
     @Test

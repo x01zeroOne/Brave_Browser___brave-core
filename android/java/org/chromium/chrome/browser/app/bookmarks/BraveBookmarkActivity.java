@@ -8,14 +8,14 @@ package org.chromium.chrome.browser.app.bookmarks;
 import android.content.Intent;
 import android.os.Bundle;
 
-import org.chromium.chrome.browser.bookmarks.BookmarkManager;
-import org.chromium.chrome.browser.bookmarks.BraveBookmarkManager;
+import org.chromium.chrome.browser.bookmarks.BookmarkManagerCoordinator;
+import org.chromium.chrome.browser.bookmarks.BraveBookmarkManagerCoordinator;
 import org.chromium.ui.base.ActivityWindowAndroid;
 import org.chromium.ui.base.IntentRequestTracker;
 
 public class BraveBookmarkActivity extends BookmarkActivity {
-    // Overridden Chromium's BookmarkActivity.mBookmarkManager
-    private BookmarkManager mBookmarkManager;
+    // Overridden Chromium's BookmarkActivity.mBookmarkManagerCoordinator
+    private BookmarkManagerCoordinator mBookmarkManagerCoordinator;
     private ActivityWindowAndroid mWindowAndroid;
 
     @Override
@@ -25,9 +25,9 @@ public class BraveBookmarkActivity extends BookmarkActivity {
         IntentRequestTracker intentRequestTracker = IntentRequestTracker.createFromActivity(this);
         mWindowAndroid = new ActivityWindowAndroid(this, true, intentRequestTracker);
         mWindowAndroid.getIntentRequestTracker().restoreInstanceState(savedInstanceState);
-        assert mBookmarkManager != null;
-        if (mBookmarkManager instanceof BraveBookmarkManager) {
-            ((BraveBookmarkManager) mBookmarkManager).setWindow(mWindowAndroid);
+        if (mBookmarkManagerCoordinator instanceof BraveBookmarkManagerCoordinator) {
+            ((BraveBookmarkManagerCoordinator) mBookmarkManagerCoordinator)
+                    .setWindow(mWindowAndroid);
         }
     }
 

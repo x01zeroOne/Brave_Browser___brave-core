@@ -219,17 +219,25 @@
     *** showBookmarkManagerOnPhone(...);
 }
 
--keep class org.chromium.chrome.browser.bookmarks.BookmarkActionBar {
-    *** mDelegate;
+-keep class org.chromium.chrome.browser.bookmarks.BookmarkToolbar {
     public <init>(...);
 }
 
--keep class org.chromium.chrome.browser.bookmarks.BraveBookmarkActionBar {
+-keep class org.chromium.chrome.browser.bookmarks.BraveBookmarkToolbar {
+    public <init>(...);
+}
+
+-keep class org.chromium.chrome.browser.bookmarks.BookmarkToolbarCoordinator {
+*** mToolbar;
+    public <init>(...);
+}
+
+-keep class org.chromium.chrome.browser.bookmarks.BraveBookmarkToolbarCoordinator {
     public <init>(...);
 }
 
 -keep class org.chromium.chrome.browser.bookmarks.BookmarkActivity {
-    *** mBookmarkManager;
+    *** mBookmarkManagerCoordinator;
     public <init>(...);
 }
 
@@ -237,13 +245,22 @@
     public <init>(...);
 }
 
--keep class org.chromium.chrome.browser.bookmarks.BookmarkManager {
+-keep class org.chromium.chrome.browser.bookmarks.BookmarkManagerCoordinator {
+    *** mMediator;
+    public <init>(...);
+}
+
+-keep class org.chromium.chrome.browser.bookmarks.BraveBookmarkManagerCoordinator {
+    public <init>(...);
+}
+
+-keep class org.chromium.chrome.browser.bookmarks.BookmarkManagerMediator {
     *** mBookmarkModel;
     *** mContext;
     public <init>(...);
 }
 
--keep class org.chromium.chrome.browser.bookmarks.BraveBookmarkManager {
+-keep class org.chromium.chrome.browser.bookmarks.BraveBookmarkManagerMediator {
     public <init>(...);
 }
 
@@ -256,7 +273,7 @@
 }
 
 -keep class org.chromium.chrome.browser.bookmarks.BookmarkPage {
-    *** mManager;
+    *** mBookmarkManagerCoordinator;
     public <init>(...);
 }
 

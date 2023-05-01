@@ -16,35 +16,47 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.OpenableColumns;
+import androidx.recyclerview.widget.RecyclerView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import org.chromium.base.Log;
 import org.chromium.base.task.PostTask;
 import org.chromium.base.task.TaskTraits;
+import org.chromium.chrome.browser.profiles.Profile;
 import org.chromium.chrome.R;
 import org.chromium.chrome.browser.ui.messages.snackbar.SnackbarManager;
+import org.chromium.components.browser_ui.widget.selectable_list.SelectableListLayout;
+import org.chromium.components.browser_ui.widget.selectable_list.SelectionDelegate;
+import org.chromium.components.favicon.LargeIconBridge;
+import org.chromium.base.supplier.ObservableSupplierImpl;
 import org.chromium.ui.base.ActivityWindowAndroid;
 import org.chromium.ui.base.WindowAndroid;
+import org.chromium.components.bookmarks.BookmarkId;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class BraveBookmarkManager extends BookmarkManager implements BraveBookmarkDelegate {
+class BraveBookmarkManagerMediator extends BookmarkManagerMediator implements BraveBookmarkDelegate {
     private ActivityWindowAndroid mWindowAndroid;
 
-    // Overridden Chromium's BookmarkManager.mBookmarkModel
+    // Overridden Chromium's BookmarkManagerMediator.mBookmarkModel
     private BookmarkModel mBookmarkModel;
 
-    // Overridden Chromium's BookmarkManager.mContext
+    // Overridden Chromium's BookmarkManagerMediator.mContext
     private Context mContext;
-    private static final String TAG = "BraveBookmarkManager";
+    private static final String TAG = "BraveBookmarkManagerMediator";
 
-    public BraveBookmarkManager(Context context, ComponentName openBookmarkComponentName,
-            boolean isDialogUi, boolean isIncognito, SnackbarManager snackbarManager) {
-        super(context, openBookmarkComponentName, isDialogUi, isIncognito, snackbarManager);
+    BraveBookmarkManagerMediator(Context context, BookmarkModel bookmarkModel,
+            BookmarkOpener bookmarkOpener, SelectableListLayout<BookmarkId> selectableListLayout,
+            SelectionDelegate<BookmarkId> selectionDelegate, RecyclerView recyclerView,
+            BookmarkItemsAdapter bookmarkItemsAdapter, LargeIconBridge largeIconBridge,
+            boolean isDialogUi, boolean isIncognito,
+            ObservableSupplierImpl<Boolean> backPressStateSupplier, Profile profile,
+            BookmarkUndoController bookmarkUndoController) {
+        super(context, bookmarkModel, bookmarkOpener, selectableListLayout, selectionDelegate, recyclerView, bookmarkItemsAdapter, largeIconBridge, isDialogUi, isIncognito, backPressStateSupplier, profile, bookmarkUndoController);
     }
 
     public void setWindow(ActivityWindowAndroid window) {

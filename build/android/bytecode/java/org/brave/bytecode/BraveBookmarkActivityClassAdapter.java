@@ -16,7 +16,11 @@ public class BraveBookmarkActivityClassAdapter extends BraveClassVisitor {
     public BraveBookmarkActivityClassAdapter(ClassVisitor visitor) {
         super(visitor);
 
-        deleteField(sBraveBookmarkActivityClassName, "mBookmarkManager");
+        /*deleteField(sBraveBookmarkActivityClassName, "mBookmarkManager");
         makeProtectedField(sBookmarkActivityClassName, "mBookmarkManager");
+*/
+
+        deleteField(sBraveBookmarkActivityClassName, "mBookmarkManagerCoordinator");
+        makeProtectedField(sBookmarkActivityClassName, "mBookmarkManagerCoordinator");
     }
 }

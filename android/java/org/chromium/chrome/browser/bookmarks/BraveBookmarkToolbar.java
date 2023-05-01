@@ -9,16 +9,18 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.view.MenuItem;
 
+import org.chromium.base.supplier.OneshotSupplier;
+import org.chromium.base.Log;
 import org.chromium.chrome.R;
 
-public class BraveBookmarkActionBar extends BookmarkActionBar {
+public class BraveBookmarkToolbar extends BookmarkToolbar {
+
     private int MENU_IMPORT_ID = 100;
     private int MENU_EXPORT_ID = 101;
 
-    // Overridden Chromium's BookmarkActionBar.mDelegate
-    private BookmarkDelegate mDelegate;
+    private BraveBookmarkDelegate mBraveBookmarkDelegate;
 
-    public BraveBookmarkActionBar(Context context, AttributeSet attrs) {
+    public BraveBookmarkToolbar(Context context, AttributeSet attrs) {
         super(context, attrs);
         int menuSize = getMenu().size();
         getMenu()
@@ -33,17 +35,25 @@ public class BraveBookmarkActionBar extends BookmarkActionBar {
     @Override
     public boolean onMenuItemClick(MenuItem menuItem) {
         if (menuItem.getItemId() == MENU_IMPORT_ID) {
-            if (mDelegate != null && mDelegate instanceof BraveBookmarkDelegate) {
-                ((BraveBookmarkDelegate) mDelegate).importBookmarks();
+            if (mBraveBookmarkDelegate != null) {
+                mBraveBookmarkDelegate.importBookmarks();
             }
             return true;
         } else if (menuItem.getItemId() == MENU_EXPORT_ID) {
-            if (mDelegate != null && mDelegate instanceof BraveBookmarkDelegate) {
-                ((BraveBookmarkDelegate) mDelegate).exportBookmarks();
+            if (mBraveBookmarkDelegate != null) {
+                mBraveBookmarkDelegate.exportBookmarks();
             }
             return true;
         }
 
         return super.onMenuItemClick(menuItem);
+    }
+
+    void setBraveBookmarkDelegate(OneshotSupplier<BookmarkDelegate> bookmarkDelegateSupplier) {
+        bookmarkDelegateSupplier.onAvailable((bookmarkDelegate) -> {
+            if(bookmarkDelegate instanceof BraveBookmarkDelegate) {
+                mBraveBookmarkDelegate = (BraveBookmarkDelegate) bookmarkDelegate;
+            }
+        });
     }
 }
