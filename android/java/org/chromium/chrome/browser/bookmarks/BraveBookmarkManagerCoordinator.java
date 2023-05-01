@@ -5,25 +5,27 @@
 
 package org.chromium.chrome.browser.bookmarks;
 
-import android.content.Context;
 import android.content.ComponentName;
+import android.content.Context;
 
 import org.chromium.chrome.browser.profiles.Profile;
-import org.chromium.ui.base.ActivityWindowAndroid;
 import org.chromium.chrome.browser.ui.messages.snackbar.SnackbarManager;
+import org.chromium.ui.base.ActivityWindowAndroid;
 
 public class BraveBookmarkManagerCoordinator extends BookmarkManagerCoordinator {
+    // Overridden Chromium's BookmarkManagerCoordinator.mMediator
+    private BookmarkManagerMediator mMediator;
 
-	// Overridden Chromium's BookmarkManagerCoordinator.mMediator
-	private BookmarkManagerMediator mMediator;
+    public BraveBookmarkManagerCoordinator(Context context, ComponentName openBookmarkComponentName,
+            boolean isDialogUi, boolean isIncognito, SnackbarManager snackbarManager,
+            Profile profile) {
+        super(context, openBookmarkComponentName, isDialogUi, isIncognito, snackbarManager,
+                profile);
+    }
 
-	public BraveBookmarkManagerCoordinator(Context context, ComponentName openBookmarkComponentName, boolean isDialogUi, boolean isIncognito, SnackbarManager snackbarManager, Profile profile) {
-		super(context, openBookmarkComponentName, isDialogUi, isIncognito, snackbarManager, profile);
-	}
-
-	public void setWindow(ActivityWindowAndroid window) {
-		if(mMediator instanceof BraveBookmarkManagerMediator) {
-			((BraveBookmarkManagerMediator) mMediator).setWindow(window);
-		}
+    public void setWindow(ActivityWindowAndroid window) {
+        if (mMediator instanceof BraveBookmarkManagerMediator) {
+            ((BraveBookmarkManagerMediator) mMediator).setWindow(window);
+        }
     }
 }

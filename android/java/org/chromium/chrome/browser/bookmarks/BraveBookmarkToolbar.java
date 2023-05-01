@@ -9,12 +9,11 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.view.MenuItem;
 
-import org.chromium.base.supplier.OneshotSupplier;
 import org.chromium.base.Log;
+import org.chromium.base.supplier.OneshotSupplier;
 import org.chromium.chrome.R;
 
 public class BraveBookmarkToolbar extends BookmarkToolbar {
-
     private int MENU_IMPORT_ID = 100;
     private int MENU_EXPORT_ID = 101;
 
@@ -51,7 +50,7 @@ public class BraveBookmarkToolbar extends BookmarkToolbar {
 
     void setBraveBookmarkDelegate(OneshotSupplier<BookmarkDelegate> bookmarkDelegateSupplier) {
         bookmarkDelegateSupplier.onAvailable((bookmarkDelegate) -> {
-            if(bookmarkDelegate instanceof BraveBookmarkDelegate) {
+            if (bookmarkDelegate instanceof BraveBookmarkDelegate) {
                 mBraveBookmarkDelegate = (BraveBookmarkDelegate) bookmarkDelegate;
             }
         });

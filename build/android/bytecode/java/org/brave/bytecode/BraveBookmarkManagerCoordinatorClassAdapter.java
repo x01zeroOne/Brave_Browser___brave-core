@@ -16,7 +16,8 @@ public class BraveBookmarkManagerCoordinatorClassAdapter extends BraveClassVisit
     public BraveBookmarkManagerCoordinatorClassAdapter(ClassVisitor visitor) {
         super(visitor);
 
-        redirectConstructor(sBookmarkManagerCoordinatorClassName, sBraveBookmarkManagerCoordinatorClassName);
+        redirectConstructor(
+                sBookmarkManagerCoordinatorClassName, sBraveBookmarkManagerCoordinatorClassName);
         deleteField(sBraveBookmarkManagerCoordinatorClassName, "mMediator");
         makeProtectedField(sBookmarkManagerCoordinatorClassName, "mMediator");
     }

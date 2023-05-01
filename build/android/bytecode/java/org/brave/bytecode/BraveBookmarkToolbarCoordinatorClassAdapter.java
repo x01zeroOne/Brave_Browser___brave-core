@@ -16,7 +16,8 @@ public class BraveBookmarkToolbarCoordinatorClassAdapter extends BraveClassVisit
     public BraveBookmarkToolbarCoordinatorClassAdapter(ClassVisitor visitor) {
         super(visitor);
 
-        redirectConstructor(sBookmarkToolbarCoordinatorClassName, sBraveBookmarkToolbarCoordinatorClassName);
+        redirectConstructor(
+                sBookmarkToolbarCoordinatorClassName, sBraveBookmarkToolbarCoordinatorClassName);
 
         deleteField(sBraveBookmarkToolbarCoordinatorClassName, "mToolbar");
         makeProtectedField(sBookmarkToolbarCoordinatorClassName, "mToolbar");

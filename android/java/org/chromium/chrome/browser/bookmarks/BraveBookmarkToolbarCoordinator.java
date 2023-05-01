@@ -24,10 +24,11 @@ class BraveBookmarkToolbarCoordinator extends BookmarkToolbarCoordinator {
             BookmarkItemsAdapter bookmarkItemsAdapter, boolean isDialogUi,
             OneshotSupplier<BookmarkDelegate> bookmarkDelegateSupplier, BookmarkModel bookmarkModel,
             BookmarkOpener bookmarkOpener) {
-        super(selectableListLayout, selectionDelegate, searchDelegate, bookmarkItemsAdapter, isDialogUi, bookmarkDelegateSupplier, bookmarkModel, bookmarkOpener);
-        
-        if(mToolbar instanceof BraveBookmarkToolbar) {
-           ((BraveBookmarkToolbar) mToolbar).setBraveBookmarkDelegate(bookmarkDelegateSupplier);
+        super(selectableListLayout, selectionDelegate, searchDelegate, bookmarkItemsAdapter,
+                isDialogUi, bookmarkDelegateSupplier, bookmarkModel, bookmarkOpener);
+
+        if (mToolbar instanceof BraveBookmarkToolbar) {
+            ((BraveBookmarkToolbar) mToolbar).setBraveBookmarkDelegate(bookmarkDelegateSupplier);
         }
     }
 }
