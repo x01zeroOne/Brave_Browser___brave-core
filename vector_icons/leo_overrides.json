@@ -1,4 +1,11 @@
 {
   "back_arrow": "leo_browser_back",
-  "forward_arrow": "leo_browser_forward"
+  "forward_arrow": "leo_browser_forward",
+  "reload": "leo_browser_refresh",
+  "star": "leo_browser_bookmark-normal",
+  "star_active": "leo_bookmark_added",
+  "bookmark": "leo_browser_bookmark-normal",
+  "navigate_home": "leo_browser_home",
+  "extension": "leo_browser_extensions",
+  "browser_tools": "leo_hamburger_menu"
 }
