@@ -789,7 +789,7 @@ public class BytecodeTest {
                 "org/chromium/chrome/browser/bookmarks/BraveBookmarkToolbarCoordinator",
                 SelectableListLayout.class, SelectionDelegate.class, SearchDelegate.class,
                 BookmarkItemsAdapter.class, boolean.class, OneshotSupplier.class,
-                BookmarkModel.class.BookmarkOpener.class));
+                BookmarkModel.class, BookmarkOpener.class));
         Assert.assertTrue(constructorsMatch(
                 "org/chromium/chrome/browser/bookmarks/BookmarkManagerCoordinator",
                 "org/chromium/chrome/browser/bookmarks/BraveBookmarkManagerCoordinator",
