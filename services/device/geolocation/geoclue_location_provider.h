@@ -56,7 +56,7 @@ protected:
   // Stores whether or not permission has been granted.
   bool permission_granted_ = false;
 
-  void SetLocation(const mojom::Geoposition &position);
+  void SetPosition(const mojom::Geoposition &position);
 
 private:
   // There is a bit of a process to setup a GeoClue2.Client and start listening
@@ -108,7 +108,7 @@ private:
   scoped_refptr<dbus::ObjectProxy> gclue_client_;
 
   mojom::Geoposition last_position_;
-  LocationProviderUpdateCallback location_update_callback_;
+  LocationProviderUpdateCallback position_update_callback_;
 
   base::WeakPtrFactory<GeoClueLocationProvider> weak_ptr_factory_{this};
 };

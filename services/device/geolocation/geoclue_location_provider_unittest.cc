@@ -27,7 +27,7 @@ class TestGeoClueLocationProvider : public GeoClueProvider {
   bool Started() { return client_state_ != kStopped; }
 
   void SetPositionForTesting(const mojom::Geoposition& position) {
-    SetLocation(position);
+    SetPosition(position);
   }
 
  private:

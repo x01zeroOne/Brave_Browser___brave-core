@@ -112,7 +112,7 @@ void GeoClueLocationProvider::SetUpdateCallback(
     const LocationProviderUpdateCallback &callback) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
-  location_update_callback_ = callback;
+  position_update_callback_ = callback;
 }
 
 void GeoClueLocationProvider::StartProvider(bool high_accuracy) {
@@ -169,7 +169,7 @@ void GeoClueLocationProvider::OnPermissionGranted() {
   StartClient();
 }
 
-void GeoClueLocationProvider::SetLocation(const mojom::Geoposition &position) {
+void GeoClueLocationProvider::SetPosition(const mojom::Geoposition &position) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   last_position_ = position;
@@ -182,21 +182,21 @@ void GeoClueLocationProvider::SetLocation(const mojom::Geoposition &position) {
       !device::ValidateGeoposition(last_position_)) {
     return;
   }
-  location_update_callback_.Run(this, last_position_);
+  position_update_callback_.Run(this, last_position_);
 }
 
 void GeoClueLocationProvider::OnGetClientCompleted(dbus::Response *response) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   if (!response) {
-    SetLocation(GetErrorPosition());
+    SetPosition(GetErrorPosition());
     return;
   }
 
   dbus::MessageReader reader(response);
   dbus::ObjectPath path;
   if (!reader.PopObjectPath(&path)) {
-    SetLocation(GetErrorPosition());
+    SetPosition(GetErrorPosition());
     return;
   }
 
@@ -222,7 +222,7 @@ void GeoClueLocationProvider::OnSetDesktopId(
   if (!success) {
     LOG(ERROR) << "Failed to set desktop id. GeoClue2 location provider will "
                   "not work properly";
-    SetLocation(GetErrorPosition());
+    SetPosition(GetErrorPosition());
     return;
   }
 
@@ -243,7 +243,7 @@ void GeoClueLocationProvider::ConnectSignal() {
             if (!reader.PopObjectPath(&old_location) ||
                 !reader.PopObjectPath(&new_location)) {
               if (provider) {
-                provider->SetLocation(GetErrorPosition());
+                provider->SetPosition(GetErrorPosition());
               }
               return;
             }
@@ -266,7 +266,7 @@ void GeoClueLocationProvider::OnSignalConnected(
     LOG(ERROR) << "Failed to connect to LocationUpdated Signal. GeoClue2 "
                   "location provider will "
                   "not work properly";
-    SetLocation(GetErrorPosition());
+    SetPosition(GetErrorPosition());
     return;
   }
 
@@ -320,7 +320,7 @@ void GeoClueLocationProvider::OnReadGeoClueLocation(
   position.speed = properties->speed.value();
   position.error_code = mojom::Geoposition::ErrorCode::NONE;
   position.timestamp = base::Time::Now();
-  SetLocation(position);
+  SetPosition(position);
 }
 
 std::unique_ptr<LocationProvider> NewSystemLocationProvider(
