@@ -9,5 +9,7 @@
   "extension": "leo_browser_extensions",
   "browser_tools": "leo_hamburger_menu",
   "https_valid": "leo_lock_plain",
-  "share": "leo_share_browser"
+  "share": "leo_share_browser",
+  "download_in_progress": "leo_download",
+  "download_toolbar_button": "leo_download"
 }
