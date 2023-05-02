@@ -27,7 +27,7 @@ namespace brave_federated {
 namespace {
 
 // Maximum size of the federated server response in bytes.
-const int kMaxFederatedServerResponseSizeBytes = 1024 * 1024; // 1 MB
+const int kMaxFederatedServerResponseSizeBytes = 1024 * 1024;  // 1 MB
 
 net::NetworkTrafficAnnotationTag GetNetworkTrafficAnnotationTag() {
   return net::DefineNetworkTrafficAnnotation("federated_learning", R"(
@@ -64,12 +64,13 @@ CommunicationAdapter::CommunicationAdapter(
     const net::BackoffEntry::Policy reconnect_policy,
     const net::BackoffEntry::Policy request_task_policy)
     : url_loader_factory_(std::move(url_loader_factory)) {
-  reconnect_policy_ = std::make_unique<const net::BackoffEntry::Policy>(reconnect_policy);
+  reconnect_policy_ =
+      std::make_unique<const net::BackoffEntry::Policy>(reconnect_policy);
   reconnect_backoff_entry_ =
       std::make_unique<net::BackoffEntry>(reconnect_policy_.get());
 
-  request_task_policy_ = std::make_unique<const net::BackoffEntry::Policy>(
-      request_task_policy);
+  request_task_policy_ =
+      std::make_unique<const net::BackoffEntry::Policy>(request_task_policy);
   request_task_backoff_entry_ =
       std::make_unique<net::BackoffEntry>(request_task_policy_.get());
 }
