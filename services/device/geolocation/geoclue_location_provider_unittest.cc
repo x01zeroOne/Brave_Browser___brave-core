@@ -17,7 +17,7 @@
 
 namespace device {
 
-class TestGeoClueLocationProvider : public GeoClueProvider {
+class TestGeoClueLocationProvider : public GeoClueLocationProvider {
  public:
   TestGeoClueLocationProvider() = default;
   ~TestGeoClueLocationProvider() override = default;

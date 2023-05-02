@@ -22,27 +22,26 @@
 
 namespace device {
 
-class GeolocationManager;
 struct GeoClueLocationProperties;
 
 class GeoClueLocationProvider : public LocationProvider {
-public:
+ public:
   GeoClueLocationProvider();
 
-  GeoClueLocationProvider(const GeoClueLocationProvider &) = delete;
-  GeoClueLocationProvider &operator=(const GeoClueLocationProvider &) = delete;
+  GeoClueLocationProvider(const GeoClueLocationProvider&) = delete;
+  GeoClueLocationProvider& operator=(const GeoClueLocationProvider&) = delete;
 
   ~GeoClueLocationProvider() override;
 
   // LocationProvider:
-  void
-  SetUpdateCallback(const LocationProviderUpdateCallback &callback) override;
+  void SetUpdateCallback(
+      const LocationProviderUpdateCallback& callback) override;
   void StartProvider(bool high_accuracy) override;
   void StopProvider() override;
-  const mojom::Geoposition &GetPosition() override;
+  const mojom::Geoposition& GetPosition() override;
   void OnPermissionGranted() override;
 
-protected:
+ protected:
   enum ClientState {
     kStopped,
     kInitializing,
@@ -56,9 +55,9 @@ protected:
   // Stores whether or not permission has been granted.
   bool permission_granted_ = false;
 
-  void SetPosition(const mojom::Geoposition &position);
+  void SetPosition(const mojom::Geoposition& position);
 
-private:
+ private:
   // There is a bit of a process to setup a GeoClue2.Client and start listening
   // for location changes:
   // 1. Get the current GeoClue2.Manager
@@ -78,7 +77,7 @@ private:
 
   // Step 2
   void GetClient();
-  void OnGetClientCompleted(dbus::Response *response);
+  void OnGetClientCompleted(dbus::Response* response);
 
   // Step 3
   void SetDesktopId();
@@ -87,20 +86,21 @@ private:
 
   // Step 4
   void ConnectSignal();
-  void OnSignalConnected(const std::string &interface_name,
-                         const std::string &signal_name, bool success);
+  void OnSignalConnected(const std::string& interface_name,
+                         const std::string& signal_name,
+                         bool success);
 
   // Step 5: Start the client. This is safe to call before permission is granted
   // or while the client is starting up, it will just be ignored if we aren't
   // ready to start. It will be invoked again when everything is ready.
   void StartClient();
-  void OnClientStarted(dbus::Response *response);
+  void OnClientStarted(dbus::Response* response);
 
   // Functions for triggering the read of a new GeoClue2.Location, and a
   // callback for when it has been read.
-  void ReadGeoClueLocation(const dbus::ObjectPath &path);
-  void
-  OnReadGeoClueLocation(std::unique_ptr<GeoClueLocationProperties> properties);
+  void ReadGeoClueLocation(const dbus::ObjectPath& path);
+  void OnReadGeoClueLocation(
+      std::unique_ptr<GeoClueLocationProperties> properties);
 
   SEQUENCE_CHECKER(sequence_checker_);
 
@@ -113,6 +113,6 @@ private:
   base::WeakPtrFactory<GeoClueLocationProvider> weak_ptr_factory_{this};
 };
 
-} // namespace device
+}  // namespace device
 
 #endif  // BRAVE_SERVICES_DEVICE_GEOLOCATION_GEOCLUE_LOCATION_PROVIDER_H_
