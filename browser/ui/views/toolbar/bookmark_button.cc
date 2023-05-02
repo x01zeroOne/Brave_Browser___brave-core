@@ -26,7 +26,9 @@ BookmarkButton::BookmarkButton(PressedCallback callback)
 
 BookmarkButton::~BookmarkButton() = default;
 
-const char *BookmarkButton::GetClassName() const { return "BookmarkButton"; }
+const char* BookmarkButton::GetClassName() const {
+  return "BookmarkButton";
+}
 
 void BookmarkButton::SetToggled(bool on) {
   active_ = on;
@@ -34,9 +36,9 @@ void BookmarkButton::SetToggled(bool on) {
 }
 
 void BookmarkButton::UpdateImageAndText() {
-  const ui::ColorProvider *color_provider = GetColorProvider();
+  const ui::ColorProvider* color_provider = GetColorProvider();
   SkColor icon_color = color_provider->GetColor(kColorToolbarButtonIcon);
-  const gfx::VectorIcon &icon =
+  const gfx::VectorIcon& icon =
       active_ ? omnibox::kStarActiveIcon : omnibox::kStarIcon;
   SetImage(views::Button::STATE_NORMAL,
            gfx::CreateVectorIcon(icon, 16, icon_color));
