@@ -26,7 +26,6 @@ class GeolocationManager;
 
 struct GeoClueProperties : public dbus::PropertySet {
   dbus::Property<std::string> desktop_id;
-  dbus::Property<dbus::ObjectPath> location;
 
   GeoClueProperties(dbus::ObjectProxy *proxy, const std::string &interface_name,
                     const PropertyChangedCallback &callback);
@@ -93,35 +92,40 @@ private:
   // 2. Call Manager.GetClient(), which returns a client
   // 3. Set the DesktopId for ourselves. This is basically just an identifier
   // for the current app.
-  // 4. Finally, we can call GeoClue2.Client.Start(), which will let us access
+  // 4. Connect to the `LocationUpdated` signal, which will fire when we get a
+  // location.
+  // 5. Finally, we can call GeoClue2.Client.Start(), which will let us access
   // the current location.
-  // 5. Now, we can connect to the `LocationUpdated` Signal, which will fire
-  // when the current location changes.
-  // In this process, it's safe to do steps 1, 2 & 3 before permission is
-  // granted, but steps 4 and on should **NOT** run until permission is granted.
+  // In this process, it's safe to do steps 1, 2, 3 & 4 before permission is
+  // granted, but step 5 should not be called until permission has been granted.
+  //
   // If any step fails, we set the current position to POSITION_UNAVAILABLE.
   //
   // When the provider is stopped this process is completely reset.
 
-  // Step 2: Get current client completed.
+  // Step 2
+  void GetClient();
   void OnGetClientCompleted(dbus::Response *response);
 
-  // Step 3: Set desktop id completed.
+  // Step 3
+  void SetDesktopId();
   void OnSetDesktopId(bool success);
 
-  // Step 4: Start the client. This is safe to call before permission is granted
+  // Step 4
+  void ConnectSignal();
+  void OnSignalConnected(const std::string &interface_name,
+                         const std::string &signal_name, bool success);
+
+  // Step 5: Start the client. This is safe to call before permission is granted
   // or while the client is starting up, it will just be ignored if we aren't
   // ready to start. It will be invoked again when everything is ready.
   void StartClient();
+  void OnClientStarted(dbus::Response *response);
 
-  // Step 4 Completed, Connect Signals.
-  void OnStarted(dbus::Response *response);
-
-  void OnGetLocationObjectPath(bool success);
-
-  void OnLocationChanged();
-
-  void SetLocationPath(const dbus::ObjectPath &path);
+  // Functions for triggering the read of a new GeoClue2.Location, and a
+  // callback for when it has been read.
+  void ReadGeoClueLocation(const dbus::ObjectPath &path);
+  void OnReadGeoClueLocation();
 
   SEQUENCE_CHECKER(sequence_checker_);
 

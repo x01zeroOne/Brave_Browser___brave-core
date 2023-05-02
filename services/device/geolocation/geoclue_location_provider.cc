@@ -9,6 +9,7 @@
 #include <string>
 #include <utility>
 
+#include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/location.h"
 #include "base/time/time.h"
@@ -33,20 +34,18 @@ mojom::Geoposition GetErrorPosition() {
   return response;
 }
 
-}  // namespace
+} // namespace
 
-GeoClueProperties::GeoClueProperties(dbus::ObjectProxy* proxy,
-                                     const std::string& interface_name,
-                                     const PropertyChangedCallback& callback)
+GeoClueProperties::GeoClueProperties(dbus::ObjectProxy *proxy,
+                                     const std::string &interface_name,
+                                     const PropertyChangedCallback &callback)
     : dbus::PropertySet(proxy, interface_name, callback) {
   RegisterProperty("DesktopId", &desktop_id);
-  RegisterProperty("Location", &location);
 }
 GeoClueProperties::~GeoClueProperties() = default;
 
 GeoClueLocationProperties::GeoClueLocationProperties(
-    dbus::ObjectProxy* proxy,
-    const std::string& interface_name,
+    dbus::ObjectProxy *proxy, const std::string &interface_name,
     base::OnceCallback<void()> on_got_initial_values)
     : dbus::PropertySet(proxy, interface_name, base::NullCallback()),
       on_got_initial_values_(std::move(on_got_initial_values)) {
@@ -60,7 +59,7 @@ GeoClueLocationProperties::GeoClueLocationProperties(
 
 GeoClueLocationProperties::~GeoClueLocationProperties() = default;
 
-void GeoClueLocationProperties::OnGetAll(dbus::Response* response) {
+void GeoClueLocationProperties::OnGetAll(dbus::Response *response) {
   dbus::PropertySet::OnGetAll(response);
 
   if (on_got_initial_values_) {
@@ -86,7 +85,7 @@ GeoClueLocationProvider::~GeoClueLocationProvider() {
 }
 
 void GeoClueLocationProvider::SetUpdateCallback(
-    const LocationProviderUpdateCallback& callback) {
+    const LocationProviderUpdateCallback &callback) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   location_update_callback_ = callback;
@@ -100,13 +99,14 @@ void GeoClueLocationProvider::StartProvider(bool high_accuracy) {
   }
   client_state_ = kInitializing;
 
-  dbus::ObjectProxy* proxy =
+  dbus::ObjectProxy *proxy =
       bus_->GetObjectProxy(kServiceName, dbus::ObjectPath(kManagerObjectPath));
 
   dbus::MethodCall call(kManagerInterfaceName, "GetClient");
-  proxy->CallMethod(&call, dbus::ObjectProxy::TIMEOUT_USE_DEFAULT,
-                    base::BindOnce(&GeoClueLocationProvider::OnGetClientCompleted,
-                                   weak_ptr_factory_.GetWeakPtr()));
+  proxy->CallMethod(
+      &call, dbus::ObjectProxy::TIMEOUT_USE_DEFAULT,
+      base::BindOnce(&GeoClueLocationProvider::OnGetClientCompleted,
+                     weak_ptr_factory_.GetWeakPtr()));
 }
 
 void GeoClueLocationProvider::StopProvider() {
@@ -137,7 +137,7 @@ void GeoClueLocationProvider::StopProvider() {
   gclue_location_properties_.reset();
 }
 
-const mojom::Geoposition& GeoClueLocationProvider::GetPosition() {
+const mojom::Geoposition &GeoClueLocationProvider::GetPosition() {
   return last_position_;
 }
 
@@ -148,22 +148,7 @@ void GeoClueLocationProvider::OnPermissionGranted() {
   StartClient();
 }
 
-void GeoClueLocationProvider::OnLocationChanged() {
-  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-
-  mojom::Geoposition position;
-  position.latitude = gclue_location_properties_->latitude.value();
-  position.longitude = gclue_location_properties_->longitude.value();
-  position.accuracy = gclue_location_properties_->accuracy.value();
-  position.altitude = gclue_location_properties_->altitude.value();
-  position.heading = gclue_location_properties_->heading.value();
-  position.speed = gclue_location_properties_->speed.value();
-  position.error_code = mojom::Geoposition::ErrorCode::NONE;
-  position.timestamp = base::Time::Now();
-  SetLocation(position);
-}
-
-void GeoClueLocationProvider::SetLocation(const mojom::Geoposition& position) {
+void GeoClueLocationProvider::SetLocation(const mojom::Geoposition &position) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   last_position_ = position;
@@ -179,7 +164,7 @@ void GeoClueLocationProvider::SetLocation(const mojom::Geoposition& position) {
   location_update_callback_.Run(this, last_position_);
 }
 
-void GeoClueLocationProvider::OnGetClientCompleted(dbus::Response* response) {
+void GeoClueLocationProvider::OnGetClientCompleted(dbus::Response *response) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   if (!response) {
@@ -198,6 +183,12 @@ void GeoClueLocationProvider::OnGetClientCompleted(dbus::Response* response) {
   gclue_client_properties_ = std::make_unique<GeoClueProperties>(
       gclue_client_.get(), kClientInterfaceName, base::NullCallback());
 
+  SetDesktopId();
+}
+
+void GeoClueLocationProvider::SetDesktopId() {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+
   gclue_client_properties_->desktop_id.Set(
       kBraveDesktopId, base::BindOnce(&GeoClueLocationProvider::OnSetDesktopId,
                                       weak_ptr_factory_.GetWeakPtr()));
@@ -208,6 +199,50 @@ void GeoClueLocationProvider::OnSetDesktopId(bool success) {
 
   if (!success) {
     LOG(ERROR) << "Failed to set desktop id. GeoClue2 location provider will "
+                  "not work properly";
+    SetLocation(GetErrorPosition());
+    return;
+  }
+
+  ConnectSignal();
+}
+
+void GeoClueLocationProvider::ConnectSignal() {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+
+  gclue_client_->ConnectToSignal(
+      kClientInterfaceName, "LocationUpdated",
+      base::BindRepeating(
+          [](base::WeakPtr<GeoClueLocationProvider> provider,
+             dbus::Signal *signal) {
+            dbus::MessageReader reader(signal);
+            dbus::ObjectPath old_location;
+            dbus::ObjectPath new_location;
+            if (!reader.PopObjectPath(&old_location) ||
+                !reader.PopObjectPath(&new_location)) {
+              if (provider) {
+                provider->SetLocation(GetErrorPosition());
+              }
+              return;
+            }
+
+            if (provider) {
+              provider->ReadGeoClueLocation(new_location);
+            }
+          },
+          weak_ptr_factory_.GetWeakPtr()),
+      base::BindOnce(&GeoClueLocationProvider::OnSignalConnected,
+                     weak_ptr_factory_.GetWeakPtr()));
+}
+
+void GeoClueLocationProvider::OnSignalConnected(
+    const std::string &interface_name, const std::string &signal_name,
+    bool success) {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+
+  if (!success) {
+    LOG(ERROR) << "Failed to connect to LocationUpdated Signal. GeoClue2 "
+                  "location provider will "
                   "not work properly";
     SetLocation(GetErrorPosition());
     return;
@@ -227,65 +262,50 @@ void GeoClueLocationProvider::StartClient() {
   client_state_ = kStarting;
 
   dbus::MethodCall start(kClientInterfaceName, "Start");
-  gclue_client_->CallMethod(&start, dbus::ObjectProxy::TIMEOUT_USE_DEFAULT,
-                            base::BindOnce(&GeoClueLocationProvider::OnStarted,
-                                           weak_ptr_factory_.GetWeakPtr()));
-}
-
-void GeoClueLocationProvider::OnStarted(dbus::Response* response) {
-  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
-
-  client_state_ = kStarted;
-
-  gclue_client_->ConnectToSignal(
-      kClientInterfaceName, "LocationUpdated",
-      base::BindRepeating(
-          [](base::WeakPtr<GeoClueLocationProvider> provider, dbus::Signal* signal) {
-            dbus::MessageReader reader(signal);
-            dbus::ObjectPath old_location;
-            dbus::ObjectPath new_location;
-            if (!reader.PopObjectPath(&old_location) ||
-                !reader.PopObjectPath(&new_location)) {
-              if (provider) {
-                provider->SetLocation(GetErrorPosition());
-              }
-              return;
-            }
-
-            if (provider) {
-              provider->SetLocationPath(new_location);
-            }
-          },
-          weak_ptr_factory_.GetWeakPtr()),
-      base::DoNothing());
-  gclue_client_properties_->location.Get(
-      base::BindOnce(&GeoClueLocationProvider::OnGetLocationObjectPath,
+  gclue_client_->CallMethod(
+      &start, dbus::ObjectProxy::TIMEOUT_USE_DEFAULT,
+      base::BindOnce(&GeoClueLocationProvider::OnClientStarted,
                      weak_ptr_factory_.GetWeakPtr()));
 }
 
-void GeoClueLocationProvider::OnGetLocationObjectPath(bool success) {
+void GeoClueLocationProvider::OnClientStarted(dbus::Response *response) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
-  dbus::ObjectPath location_path = gclue_client_properties_->location.value();
-  SetLocationPath(location_path);
+  client_state_ = kStarted;
 }
 
-void GeoClueLocationProvider::SetLocationPath(const dbus::ObjectPath& location_path) {
+void GeoClueLocationProvider::ReadGeoClueLocation(
+    const dbus::ObjectPath &location_path) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
-  dbus::ObjectProxy* location_proxy =
+  dbus::ObjectProxy *location_proxy =
       bus_->GetObjectProxy(kServiceName, location_path);
   gclue_location_properties_ = std::make_unique<GeoClueLocationProperties>(
       location_proxy, kLocationInterfaceName,
-      base::BindRepeating(&GeoClueLocationProvider::OnLocationChanged,
+      base::BindRepeating(&GeoClueLocationProvider::OnReadGeoClueLocation,
                           weak_ptr_factory_.GetWeakPtr()));
   gclue_location_properties_->GetAll();
 }
 
+void GeoClueLocationProvider::OnReadGeoClueLocation() {
+  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+
+  mojom::Geoposition position;
+  position.latitude = gclue_location_properties_->latitude.value();
+  position.longitude = gclue_location_properties_->longitude.value();
+  position.accuracy = gclue_location_properties_->accuracy.value();
+  position.altitude = gclue_location_properties_->altitude.value();
+  position.heading = gclue_location_properties_->heading.value();
+  position.speed = gclue_location_properties_->speed.value();
+  position.error_code = mojom::Geoposition::ErrorCode::NONE;
+  position.timestamp = base::Time::Now();
+  SetLocation(position);
+}
+
 std::unique_ptr<LocationProvider> NewSystemLocationProvider(
     scoped_refptr<base::SingleThreadTaskRunner> main_task_runner,
-    GeolocationManager* geolocation_manager) {
+    GeolocationManager *geolocation_manager) {
   return std::make_unique<GeoClueLocationProvider>();
 }
 
-}  // namespace device
+} // namespace device
