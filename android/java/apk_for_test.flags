@@ -229,11 +229,11 @@
 
 -keep class org.chromium.chrome.browser.bookmarks.BookmarkToolbarCoordinator {
     *** mToolbar;
-    public <init>(...);
+    <init>(...);
 }
 
 -keep class org.chromium.chrome.browser.bookmarks.BraveBookmarkToolbarCoordinator {
-    public <init>(...);
+    <init>(...);
 }
 
 -keep class org.chromium.chrome.browser.app.bookmarks.BookmarkActivity {
