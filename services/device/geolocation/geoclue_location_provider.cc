@@ -3,28 +3,17 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include "brave/services/device/geolocation/geoclue_location_provider.h"
+
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
-#include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/location.h"
-#include "base/memory/scoped_refptr.h"
-#include "base/memory/weak_ptr.h"
-#include "base/sequence_checker.h"
-#include "base/strings/string_util.h"
 #include "base/time/time.h"
-#include "brave/services/device/geolocation/geoclue_location_provider.h"
 #include "components/dbus/thread_linux/dbus_thread_linux.h"
-#include "dbus/bus.h"
-#include "dbus/message.h"
-#include "dbus/object_path.h"
-#include "dbus/object_proxy.h"
-#include "dbus/property.h"
 #include "services/device/public/cpp/geolocation/geoposition.h"
-#include "services/device/public/mojom/geoposition.mojom.h"
 
 namespace device {
 
