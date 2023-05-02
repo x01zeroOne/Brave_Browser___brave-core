@@ -54,14 +54,14 @@ struct GeoClueLocationProperties : public dbus::PropertySet {
   base::OnceCallback<void()> on_got_initial_values_;
 };
 
-class GeoClueProvider : public LocationProvider {
+class GeoClueLocationProvider : public LocationProvider {
  public:
-  GeoClueProvider();
+  GeoClueLocationProvider();
 
-  GeoClueProvider(const GeoClueProvider&) = delete;
-  GeoClueProvider& operator=(const GeoClueProvider&) = delete;
+  GeoClueLocationProvider(const GeoClueLocationProvider&) = delete;
+  GeoClueLocationProvider& operator=(const GeoClueLocationProvider&) = delete;
 
-  ~GeoClueProvider() override;
+  ~GeoClueLocationProvider() override;
 
   // LocationProvider:
   void SetUpdateCallback(
@@ -109,7 +109,7 @@ class GeoClueProvider : public LocationProvider {
   mojom::Geoposition last_position_;
   LocationProviderUpdateCallback location_update_callback_;
 
-  base::WeakPtrFactory<GeoClueProvider> weak_ptr_factory_{this};
+  base::WeakPtrFactory<GeoClueLocationProvider> weak_ptr_factory_{this};
 };
 
 }  // namespace device

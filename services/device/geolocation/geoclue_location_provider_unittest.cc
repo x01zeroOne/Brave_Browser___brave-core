@@ -17,10 +17,10 @@
 
 namespace device {
 
-class TestGeoclueLocationProvider : public GeoClueProvider {
+class TestGeoClueLocationProvider : public GeoClueProvider {
  public:
-  TestGeoclueLocationProvider() = default;
-  ~TestGeoclueLocationProvider() override = default;
+  TestGeoClueLocationProvider() = default;
+  ~TestGeoClueLocationProvider() override = default;
 
   bool HasPermission() { return permission_granted_; }
 
@@ -34,15 +34,15 @@ class TestGeoclueLocationProvider : public GeoClueProvider {
   mojom::Geoposition position_;
 };
 
-class GeoclueLocationProviderTest : public testing::Test {
+class GeoClueLocationProviderTest : public testing::Test {
  public:
-  GeoclueLocationProviderTest() = default;
-  ~GeoclueLocationProviderTest() override = default;
+  GeoClueLocationProviderTest() = default;
+  ~GeoClueLocationProviderTest() override = default;
 
   void InitializeProvider() {
-    provider_ = std::make_unique<TestGeoclueLocationProvider>();
+    provider_ = std::make_unique<TestGeoClueLocationProvider>();
     provider_->SetUpdateCallback(base::BindRepeating(
-        [](GeoclueLocationProviderTest* test, const LocationProvider* provider,
+        [](GeoClueLocationProviderTest* test, const LocationProvider* provider,
            const mojom::Geoposition& position) {
           test->loop_->Quit();
           test->update_count_++;
@@ -60,31 +60,31 @@ class GeoclueLocationProviderTest : public testing::Test {
   std::unique_ptr<base::RunLoop> loop_;
   int update_count_ = 0;
 
-  std::unique_ptr<TestGeoclueLocationProvider> provider_;
+  std::unique_ptr<TestGeoClueLocationProvider> provider_;
 };
 
-TEST_F(GeoclueLocationProviderTest,
+TEST_F(GeoClueLocationProviderTest,
        CreateDestroy) {  // should not crash
   InitializeProvider();
   EXPECT_TRUE(provider_);
   provider_.reset();
 }
 
-TEST_F(GeoclueLocationProviderTest, OnPermissionGranted) {
+TEST_F(GeoClueLocationProviderTest, OnPermissionGranted) {
   InitializeProvider();
   EXPECT_FALSE(provider_->HasPermission());
   provider_->OnPermissionGranted();
   EXPECT_TRUE(provider_->HasPermission());
 }
 
-TEST_F(GeoclueLocationProviderTest, CanStart) {
+TEST_F(GeoClueLocationProviderTest, CanStart) {
   InitializeProvider();
   EXPECT_FALSE(provider_->Started());
   provider_->StartProvider(false);
   EXPECT_TRUE(provider_->Started());
 }
 
-TEST_F(GeoclueLocationProviderTest, CanStop) {
+TEST_F(GeoClueLocationProviderTest, CanStop) {
   InitializeProvider();
   EXPECT_FALSE(provider_->Started());
 
@@ -104,7 +104,7 @@ TEST_F(GeoclueLocationProviderTest, CanStop) {
   EXPECT_FALSE(provider_->Started());
 }
 
-TEST_F(GeoclueLocationProviderTest, CanStopPermissionGranted) {
+TEST_F(GeoClueLocationProviderTest, CanStopPermissionGranted) {
   InitializeProvider();
   EXPECT_FALSE(provider_->Started());
 
@@ -115,7 +115,7 @@ TEST_F(GeoclueLocationProviderTest, CanStopPermissionGranted) {
   EXPECT_TRUE(provider_->HasPermission());
 }
 
-TEST_F(GeoclueLocationProviderTest, CanStopStartedAndPermissionGranted) {
+TEST_F(GeoClueLocationProviderTest, CanStopStartedAndPermissionGranted) {
   InitializeProvider();
 
   provider_->OnPermissionGranted();
@@ -142,7 +142,7 @@ TEST_F(GeoclueLocationProviderTest, CanStopStartedAndPermissionGranted) {
   EXPECT_EQ(1, update_count_);
 }
 
-TEST_F(GeoclueLocationProviderTest, CanRestartProvider) {
+TEST_F(GeoClueLocationProviderTest, CanRestartProvider) {
   InitializeProvider();
 
   provider_->OnPermissionGranted();
@@ -161,7 +161,7 @@ TEST_F(GeoclueLocationProviderTest, CanRestartProvider) {
   EXPECT_EQ(2, update_count_);
 }
 
-TEST_F(GeoclueLocationProviderTest, NoLocationUntilPermissionGranted) {
+TEST_F(GeoClueLocationProviderTest, NoLocationUntilPermissionGranted) {
   InitializeProvider();
   EXPECT_FALSE(provider_->Started());
   EXPECT_FALSE(provider_->HasPermission());
@@ -193,7 +193,7 @@ TEST_F(GeoclueLocationProviderTest, NoLocationUntilPermissionGranted) {
   EXPECT_EQ(2, update_count_);
 }
 
-TEST_F(GeoclueLocationProviderTest, GetsLocation) {
+TEST_F(GeoClueLocationProviderTest, GetsLocation) {
   InitializeProvider();
   provider_->StartProvider(false);
   provider_->OnPermissionGranted();
