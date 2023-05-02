@@ -43,7 +43,7 @@ class EphemeralStorageForgetByDefaultBrowserTest
     }
 
     scoped_feature_list_.InitAndEnableFeatureWithParameters(
-        net::features::kBraveForgetFirstPartyStorage, feature_params);
+        net::features::kBraveForgetFirstPartyStorage, {});
   }
 
   ~EphemeralStorageForgetByDefaultBrowserTest() override = default;
@@ -65,12 +65,6 @@ class EphemeralStorageForgetByDefaultBrowserTest
     EXPECT_EQ(cookie_value, first_party_values.main_frame.cookies);
     EXPECT_EQ(cookie_value, first_party_values.iframe_1.cookies);
     EXPECT_EQ(cookie_value, first_party_values.iframe_2.cookies);
-  }
-
-  size_t FireCleanupTimersForTesting() {
-    return EphemeralStorageServiceFactory::GetInstance()
-        ->GetForContext(browser()->profile())
-        ->FireCleanupTimersForTesting();
   }
 
  protected:
@@ -229,7 +223,7 @@ IN_PROC_BROWSER_TEST_F(EphemeralStorageForgetByDefaultBrowserTest,
   // After keepalive values should be cleared.
   ASSERT_TRUE(ui_test_utils::NavigateToURL(incognito_browser,
                                            b_site_ephemeral_storage_url_));
-  WaitForCleanupAfterKeepAlive();
+  WaitForCleanupAfterKeepAlive(incognito_browser);
   ASSERT_TRUE(ui_test_utils::NavigateToURL(incognito_browser,
                                            a_site_ephemeral_storage_url_));
 
@@ -315,7 +309,7 @@ IN_PROC_BROWSER_TEST_F(EphemeralStorageForgetByDefaultBrowserTest,
 
 IN_PROC_BROWSER_TEST_F(EphemeralStorageForgetByDefaultBrowserTest,
                        ForgetFirstPartyAfterRestart) {
-  EXPECT_EQ(1u, FireCleanupTimersForTesting());
+  EXPECT_EQ(1u, WaitForCleanupAfterKeepAlive());
   EXPECT_EQ(0u, GetAllCookies().size());
 }
 
@@ -347,7 +341,7 @@ IN_PROC_BROWSER_TEST_F(EphemeralStorageForgetByDefaultBrowserTest,
 
 IN_PROC_BROWSER_TEST_F(EphemeralStorageForgetByDefaultBrowserTest,
                        DontForgetFirstPartyIfSubDomainIsOpened) {
-  EXPECT_EQ(0u, FireCleanupTimersForTesting());
+  EXPECT_EQ(0u, WaitForCleanupAfterKeepAlive());
   EXPECT_EQ(1u, GetAllCookies().size());
 }
 
@@ -433,7 +427,7 @@ IN_PROC_BROWSER_TEST_F(EphemeralStorageForgetByDefaultIsDefaultBrowserTest,
 
 IN_PROC_BROWSER_TEST_F(EphemeralStorageForgetByDefaultIsDefaultBrowserTest,
                        ForgetFirstPartyAfterRestart) {
-  EXPECT_EQ(1u, FireCleanupTimersForTesting());
+  EXPECT_EQ(1u, WaitForCleanupAfterKeepAlive());
   EXPECT_EQ(0u, GetAllCookies().size());
 }
 

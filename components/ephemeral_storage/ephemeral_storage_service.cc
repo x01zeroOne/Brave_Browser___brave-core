@@ -5,6 +5,7 @@
 
 #include "brave/components/ephemeral_storage/ephemeral_storage_service.h"
 
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -19,8 +20,9 @@
 #include "content/public/browser/browser_context.h"
 #include "content/public/browser/browsing_data_filter_builder.h"
 #include "content/public/browser/browsing_data_remover.h"
+#include "content/public/browser/dom_storage_context.h"
 #include "content/public/browser/site_instance.h"
-#include "content/public/browser/storage_partition.h"
+#include "content/public/browser/storage_partition_config.h"
 #include "net/base/features.h"
 #include "net/base/schemeful_site.h"
 #include "url/origin.h"
@@ -35,24 +37,30 @@ bool IsOriginAcceptableForFirstPartyStorageCleanup(const url::Origin& origin) {
                               origin.scheme() == url::kHttpsScheme);
 }
 
+url::Origin GetFirstPartyStorageOrigin(const std::string& ephemeral_domain) {
+  return url::Origin::CreateFromNormalizedTuple(url::kHttpsScheme,
+                                                ephemeral_domain, 443);
+}
+
 }  // namespace
 
 EphemeralStorageService::EphemeralStorageService(
     content::BrowserContext* context,
-    HostContentSettingsMap* host_content_settings_map)
-    : context_(context), host_content_settings_map_(host_content_settings_map) {
+    HostContentSettingsMap* host_content_settings_map,
+    scoped_refptr<content_settings::CookieSettings> cookie_settings)
+    : context_(context),
+      host_content_settings_map_(host_content_settings_map),
+      cookie_settings_(std::move(cookie_settings)) {
   DCHECK(context_);
   DCHECK(host_content_settings_map_);
+  DCHECK(cookie_settings_);
+
+  tld_ephemeral_area_keep_alive_ = base::Seconds(
+      net::features::kBraveEphemeralStorageKeepAliveTimeInSeconds.Get());
 
   if (base::FeatureList::IsEnabled(
           net::features::kBraveForgetFirstPartyStorage)) {
-    first_party_storage_areas_keep_alive_ = base::Seconds(
-        net::features::kBraveForgetFirstPartyStorageKeepAliveTimeInSeconds
-            .Get());
-    first_party_storage_startup_cleanup_delay_ = base::Seconds(
-        net::features::kBraveForgetFirstPartyStorageStartupCleanupDelayInSeconds
-            .Get());
-    CleanupFirstPartyStorageAreasOnStartup();
+    ScheduleFirstPartyStorageAreasCleanupOnStartup();
   }
 }
 
@@ -142,88 +150,136 @@ bool EphemeralStorageService::IsDefaultCookieSetting(const GURL& url) const {
   return true;
 }
 
-void EphemeralStorageService::FirstPartyStorageAreaInUse(
-    const url::Origin& origin) {
-  if (!base::FeatureList::IsEnabled(
-          net::features::kBraveForgetFirstPartyStorage)) {
-    return;
-  }
+void EphemeralStorageService::TLDEphemeralLifetimeCreated(
+    const std::string& ephemeral_domain,
+    const content::StoragePartitionConfig& storage_partition_config) {
+  DVLOG(1) << __func__ << " " << ephemeral_domain << " "
+           << storage_partition_config;
+  const TLDEphemeralAreaKey key(ephemeral_domain, storage_partition_config);
 
-  if (!IsOriginAcceptableForFirstPartyStorageCleanup(origin)) {
-    return;
-  }
+  tld_ephemeral_areas_to_cleanup_.erase(key);
 
-  if (!first_party_storage_areas_to_cleanup_.erase(origin)) {
-    return;
-  }
-
-  ScopedListPrefUpdate pref_update(user_prefs::UserPrefs::Get(context_),
-                                   kFirstPartyStorageOriginsToCleanup);
-  pref_update->EraseValue(base::Value(origin.Serialize()));
+  FirstPartyStorageAreaInUse(ephemeral_domain);
 }
 
-void EphemeralStorageService::FirstPartyStorageAreaNotInUse(
-    const url::Origin& origin) {
+void EphemeralStorageService::TLDEphemeralLifetimeDestroyed(
+    const std::string& ephemeral_domain,
+    const content::StoragePartitionConfig& storage_partition_config,
+    TLDEphemeralAreaOnDestroyCallbacks on_destroy_callbacks) {
+  DVLOG(1) << __func__ << " " << ephemeral_domain << " "
+           << storage_partition_config;
+  const TLDEphemeralAreaKey key(ephemeral_domain, storage_partition_config);
+
+  const bool cleanup_first_party_storage_area =
+      FirstPartyStorageAreaNotInUse(ephemeral_domain);
+
+  if (base::FeatureList::IsEnabled(
+          net::features::kBraveEphemeralStorageKeepAlive)) {
+    auto cleanup_timer = std::make_unique<base::OneShotTimer>();
+    cleanup_timer->Start(
+        FROM_HERE, tld_ephemeral_area_keep_alive_,
+        base::BindOnce(&EphemeralStorageService::CleanupTLDEphemeralAreaByTimer,
+                       weak_ptr_factory_.GetWeakPtr(), key,
+                       cleanup_first_party_storage_area,
+                       std::move(on_destroy_callbacks)));
+    tld_ephemeral_areas_to_cleanup_.emplace(key, std::move(cleanup_timer));
+  } else {
+    CleanupTLDEphemeralArea(key, cleanup_first_party_storage_area,
+                            std::move(on_destroy_callbacks));
+  }
+}
+
+void EphemeralStorageService::FirstPartyStorageAreaInUse(
+    const std::string& ephemeral_domain) {
   if (!base::FeatureList::IsEnabled(
           net::features::kBraveForgetFirstPartyStorage)) {
     return;
   }
 
+  const url::Origin origin(GetFirstPartyStorageOrigin(ephemeral_domain));
   if (!IsOriginAcceptableForFirstPartyStorageCleanup(origin)) {
     return;
+  }
+
+  const base::Value origin_value(origin.Serialize());
+  ScopedListPrefUpdate pref_update(user_prefs::UserPrefs::Get(context_),
+                                   kFirstPartyStorageOriginsToCleanup);
+  pref_update->EraseValue(origin_value);
+
+  first_party_storage_areas_to_cleanup_on_startup_.EraseValue(origin_value);
+}
+
+bool EphemeralStorageService::FirstPartyStorageAreaNotInUse(
+    const std::string& ephemeral_domain) {
+  if (!base::FeatureList::IsEnabled(
+          net::features::kBraveForgetFirstPartyStorage)) {
+    return false;
+  }
+
+  const url::Origin origin(GetFirstPartyStorageOrigin(ephemeral_domain));
+  if (!IsOriginAcceptableForFirstPartyStorageCleanup(origin)) {
+    return false;
   }
 
   const auto& url = origin.GetURL();
+
+  if (host_content_settings_map_->GetContentSetting(
+          url, url, ContentSettingsType::BRAVE_SHIELDS) !=
+      CONTENT_SETTING_ALLOW) {
+    // If Shields are off, do nothing.
+    return false;
+  }
+
   if (host_content_settings_map_->GetContentSetting(
           url, url, ContentSettingsType::BRAVE_REMEMBER_1P_STORAGE) !=
       CONTENT_SETTING_BLOCK) {
-    return;
+    return false;
   }
 
-  auto cleanup_timer = std::make_unique<base::OneShotTimer>();
-  cleanup_timer->Start(
-      FROM_HERE, first_party_storage_areas_keep_alive_,
-      base::BindOnce(
-          &EphemeralStorageService::CleanupFirstPartyStorageAreaByTimer,
-          weak_ptr_factory_.GetWeakPtr(), origin));
-  first_party_storage_areas_to_cleanup_.emplace(origin,
-                                                std::move(cleanup_timer));
   ScopedListPrefUpdate pref_update(user_prefs::UserPrefs::Get(context_),
                                    kFirstPartyStorageOriginsToCleanup);
   pref_update->Append(base::Value(origin.Serialize()));
+  return true;
 }
 
-void EphemeralStorageService::CleanupFirstPartyStorageAreasOnStartup() {
-  ScopedListPrefUpdate urls_to_cleanup(user_prefs::UserPrefs::Get(context_),
-                                       kFirstPartyStorageOriginsToCleanup);
-  for (const auto& url_to_cleanup : urls_to_cleanup.Get()) {
-    const auto* url_string = url_to_cleanup.GetIfString();
-    if (!url_string) {
-      continue;
+void EphemeralStorageService::CleanupTLDEphemeralAreaByTimer(
+    const TLDEphemeralAreaKey& key,
+    bool cleanup_first_party_storage_area,
+    TLDEphemeralAreaOnDestroyCallbacks on_destroy_callbacks) {
+  DVLOG(1) << __func__ << " " << key.first << " " << key.second;
+  tld_ephemeral_areas_to_cleanup_.erase(key);
+  CleanupTLDEphemeralArea(key, cleanup_first_party_storage_area,
+                          std::move(on_destroy_callbacks));
+}
+
+void EphemeralStorageService::CleanupTLDEphemeralArea(
+    const TLDEphemeralAreaKey& key,
+    bool cleanup_first_party_storage_area,
+    TLDEphemeralAreaOnDestroyCallbacks on_destroy_callbacks) {
+  DVLOG(1) << __func__ << " " << key.first << " " << key.second;
+  if (auto* storage_partition = context_->GetStoragePartition(key.second)) {
+    auto filter = network::mojom::CookieDeletionFilter::New();
+    filter->ephemeral_storage_domain = key.first;
+    storage_partition->GetCookieManagerForBrowserProcess()->DeleteCookies(
+        std::move(filter), base::NullCallback());
+    for (const auto& opaque_origin :
+         cookie_settings_->TakeEphemeralStorageOpaqueOrigins(key.first)) {
+      storage_partition->GetDOMStorageContext()->DeleteLocalStorage(
+          blink::StorageKey::CreateFirstParty(opaque_origin),
+          base::DoNothing());
     }
-    const GURL url(*url_string);
-    if (!url.is_valid()) {
-      continue;
-    }
-    const url::Origin origin(url::Origin::Create(url));
-    auto cleanup_timer = std::make_unique<base::OneShotTimer>();
-    cleanup_timer->Start(
-        FROM_HERE, first_party_storage_startup_cleanup_delay_,
-        base::BindOnce(
-            &EphemeralStorageService::CleanupFirstPartyStorageAreaByTimer,
-            weak_ptr_factory_.GetWeakPtr(), origin));
-    first_party_storage_areas_to_cleanup_.emplace(origin,
-                                                  std::move(cleanup_timer));
+  }
+  if (cleanup_first_party_storage_area) {
+    CleanupFirstPartyStorageAreaByTimer(GetFirstPartyStorageOrigin(key.first));
+  }
+  for (auto& callback : on_destroy_callbacks) {
+    std::move(callback).Run(key.first);
   }
 }
 
 void EphemeralStorageService::CleanupFirstPartyStorageAreaByTimer(
     const url::Origin& origin) {
-  DCHECK(base::Contains(first_party_storage_areas_to_cleanup_, origin));
-
   CleanupFirstPartyStorageArea(origin);
-
-  first_party_storage_areas_to_cleanup_.erase(origin);
   ScopedListPrefUpdate pref_update(user_prefs::UserPrefs::Get(context_),
                                    kFirstPartyStorageOriginsToCleanup);
   pref_update->EraseValue(base::Value(origin.Serialize()));
@@ -247,15 +303,58 @@ void EphemeralStorageService::CleanupFirstPartyStorageArea(
                             origin_type, std::move(filter_builder));
 }
 
+void EphemeralStorageService::ScheduleFirstPartyStorageAreasCleanupOnStartup() {
+  first_party_storage_areas_to_cleanup_on_startup_ =
+      user_prefs::UserPrefs::Get(context_)
+          ->GetList(kFirstPartyStorageOriginsToCleanup)
+          .Clone();
+
+  first_party_storage_areas_startup_cleanup_timer_.Start(
+      FROM_HERE,
+      base::Seconds(
+          net::features::
+              kBraveForgetFirstPartyStorageStartupCleanupDelayInSeconds.Get()),
+      base::BindOnce(
+          &EphemeralStorageService::CleanupFirstPartyStorageAreasOnStartup,
+          weak_ptr_factory_.GetWeakPtr()));
+}
+
+void EphemeralStorageService::CleanupFirstPartyStorageAreasOnStartup() {
+  ScopedListPrefUpdate pref_update(user_prefs::UserPrefs::Get(context_),
+                                   kFirstPartyStorageOriginsToCleanup);
+  for (const auto& url_to_cleanup :
+       first_party_storage_areas_to_cleanup_on_startup_) {
+    const auto* url_string = url_to_cleanup.GetIfString();
+    if (!url_string) {
+      continue;
+    }
+    const GURL url(*url_string);
+    if (!url.is_valid()) {
+      continue;
+    }
+    const url::Origin origin(url::Origin::Create(url));
+    CleanupFirstPartyStorageArea(origin);
+
+    pref_update->EraseValue(url_to_cleanup);
+  }
+  first_party_storage_areas_to_cleanup_on_startup_.clear();
+}
+
 size_t EphemeralStorageService::FireCleanupTimersForTesting() {
   std::vector<base::OneShotTimer*> timers;
-  for (const auto& areas_to_cleanup : first_party_storage_areas_to_cleanup_) {
+  for (const auto& areas_to_cleanup : tld_ephemeral_areas_to_cleanup_) {
     timers.push_back(areas_to_cleanup.second.get());
   }
   for (auto* timer : timers) {
     timer->FireNow();
   }
-  return timers.size();
+  const size_t first_party_storage_areas_to_cleanup_count =
+      first_party_storage_areas_to_cleanup_on_startup_.size();
+  if (first_party_storage_areas_startup_cleanup_timer_.IsRunning()) {
+    first_party_storage_areas_startup_cleanup_timer_.FireNow();
+  }
+  DCHECK(first_party_storage_areas_to_cleanup_on_startup_.empty());
+  return timers.size() + first_party_storage_areas_to_cleanup_count;
 }
 
 }  // namespace ephemeral_storage
