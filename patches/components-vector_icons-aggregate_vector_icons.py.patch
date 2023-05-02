@@ -1,8 +1,28 @@
 diff --git a/components/vector_icons/aggregate_vector_icons.py b/components/vector_icons/aggregate_vector_icons.py
-index 3e5a94a7f053ffc66f1a820073265cbfe1332b39..0175ec714b441df5e8fa58e9391e2de6bbd67755 100644
+index 3e5a94a7f053f..47a09b09313d2 100644
 --- a/components/vector_icons/aggregate_vector_icons.py
 +++ b/components/vector_icons/aggregate_vector_icons.py
-@@ -102,7 +102,7 @@ def ExtractIconReps(icon_file_name):
+@@ -10,6 +10,19 @@ import re
+ import shlex
+ import sys
+ import textwrap
++import json
++from pathlib import Path
++
++def get_overrides():
++  brave_root = f'{Path(__file__).parent}/../../brave'
++  overrides_file_path =  f'{brave_root}/vector_icons/leo_overrides.json'
++
++  leo_overrides = {}
++  data = json.load(open(overrides_file_path))
++
++  for icon, leo_override in data.items():
++    leo_overrides[icon] = f'../../brave/node_modules/@brave/leo/icons-skia/{leo_override}.icon'
++  return leo_overrides
+ 
+ CANVAS_DIMENSIONS = "CANVAS_DIMENSIONS"
+ CPP_COMMENT_DELIMITER = "//"
+@@ -102,7 +115,7 @@ def ExtractIconReps(icon_file_name):
    return icon_representations
  
  
@@ -11,7 +31,7 @@ index 3e5a94a7f053ffc66f1a820073265cbfe1332b39..0175ec714b441df5e8fa58e9391e2de6
    """Compiles all .icon files in a directory into two C++ files.
  
    Args:
-@@ -111,6 +111,8 @@ def AggregateVectorIcons(working_directory, file_list, output_cc, output_h):
+@@ -111,8 +124,12 @@ def AggregateVectorIcons(working_directory, file_list, output_cc, output_h):
        file_list: A file containing the list of vector icon files to process.
        output_cc: The path that should be used to write the .cc file.
        output_h: The path that should be used to write the .h file.
@@ -19,20 +39,43 @@ index 3e5a94a7f053ffc66f1a820073265cbfe1332b39..0175ec714b441df5e8fa58e9391e2de6
 +          the .icon files
    """
  
++  leo_overrides = get_overrides()
++
    # For each file in |file_list|, place it in |path_map| if its extension is
-@@ -129,6 +131,11 @@ def AggregateVectorIcons(working_directory, file_list, output_cc, output_h):
+   # .icon. This will map the icon's name to its path, e.g.,
+   # path_map['cat'] = 'foo/bar/cat.icon'.
+@@ -129,6 +146,14 @@ def AggregateVectorIcons(working_directory, file_list, output_cc, output_h):
      if extension != ".icon":
        Error("Only filenames " + icon_name + ".icon are allowed.")
  
 +    # Check for alternative path
 +    alt_icon_path = os.path.join(alt_working_directory, os.path.basename(icon_path))
-+    if (os.path.exists(alt_icon_path)):
++    
++    if icon_name in leo_overrides:
++      icon_path = leo_overrides[icon_name]
++    elif os.path.exists(alt_icon_path):
 +      icon_path = alt_icon_path
 +
      if icon_name not in path_map:
        path_map[icon_name] = icon_path
      else:
-@@ -205,13 +212,16 @@ def main():
+@@ -151,6 +176,7 @@ def AggregateVectorIcons(working_directory, file_list, output_cc, output_h):
+     for icon in path_map:
+       (icon_name, extension) = os.path.splitext(
+                                os.path.basename(path_map[icon]))
++      icon_name = icon
+       output_header.write("VECTOR_ICON_TEMPLATE_H({})\n".format(
+           GetIconName(icon_name)))
+   output_header.close()
+@@ -171,6 +197,7 @@ def AggregateVectorIcons(working_directory, file_list, output_cc, output_h):
+     for icon in path_map:
+       (icon_name, extension) = os.path.splitext(
+                                os.path.basename(path_map[icon]))
++      icon_name = icon
+ 
+       icon_representations = ExtractIconReps(path_map[icon])
+       icon_representation_strings = []
+@@ -205,13 +232,16 @@ def main():
                      help="The path to output the CC file to.")
    parser.add_option("--output_h",
                      help="The path to output the header file to.")
