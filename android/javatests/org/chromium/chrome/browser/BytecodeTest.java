@@ -1110,9 +1110,8 @@ public class BytecodeTest {
         Assert.assertTrue(checkSuperName(
                 "org/chromium/chrome/browser/incognito/reauth/FullScreenIncognitoReauthCoordinator",
                 "org/chromium/chrome/browser/incognito/reauth/BravePrivateTabReauthCoordinatorBase"));
-        Assert.assertTrue(
-                checkSuperName("org/chromium/chrome/browser/browser/bookmarks/BookmarkModel",
-                        "org/chromium/chrome/browser/bookmarks/BraveBookmarkBridge"));
+        Assert.assertTrue(checkSuperName("org/chromium/chrome/browser/bookmarks/BookmarkModel",
+                "org/chromium/chrome/browser/bookmarks/BraveBookmarkBridge"));
     }
 
     private boolean classExists(String className) {
