@@ -23,26 +23,7 @@
 namespace device {
 
 class GeolocationManager;
-
-struct GeoClueLocationProperties : public dbus::PropertySet {
-  dbus::Property<double> latitude;
-  dbus::Property<double> longitude;
-  dbus::Property<double> accuracy;
-  dbus::Property<double> altitude;
-  dbus::Property<double> speed;
-  dbus::Property<double> heading;
-
-  GeoClueLocationProperties(dbus::ObjectProxy *proxy,
-                            const std::string &interface_name,
-                            base::OnceCallback<void()> on_got_initial_values);
-  ~GeoClueLocationProperties() override;
-
-  // dbus::PropertySet:
-  void OnGetAll(dbus::Response *response) override;
-
-private:
-  base::OnceCallback<void()> on_got_initial_values_;
-};
+struct GeoClueLocationProperties;
 
 class GeoClueLocationProvider : public LocationProvider {
 public:
@@ -118,14 +99,13 @@ private:
   // Functions for triggering the read of a new GeoClue2.Location, and a
   // callback for when it has been read.
   void ReadGeoClueLocation(const dbus::ObjectPath &path);
-  void OnReadGeoClueLocation();
+  void
+  OnReadGeoClueLocation(std::unique_ptr<GeoClueLocationProperties> properties);
 
   SEQUENCE_CHECKER(sequence_checker_);
 
   scoped_refptr<dbus::Bus> bus_;
   scoped_refptr<dbus::ObjectProxy> gclue_client_;
-
-  std::unique_ptr<GeoClueLocationProperties> gclue_location_properties_;
 
   mojom::Geoposition last_position_;
   LocationProviderUpdateCallback location_update_callback_;

@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "base/functional/bind.h"
+#include "base/functional/callback_forward.h"
 #include "base/functional/callback_helpers.h"
 #include "base/location.h"
 #include "base/memory/weak_ptr.h"
@@ -50,28 +51,45 @@ struct GeoClueProperties : public dbus::PropertySet {
   ~GeoClueProperties() override = default;
 };
 
-GeoClueLocationProperties::GeoClueLocationProperties(
-    dbus::ObjectProxy *proxy, const std::string &interface_name,
-    base::OnceCallback<void()> on_got_initial_values)
-    : dbus::PropertySet(proxy, interface_name, base::NullCallback()),
-      on_got_initial_values_(std::move(on_got_initial_values)) {
-  RegisterProperty("Latitude", &latitude);
-  RegisterProperty("Longitude", &longitude);
-  RegisterProperty("Accuracy", &accuracy);
-  RegisterProperty("Altitude", &altitude);
-  RegisterProperty("Speed", &speed);
-  RegisterProperty("Heading", &heading);
-}
+struct GeoClueLocationProperties : public dbus::PropertySet {
+  dbus::Property<double> latitude;
+  dbus::Property<double> longitude;
+  dbus::Property<double> accuracy;
+  dbus::Property<double> altitude;
+  dbus::Property<double> speed;
+  dbus::Property<double> heading;
 
-GeoClueLocationProperties::~GeoClueLocationProperties() = default;
-
-void GeoClueLocationProperties::OnGetAll(dbus::Response *response) {
-  dbus::PropertySet::OnGetAll(response);
-
-  if (on_got_initial_values_) {
-    std::move(on_got_initial_values_).Run();
+  explicit GeoClueLocationProperties(dbus::ObjectProxy *proxy)
+      : dbus::PropertySet(proxy, kLocationInterfaceName, base::NullCallback()) {
+    RegisterProperty("Latitude", &latitude);
+    RegisterProperty("Longitude", &longitude);
+    RegisterProperty("Accuracy", &accuracy);
+    RegisterProperty("Altitude", &altitude);
+    RegisterProperty("Speed", &speed);
+    RegisterProperty("Heading", &heading);
   }
-}
+
+  ~GeoClueLocationProperties() override = default;
+
+  void GetAllWithCallback(base::OnceCallback<void()> on_got_all) {
+    // We only support this one at a time. It's fine for now.
+    DCHECK(!on_got_all_);
+    on_got_all_ = std::move(on_got_all);
+    dbus::PropertySet::GetAll();
+  }
+
+  // dbus::PropertySet:
+  void OnGetAll(dbus::Response *response) override {
+    dbus::PropertySet::OnGetAll(response);
+
+    if (on_got_all_) {
+      std::move(on_got_all_).Run();
+    }
+  }
+
+private:
+  base::OnceCallback<void()> on_got_all_;
+};
 
 GeoClueLocationProvider::GeoClueLocationProvider() {
   DETACH_FROM_SEQUENCE(sequence_checker_);
@@ -136,10 +154,8 @@ void GeoClueLocationProvider::StopProvider() {
   gclue_client_->CallMethod(&stop, dbus::ObjectProxy::TIMEOUT_USE_DEFAULT,
                             base::DoNothing());
 
-  // Reset pointers to dbus objects. They will be destroyed when all references
-  // are gone.
+  // Reset pointers to dbus objects.
   gclue_client_.reset();
-  gclue_location_properties_.reset();
 }
 
 const mojom::Geoposition &GeoClueLocationProvider::GetPosition() {
@@ -284,25 +300,24 @@ void GeoClueLocationProvider::ReadGeoClueLocation(
     const dbus::ObjectPath &location_path) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
-  dbus::ObjectProxy *location_proxy =
-      bus_->GetObjectProxy(kServiceName, location_path);
-  gclue_location_properties_ = std::make_unique<GeoClueLocationProperties>(
-      location_proxy, kLocationInterfaceName,
-      base::BindRepeating(&GeoClueLocationProvider::OnReadGeoClueLocation,
-                          weak_ptr_factory_.GetWeakPtr()));
-  gclue_location_properties_->GetAll();
+  auto location_properties = std::make_unique<GeoClueLocationProperties>(
+      bus_->GetObjectProxy(kServiceName, location_path));
+  location_properties.get()->GetAllWithCallback(base::BindOnce(
+      &GeoClueLocationProvider::OnReadGeoClueLocation,
+      weak_ptr_factory_.GetWeakPtr(), std::move(location_properties)));
 }
 
-void GeoClueLocationProvider::OnReadGeoClueLocation() {
+void GeoClueLocationProvider::OnReadGeoClueLocation(
+    std::unique_ptr<GeoClueLocationProperties> properties) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   mojom::Geoposition position;
-  position.latitude = gclue_location_properties_->latitude.value();
-  position.longitude = gclue_location_properties_->longitude.value();
-  position.accuracy = gclue_location_properties_->accuracy.value();
-  position.altitude = gclue_location_properties_->altitude.value();
-  position.heading = gclue_location_properties_->heading.value();
-  position.speed = gclue_location_properties_->speed.value();
+  position.latitude = properties->latitude.value();
+  position.longitude = properties->longitude.value();
+  position.accuracy = properties->accuracy.value();
+  position.altitude = properties->altitude.value();
+  position.heading = properties->heading.value();
+  position.speed = properties->speed.value();
   position.error_code = mojom::Geoposition::ErrorCode::NONE;
   position.timestamp = base::Time::Now();
   SetLocation(position);
