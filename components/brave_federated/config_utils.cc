@@ -22,7 +22,7 @@ LearningServiceConfig::LearningServiceConfig() {
   request_task_policy_ = {
       /*.num_errors_to_ignore = */ 0,
       /*.initial_delay_ms = */
-          features::GetFederatedLearningUpdateCycleInSeconds() * 1000,
+      features::GetFederatedLearningUpdateCycleInSeconds() * 1000,
       /*.multiply_factor =*/2.0,
       /*.jitter_factor =*/0.0,
       /*.maximum_backoff_ms =*/16 *
@@ -31,7 +31,7 @@ LearningServiceConfig::LearningServiceConfig() {
   post_results_policy_ = {
       /*.num_errors_to_ignore = */ 0,
       /*.initial_delay_ms = */
-          features::GetFederatedLearningUpdateCycleInSeconds() * 1000,
+      features::GetFederatedLearningUpdateCycleInSeconds() * 1000,
       /*.multiply_factor =*/2.0,
       /*.jitter_factor =*/0.0,
       /*.maximum_backoff_ms =*/16 *

@@ -62,7 +62,7 @@ LearningService::LearningService(
     data_resource = static_cast<std::string>(
         resource_bundle.GetRawDataResource(IDR_BRAVE_FEDERATED_CONFIG));
   }
-  DCHECK_GT(data_resource.size(), 0);
+  DCHECK_GT(data_resource.size(), 0U);
 
   lsc_ = std::make_unique<LearningServiceConfig>(data_resource);
   const net::BackoffEntry::Policy reconnect_policy = lsc_->GetReconnectPolicy();
