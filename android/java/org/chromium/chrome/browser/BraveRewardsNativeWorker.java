@@ -672,6 +672,13 @@ public class BraveRewardsNativeWorker {
     }
 
     @CalledByNative
+    public void onCompleteReset(boolean success) {
+        for (BraveRewardsObserver observer : mObservers) {
+            observer.onCompleteReset(success);
+        }
+    }
+
+    @CalledByNative
     public void OnResetTheWholeState(boolean success) {
         for (BraveRewardsObserver observer : mObservers) {
             observer.OnResetTheWholeState(success);

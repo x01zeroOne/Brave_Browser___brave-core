@@ -1461,6 +1461,18 @@ public abstract class BraveToolbarLayoutImpl extends ToolbarLayout
     }
 
     @Override
+    public void onCompleteReset(boolean success) {
+        if (success) {
+            BraveRewardsHelper.resetRewards();
+            try {
+                BraveRelaunchUtils.askForRelaunch(BraveActivity.getBraveActivity());
+            } catch (BraveActivity.BraveActivityNotFoundException e) {
+                Log.e(TAG, "onCompleteReset " + e);
+            }
+        }
+    }
+
+    @Override
     public void OnNotificationAdded(String id, int type, long timestamp, String[] args) {
         if (mBraveRewardsNativeWorker == null) {
             return;
