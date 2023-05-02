@@ -12,8 +12,10 @@
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
 #include "base/location.h"
+#include "base/memory/weak_ptr.h"
 #include "base/time/time.h"
 #include "components/dbus/thread_linux/dbus_thread_linux.h"
+#include "dbus/property.h"
 #include "services/device/public/cpp/geolocation/geoposition.h"
 
 namespace device {
@@ -36,13 +38,17 @@ mojom::Geoposition GetErrorPosition() {
 
 } // namespace
 
-GeoClueProperties::GeoClueProperties(dbus::ObjectProxy *proxy,
-                                     const std::string &interface_name,
-                                     const PropertyChangedCallback &callback)
-    : dbus::PropertySet(proxy, interface_name, callback) {
-  RegisterProperty("DesktopId", &desktop_id);
-}
-GeoClueProperties::~GeoClueProperties() = default;
+struct GeoClueProperties : public dbus::PropertySet {
+  dbus::Property<std::string> desktop_id;
+
+  explicit GeoClueProperties(dbus::ObjectProxy *proxy)
+      : dbus::PropertySet(proxy, kClientInterfaceName, base::NullCallback()) {
+
+    RegisterProperty("DesktopId", &desktop_id);
+  }
+
+  ~GeoClueProperties() override = default;
+};
 
 GeoClueLocationProperties::GeoClueLocationProperties(
     dbus::ObjectProxy *proxy, const std::string &interface_name,
@@ -133,7 +139,6 @@ void GeoClueLocationProvider::StopProvider() {
   // Reset pointers to dbus objects. They will be destroyed when all references
   // are gone.
   gclue_client_.reset();
-  gclue_client_properties_.reset();
   gclue_location_properties_.reset();
 }
 
@@ -180,21 +185,22 @@ void GeoClueLocationProvider::OnGetClientCompleted(dbus::Response *response) {
   }
 
   gclue_client_ = bus_->GetObjectProxy(kServiceName, path);
-  gclue_client_properties_ = std::make_unique<GeoClueProperties>(
-      gclue_client_.get(), kClientInterfaceName, base::NullCallback());
-
   SetDesktopId();
 }
 
 void GeoClueLocationProvider::SetDesktopId() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
-  gclue_client_properties_->desktop_id.Set(
-      kBraveDesktopId, base::BindOnce(&GeoClueLocationProvider::OnSetDesktopId,
-                                      weak_ptr_factory_.GetWeakPtr()));
+  auto *raw_ptr = new GeoClueProperties(gclue_client_.get());
+  std::unique_ptr<dbus::PropertySet> properties(raw_ptr);
+  raw_ptr->desktop_id.Set(
+      kBraveDesktopId,
+      base::BindOnce(&GeoClueLocationProvider::OnSetDesktopId,
+                     weak_ptr_factory_.GetWeakPtr(), std::move(properties)));
 }
 
-void GeoClueLocationProvider::OnSetDesktopId(bool success) {
+void GeoClueLocationProvider::OnSetDesktopId(
+    std::unique_ptr<dbus::PropertySet> property_set, bool success) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   if (!success) {

@@ -24,14 +24,6 @@ namespace device {
 
 class GeolocationManager;
 
-struct GeoClueProperties : public dbus::PropertySet {
-  dbus::Property<std::string> desktop_id;
-
-  GeoClueProperties(dbus::ObjectProxy *proxy, const std::string &interface_name,
-                    const PropertyChangedCallback &callback);
-  ~GeoClueProperties() override;
-};
-
 struct GeoClueLocationProperties : public dbus::PropertySet {
   dbus::Property<double> latitude;
   dbus::Property<double> longitude;
@@ -109,7 +101,8 @@ private:
 
   // Step 3
   void SetDesktopId();
-  void OnSetDesktopId(bool success);
+  void OnSetDesktopId(std::unique_ptr<dbus::PropertySet> property_set,
+                      bool success);
 
   // Step 4
   void ConnectSignal();
@@ -132,7 +125,6 @@ private:
   scoped_refptr<dbus::Bus> bus_;
   scoped_refptr<dbus::ObjectProxy> gclue_client_;
 
-  std::unique_ptr<GeoClueProperties> gclue_client_properties_;
   std::unique_ptr<GeoClueLocationProperties> gclue_location_properties_;
 
   mojom::Geoposition last_position_;
@@ -143,4 +135,4 @@ private:
 
 } // namespace device
 
-#endif // BRAVE_SERVICES_DEVICE_GEOLOCATION_GEOCLUE_LOCATION_PROVIDER_H_
+#endif  // BRAVE_SERVICES_DEVICE_GEOLOCATION_GEOCLUE_LOCATION_PROVIDER_H_
