@@ -11,5 +11,10 @@
   "https_valid": "leo_lock_plain",
   "share": "leo_share_browser",
   "download_in_progress": "leo_download",
-  "download_toolbar_button": "leo_download"
+  "download_toolbar_button": "leo_download",
+  "battery_saver": "leo_energy_saver",
+  "zoom_plus": "leo_search_zoom_in",
+  "zoom_minus": "leo_search_zoom_out",
+  "not_secure_warning": "leo_warning_triangle_filled",
+  "http": "leo_warning_circle_filled"
 }
