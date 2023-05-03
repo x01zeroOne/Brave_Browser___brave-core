@@ -18,7 +18,7 @@ const iconConversions = {
   'cr:security': 'lock',
   'cr:search': 'search',
   'settings:palette': 'appearance',
-  'settings:assignment': 'list-4',
+  'settings:assignment': 'list-checks',
   'settings:language': 'product-translate',
   'settings:build': 'settings',
   'settings:restore': 'backward',
