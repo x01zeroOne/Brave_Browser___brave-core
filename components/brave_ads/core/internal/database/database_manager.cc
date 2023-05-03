@@ -59,9 +59,8 @@ void DatabaseManager::CreateOrOpen(ResultCallback callback) {
 void DatabaseManager::OnCreateOrOpen(
     ResultCallback callback,
     mojom::DBCommandResponseInfoPtr command_response) {
-  DCHECK(command_response);
-
-  if (command_response->status !=
+  if (!command_response ||
+      command_response->status !=
           mojom::DBCommandResponseInfo::StatusType::RESPONSE_OK ||
       !command_response->result) {
     BLOG(0, "Failed to open or create database");
