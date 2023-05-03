@@ -257,19 +257,19 @@
 -keep class org.chromium.chrome.browser.bookmarks.BookmarkManagerMediator {
     *** mBookmarkModel;
     *** mContext;
-    public <init>(...);
+    <init>(...);
 }
 
 -keep class org.chromium.chrome.browser.bookmarks.BraveBookmarkManagerMediator {
-    public <init>(...);
+    <init>(...);
 }
 
 -keep class org.chromium.chrome.browser.bookmarks.BookmarkModel {
-    public <init>(...);
+    <init>(...);
 }
 
 -keep class org.chromium.chrome.browser.bookmarks.BraveBookmarkModel {
-    public <init>(...);
+    <init>(...);
 }
 
 -keep class org.chromium.chrome.browser.bookmarks.BookmarkPage {
