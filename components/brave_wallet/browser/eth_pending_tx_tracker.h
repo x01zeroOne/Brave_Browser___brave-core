@@ -7,8 +7,10 @@
 #define BRAVE_COMPONENTS_BRAVE_WALLET_BROWSER_ETH_PENDING_TX_TRACKER_H_
 
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "base/containers/flat_map.h"
 #include "base/gtest_prod_util.h"
@@ -33,8 +35,10 @@ class EthPendingTxTracker {
   EthPendingTxTracker(const EthPendingTxTracker&) = delete;
   EthPendingTxTracker operator=(const EthPendingTxTracker&) = delete;
 
-  bool UpdatePendingTransactions(const absl::optional<std::string>& chain_id,
-                                 std::set<std::string>* pending_chain_ids);
+  using UpdatePendingTxsCallback =
+      base::OnceCallback<void(std::set<std::string>)>;
+  void UpdatePendingTransactions(const absl::optional<std::string>& chain_id,
+                                 UpdatePendingTxsCallback callback);
   void Reset();
 
  private:
@@ -47,6 +51,8 @@ class EthPendingTxTracker {
                       TransactionReceipt receipt,
                       mojom::ProviderError error,
                       const std::string& error_message);
+  void ContinueOnGetTxReceipt(TransactionReceipt receipt,
+                              std::unique_ptr<EthTxMeta> meta);
   void OnGetNetworkNonce(const std::string& chain_id,
                          const std::string& address,
                          uint256_t result,
@@ -56,10 +62,27 @@ class EthPendingTxTracker {
                             mojom::ProviderError error,
                             const std::string& error_message);
 
-  bool IsNonceTaken(const EthTxMeta&);
+  bool IsNonceTaken(const EthTxMeta&,
+                    const std::vector<std::unique_ptr<TxMeta>>&);
   bool ShouldTxDropped(const EthTxMeta&);
 
   void DropTransaction(TxMeta*);
+
+  void ContinueUpdatePendingTransactionsSubmitted(
+      const absl::optional<std::string>& chain_id,
+      UpdatePendingTxsCallback callback,
+      std::vector<std::unique_ptr<TxMeta>> pending_transactions);
+  void ContinueUpdatePendingTransactionsSigned(
+      std::vector<std::unique_ptr<TxMeta>> pending_transactions,
+      UpdatePendingTxsCallback callback,
+      std::vector<std::unique_ptr<TxMeta>> signed_transactions);
+  void ContinueUpdatePendingTransactions(
+      std::unique_ptr<TxMeta> pending_transaction,
+      base::OnceCallback<void(absl::optional<std::string>)> barrier_callback,
+      std::vector<std::unique_ptr<TxMeta>> confirmed_transactions);
+  void FinalizeUpdatePendingTransactions(
+      UpdatePendingTxsCallback callback,
+      const std::vector<absl::optional<std::string>>& pending_chain_ids);
 
   // (address, (chain_id, nonce))
   base::flat_map<std::string, std::map<std::string, uint256_t>>

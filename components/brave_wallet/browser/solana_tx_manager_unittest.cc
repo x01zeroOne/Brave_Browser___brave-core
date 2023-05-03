@@ -9,9 +9,10 @@
 #include <utility>
 
 #include "base/base64.h"
+#include "base/base_paths.h"
+#include "base/path_service.h"
 #include "base/test/bind.h"
 #include "base/test/scoped_feature_list.h"
-#include "base/test/task_environment.h"
 #include "base/test/values_test_util.h"
 #include "brave/components/brave_wallet/browser/brave_wallet_prefs.h"
 #include "brave/components/brave_wallet/browser/brave_wallet_utils.h"
@@ -30,6 +31,7 @@
 #include "brave/components/brave_wallet/common/features.h"
 #include "brave/components/brave_wallet/common/solana_utils.h"
 #include "components/sync_preferences/testing_pref_service_syncable.h"
+#include "content/public/test/browser_task_environment.h"
 #include "services/data_decoder/public/cpp/test_support/in_process_data_decoder.h"
 #include "services/network/public/cpp/weak_wrapper_shared_url_loader_factory.h"
 #include "services/network/test/test_url_loader_factory.h"
@@ -73,8 +75,11 @@ class SolanaTxManagerUnitTest : public testing::Test {
         std::make_unique<JsonRpcService>(shared_url_loader_factory_, &prefs_);
     keyring_service_ = std::make_unique<KeyringService>(json_rpc_service_.get(),
                                                         &prefs_, &local_state_);
+    base::FilePath test_data_dir;
+    base::PathService::Get(base::DIR_SRC_TEST_DATA_ROOT, &test_data_dir);
     tx_service_ = std::make_unique<TxService>(json_rpc_service_.get(),
-                                              keyring_service_.get(), &prefs_);
+                                              keyring_service_.get(), &prefs_,
+                                              test_data_dir);
     CreateWallet();
     AddAccount();
   }
@@ -412,8 +417,39 @@ class SolanaTxManagerUnitTest : public testing::Test {
     run_loop.Run();
   }
 
+  std::unique_ptr<SolanaTxMeta> GetTxForTesting(const std::string& chain_id,
+                                                const std::string& tx_meta_id) {
+    std::unique_ptr<SolanaTxMeta> meta_out = nullptr;
+    base::RunLoop run_loop;
+    solana_tx_manager()->GetTxForTesting(
+        chain_id, tx_meta_id,
+        base::BindLambdaForTesting([&](std::unique_ptr<SolanaTxMeta> meta) {
+          meta_out = std::move(meta);
+          run_loop.Quit();
+        }));
+    run_loop.Run();
+    return meta_out;
+  }
+
+  std::vector<std::unique_ptr<TxMeta>> GetTransactionsByStatus(
+      const absl::optional<std::string>& chain_id,
+      const absl::optional<mojom::TransactionStatus>& status,
+      const absl::optional<std::string>& from) {
+    base::RunLoop run_loop;
+    std::vector<std::unique_ptr<TxMeta>> txs_out;
+    solana_tx_manager()->GetSolanaTxStateManager()->GetTransactionsByStatus(
+        chain_id, status, from,
+        base::BindLambdaForTesting(
+            [&](std::vector<std::unique_ptr<TxMeta>> txs) {
+              txs_out = std::move(txs);
+              run_loop.Quit();
+            }));
+    run_loop.Run();
+    return txs_out;
+  }
+
  protected:
-  base::test::TaskEnvironment task_environment_;
+  content::BrowserTaskEnvironment task_environment_;
   sync_preferences::TestingPrefServiceSyncable prefs_;
   sync_preferences::TestingPrefServiceSyncable local_state_;
   network::TestURLLoaderFactory url_loader_factory_;
@@ -471,8 +507,7 @@ TEST_F(SolanaTxManagerUnitTest, AddAndApproveTransaction) {
   AddUnapprovedTransaction(mojom::kSolanaMainnet, solana_tx_data.Clone(),
                            from_account, &meta_id1);
 
-  auto tx_meta1 =
-      solana_tx_manager()->GetTxForTesting(mojom::kSolanaMainnet, meta_id1);
+  auto tx_meta1 = GetTxForTesting(mojom::kSolanaMainnet, meta_id1);
   ASSERT_TRUE(tx_meta1);
   EXPECT_EQ(tx_meta1->chain_id(), mojom::kSolanaMainnet);
 
@@ -484,8 +519,7 @@ TEST_F(SolanaTxManagerUnitTest, AddAndApproveTransaction) {
   std::string meta_id2;
   AddUnapprovedTransaction(mojom::kSolanaMainnet, solana_tx_data.Clone(),
                            from_account, &meta_id2);
-  auto tx_meta2 =
-      solana_tx_manager()->GetTxForTesting(mojom::kSolanaMainnet, meta_id2);
+  auto tx_meta2 = GetTxForTesting(mojom::kSolanaMainnet, meta_id2);
   ASSERT_TRUE(tx_meta2);
   EXPECT_EQ(tx_meta2->chain_id(), mojom::kSolanaMainnet);
   EXPECT_EQ(*tx_meta2->tx(), *tx);
@@ -500,8 +534,7 @@ TEST_F(SolanaTxManagerUnitTest, AddAndApproveTransaction) {
   tx->message()->set_recent_blockhash(latest_blockhash1_);
   tx->message()->set_last_valid_block_height(last_valid_block_height1_);
 
-  tx_meta1 =
-      solana_tx_manager()->GetTxForTesting(mojom::kSolanaMainnet, meta_id1);
+  tx_meta1 = GetTxForTesting(mojom::kSolanaMainnet, meta_id1);
   ASSERT_TRUE(tx_meta1);
   EXPECT_EQ(tx_meta1->chain_id(), mojom::kSolanaMainnet);
   EXPECT_EQ(*tx_meta1->tx(), *tx);
@@ -516,8 +549,7 @@ TEST_F(SolanaTxManagerUnitTest, AddAndApproveTransaction) {
   ApproveTransaction(mojom::kSolanaMainnet, meta_id2);
   base::RunLoop().RunUntilIdle();
 
-  tx_meta2 =
-      solana_tx_manager()->GetTxForTesting(mojom::kSolanaMainnet, meta_id2);
+  tx_meta2 = GetTxForTesting(mojom::kSolanaMainnet, meta_id2);
   ASSERT_TRUE(tx_meta2);
   EXPECT_EQ(tx_meta2->chain_id(), mojom::kSolanaMainnet);
   EXPECT_EQ(*tx_meta2->tx(), *tx);
@@ -536,14 +568,12 @@ TEST_F(SolanaTxManagerUnitTest, AddAndApproveTransaction) {
   // Fast forward again to have block tracker run with the new interceptor.
   task_environment_.FastForwardBy(
       base::Seconds(kBlockTrackerDefaultTimeInSeconds));
-  tx_meta1 =
-      solana_tx_manager()->GetTxForTesting(mojom::kSolanaMainnet, meta_id1);
+  tx_meta1 = GetTxForTesting(mojom::kSolanaMainnet, meta_id1);
   EXPECT_EQ(mojom::TransactionStatus::Submitted, tx_meta1->status());
   EXPECT_EQ(tx_meta1->signature_status(),
             SolanaSignatureStatus(100u, 10u, "", "confirmed"));
 
-  tx_meta2 =
-      solana_tx_manager()->GetTxForTesting(mojom::kSolanaMainnet, meta_id2);
+  tx_meta2 = GetTxForTesting(mojom::kSolanaMainnet, meta_id2);
   EXPECT_EQ(mojom::TransactionStatus::Confirmed, tx_meta2->status());
   EXPECT_EQ(tx_meta2->signature_status(),
             SolanaSignatureStatus(72u, 0u, "", "finalized"));
@@ -563,8 +593,7 @@ TEST_F(SolanaTxManagerUnitTest, WalletOrigin) {
                            std::move(system_transfer_data), from, absl::nullopt,
                            &meta_id);
 
-  auto tx_meta =
-      solana_tx_manager()->GetTxForTesting(mojom::kSolanaMainnet, meta_id);
+  auto tx_meta = GetTxForTesting(mojom::kSolanaMainnet, meta_id);
   ASSERT_TRUE(tx_meta);
   EXPECT_EQ(tx_meta->chain_id(), mojom::kSolanaMainnet);
   EXPECT_EQ(tx_meta->origin(), url::Origin::Create(GURL("chrome://wallet")));
@@ -584,8 +613,7 @@ TEST_F(SolanaTxManagerUnitTest, SomeSiteOrigin) {
       mojom::kSolanaMainnet, std::move(system_transfer_data), from,
       url::Origin::Create(GURL("https://some.site.com")), &meta_id);
 
-  auto tx_meta =
-      solana_tx_manager()->GetTxForTesting(mojom::kSolanaMainnet, meta_id);
+  auto tx_meta = GetTxForTesting(mojom::kSolanaMainnet, meta_id);
   ASSERT_TRUE(tx_meta);
   EXPECT_EQ(tx_meta->chain_id(), mojom::kSolanaMainnet);
   EXPECT_EQ(tx_meta->origin(),
@@ -606,8 +634,7 @@ TEST_F(SolanaTxManagerUnitTest, AddUnapprovedTransactionWithGroupId) {
                            std::move(system_transfer_data), from, absl::nullopt,
                            &meta_id, "mockGroupId");
 
-  auto tx_meta =
-      solana_tx_manager()->GetTxForTesting(mojom::kSolanaMainnet, meta_id);
+  auto tx_meta = GetTxForTesting(mojom::kSolanaMainnet, meta_id);
   ASSERT_TRUE(tx_meta);
   EXPECT_EQ(tx_meta->chain_id(), mojom::kSolanaMainnet);
   EXPECT_EQ(tx_meta->group_id(), "mockGroupId");
@@ -1014,21 +1041,18 @@ TEST_F(SolanaTxManagerUnitTest, DropTxWithInvalidBlockhash) {
   base::RunLoop().RunUntilIdle();
 
   // Check two submitted tx.
-  auto pending_transactions =
-      solana_tx_manager()->GetSolanaTxStateManager()->GetTransactionsByStatus(
-          mojom::kSolanaMainnet, mojom::TransactionStatus::Submitted,
-          absl::nullopt);
+  auto pending_transactions = GetTransactionsByStatus(
+      mojom::kSolanaMainnet, mojom::TransactionStatus::Submitted,
+      absl::nullopt);
   EXPECT_EQ(pending_transactions.size(), 2u);
-  auto tx1 =
-      solana_tx_manager()->GetTxForTesting(mojom::kSolanaMainnet, meta_id1);
+  auto tx1 = GetTxForTesting(mojom::kSolanaMainnet, meta_id1);
   ASSERT_TRUE(tx1);
   EXPECT_EQ(tx1->status(), mojom::TransactionStatus::Submitted);
   EXPECT_EQ(tx1->tx()->message()->recent_blockhash(), latest_blockhash1_);
   EXPECT_EQ(tx1->tx()->message()->last_valid_block_height(),
             last_valid_block_height1_);
 
-  auto tx2 =
-      solana_tx_manager()->GetTxForTesting(mojom::kSolanaMainnet, meta_id2);
+  auto tx2 = GetTxForTesting(mojom::kSolanaMainnet, meta_id2);
   ASSERT_TRUE(tx2);
   EXPECT_EQ(tx2->status(), mojom::TransactionStatus::Submitted);
   EXPECT_EQ(tx2->tx()->message()->recent_blockhash(), latest_blockhash2_);
@@ -1046,17 +1070,14 @@ TEST_F(SolanaTxManagerUnitTest, DropTxWithInvalidBlockhash) {
   base::RunLoop().RunUntilIdle();
 
   // Check blockhash1 should be dropped, blockhash2 stay as submitted.
-  auto dropped_transactions =
-      solana_tx_manager()->GetSolanaTxStateManager()->GetTransactionsByStatus(
-          mojom::kSolanaMainnet, mojom::TransactionStatus::Dropped,
-          absl::nullopt);
+  auto dropped_transactions = GetTransactionsByStatus(
+      mojom::kSolanaMainnet, mojom::TransactionStatus::Dropped, absl::nullopt);
   ASSERT_EQ(dropped_transactions.size(), 1u);
   EXPECT_EQ(dropped_transactions[0]->id(), meta_id1);
 
-  pending_transactions =
-      solana_tx_manager()->GetSolanaTxStateManager()->GetTransactionsByStatus(
-          mojom::kSolanaMainnet, mojom::TransactionStatus::Submitted,
-          absl::nullopt);
+  pending_transactions = GetTransactionsByStatus(
+      mojom::kSolanaMainnet, mojom::TransactionStatus::Submitted,
+      absl::nullopt);
   ASSERT_EQ(pending_transactions.size(), 1u);
   EXPECT_EQ(pending_transactions[0]->id(), meta_id2);
 }
@@ -1134,8 +1155,7 @@ TEST_F(SolanaTxManagerUnitTest, ProcessSolanaHardwareSignature) {
       mojom::SolanaProviderError::kInternalError,
       l10n_util::GetStringUTF8(IDS_WALLET_INTERNAL_ERROR));
 
-  auto meta = solana_tx_manager()->GetTxForTesting(mojom::kSolanaMainnet,
-                                                   system_transfer_meta_id);
+  auto meta = GetTxForTesting(mojom::kSolanaMainnet, system_transfer_meta_id);
   meta->tx()->message()->set_recent_blockhash(latest_blockhash1_);
   meta->tx()->message()->set_last_valid_block_height(last_valid_block_height1_);
   solana_tx_manager()->GetSolanaTxStateManager()->AddOrUpdateTx(*meta);

@@ -20,27 +20,35 @@
 
 namespace brave_wallet {
 
-EthTxStateManager::EthTxStateManager(PrefService* prefs)
-    : TxStateManager(prefs) {}
+EthTxStateManager::EthTxStateManager(PrefService* prefs,
+                                     const base::FilePath& context_path)
+    : TxStateManager(prefs, context_path) {}
 
 EthTxStateManager::~EthTxStateManager() = default;
 
-std::vector<std::unique_ptr<TxMeta>> EthTxStateManager::GetTransactionsByStatus(
+void EthTxStateManager::GetTransactionsByStatus(
     const absl::optional<std::string>& chain_id,
     const absl::optional<mojom::TransactionStatus>& status,
-    const absl::optional<EthAddress>& from) {
-  std::vector<std::unique_ptr<TxMeta>> result;
+    const absl::optional<EthAddress>& from,
+    TxStateManager::GetTxsByStatusCallback callback) {
   absl::optional<std::string> from_string =
       from.has_value() ? absl::optional<std::string>(from->ToChecksumAddress())
                        : absl::nullopt;
-  return TxStateManager::GetTransactionsByStatus(chain_id, status, from_string);
+  TxStateManager::GetTransactionsByStatus(chain_id, status, from_string,
+                                          std::move(callback));
 }
 
-std::unique_ptr<EthTxMeta> EthTxStateManager::GetEthTx(
-    const std::string& chain_id,
-    const std::string& id) {
-  return std::unique_ptr<EthTxMeta>{
-      static_cast<EthTxMeta*>(TxStateManager::GetTx(chain_id, id).release())};
+void EthTxStateManager::GetEthTx(const std::string& chain_id,
+                                 const std::string& id,
+                                 GetEthTxCallback callback) {
+  TxStateManager::GetTx(
+      chain_id, id,
+      base::BindOnce(
+          [](GetEthTxCallback callback, std::unique_ptr<TxMeta> meta) {
+            std::move(callback).Run(std::unique_ptr<EthTxMeta>{
+                static_cast<EthTxMeta*>(meta.release())});
+          },
+          std::move(callback)));
 }
 
 std::unique_ptr<EthTxMeta> EthTxStateManager::ValueToEthTxMeta(

@@ -45,14 +45,18 @@ size_t CalculatePendingTxCount(
 
 TxService::TxService(JsonRpcService* json_rpc_service,
                      KeyringService* keyring_service,
-                     PrefService* prefs)
+                     PrefService* prefs,
+                     const base::FilePath& context_path)
     : prefs_(prefs), json_rpc_service_(json_rpc_service), weak_factory_(this) {
-  tx_manager_map_[mojom::CoinType::ETH] = std::unique_ptr<TxManager>(
-      new EthTxManager(this, json_rpc_service, keyring_service, prefs));
-  tx_manager_map_[mojom::CoinType::SOL] = std::unique_ptr<TxManager>(
-      new SolanaTxManager(this, json_rpc_service, keyring_service, prefs));
-  tx_manager_map_[mojom::CoinType::FIL] = std::unique_ptr<TxManager>(
-      new FilTxManager(this, json_rpc_service, keyring_service, prefs));
+  tx_manager_map_[mojom::CoinType::ETH] =
+      std::unique_ptr<TxManager>(new EthTxManager(
+          this, json_rpc_service, keyring_service, prefs, context_path));
+  tx_manager_map_[mojom::CoinType::SOL] =
+      std::unique_ptr<TxManager>(new SolanaTxManager(
+          this, json_rpc_service, keyring_service, prefs, context_path));
+  tx_manager_map_[mojom::CoinType::FIL] =
+      std::unique_ptr<TxManager>(new FilTxManager(
+          this, json_rpc_service, keyring_service, prefs, context_path));
 }
 
 TxService::~TxService() = default;

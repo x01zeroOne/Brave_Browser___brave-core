@@ -50,14 +50,20 @@ TxManager::~TxManager() {
 void TxManager::GetTransactionInfo(const std::string& chain_id,
                                    const std::string& tx_meta_id,
                                    GetTransactionInfoCallback callback) {
-  std::unique_ptr<TxMeta> meta = tx_state_manager_->GetTx(chain_id, tx_meta_id);
-  if (!meta) {
-    LOG(ERROR) << "No transaction found";
-    std::move(callback).Run(nullptr);
-    return;
-  }
+  tx_state_manager_->GetTx(
+      chain_id, tx_meta_id,
+      base::BindOnce(
+          [](GetTransactionInfoCallback callback,
+             std::unique_ptr<TxMeta> meta) {
+            if (!meta) {
+              LOG(ERROR) << "No transaction found";
+              std::move(callback).Run(nullptr);
+              return;
+            }
 
-  std::move(callback).Run(meta->ToTransactionInfo());
+            std::move(callback).Run(meta->ToTransactionInfo());
+          },
+          std::move(callback)));
 }
 
 void TxManager::GetAllTransactionInfo(
@@ -69,31 +75,41 @@ void TxManager::GetAllTransactionInfo(
     return;
   }
 
-  std::vector<std::unique_ptr<TxMeta>> metas =
-      tx_state_manager_->GetTransactionsByStatus(chain_id, absl::nullopt, from);
-
-  // Convert vector of TxMeta to vector of TransactionInfo
-  std::vector<mojom::TransactionInfoPtr> tis(metas.size());
-  std::transform(
-      metas.begin(), metas.end(), tis.begin(),
-      [](const std::unique_ptr<TxMeta>& m) -> mojom::TransactionInfoPtr {
-        return m->ToTransactionInfo();
-      });
-  std::move(callback).Run(std::move(tis));
+  tx_state_manager_->GetTransactionsByStatus(
+      chain_id, absl::nullopt, from,
+      base::BindOnce(
+          [](GetAllTransactionInfoCallback callback,
+             std::vector<std::unique_ptr<TxMeta>> metas) {
+            // Convert vector of TxMeta to vector of TransactionInfo
+            std::vector<mojom::TransactionInfoPtr> tis(metas.size());
+            std::transform(metas.begin(), metas.end(), tis.begin(),
+                           [](const std::unique_ptr<TxMeta>& m)
+                               -> mojom::TransactionInfoPtr {
+                             return m->ToTransactionInfo();
+                           });
+            std::move(callback).Run(std::move(tis));
+          },
+          std::move(callback)));
 }
 
 void TxManager::RejectTransaction(const std::string& chain_id,
                                   const std::string& tx_meta_id,
                                   RejectTransactionCallback callback) {
-  std::unique_ptr<TxMeta> meta = tx_state_manager_->GetTx(chain_id, tx_meta_id);
-  if (!meta) {
-    LOG(ERROR) << "No transaction found";
-    std::move(callback).Run(false);
-    return;
-  }
-  meta->set_status(mojom::TransactionStatus::Rejected);
-  tx_state_manager_->AddOrUpdateTx(*meta);
-  std::move(callback).Run(true);
+  tx_state_manager_->GetTx(
+      chain_id, tx_meta_id,
+      base::BindOnce(
+          [](TxStateManager* tx_state_manager,
+             RejectTransactionCallback callback, std::unique_ptr<TxMeta> meta) {
+            if (!meta) {
+              LOG(ERROR) << "No transaction found";
+              std::move(callback).Run(false);
+              return;
+            }
+            meta->set_status(mojom::TransactionStatus::Rejected);
+            tx_state_manager->AddOrUpdateTx(*meta);
+            std::move(callback).Run(true);
+          },
+          tx_state_manager_.get(), std::move(callback)));
 }
 
 void TxManager::CheckIfBlockTrackerShouldRun(

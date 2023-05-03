@@ -26,13 +26,15 @@ class FilTxMeta;
 
 class FilTxStateManager : public TxStateManager {
  public:
-  explicit FilTxStateManager(PrefService* prefs);
+  FilTxStateManager(PrefService* prefs, const base::FilePath& context_path);
   ~FilTxStateManager() override;
   FilTxStateManager(const FilTxStateManager&) = delete;
   FilTxStateManager operator=(const FilTxStateManager&) = delete;
 
-  std::unique_ptr<FilTxMeta> GetFilTx(const std::string& chain_id,
-                                      const std::string& id);
+  using GetFilTxCallback = base::OnceCallback<void(std::unique_ptr<FilTxMeta>)>;
+  void GetFilTx(const std::string& chain_id,
+                const std::string& id,
+                GetFilTxCallback callback);
   std::unique_ptr<FilTxMeta> ValueToFilTxMeta(const base::Value::Dict& value);
 
  private:

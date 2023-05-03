@@ -30,18 +30,21 @@ class EthTxMeta;
 
 class EthTxStateManager : public TxStateManager {
  public:
-  explicit EthTxStateManager(PrefService* prefs);
+  EthTxStateManager(PrefService* prefs, const base::FilePath& context_path);
   ~EthTxStateManager() override;
   EthTxStateManager(const EthTxStateManager&) = delete;
   EthTxStateManager operator=(const EthTxStateManager&) = delete;
 
-  std::vector<std::unique_ptr<TxMeta>> GetTransactionsByStatus(
+  void GetTransactionsByStatus(
       const absl::optional<std::string>& chain_id,
       const absl::optional<mojom::TransactionStatus>& status,
-      const absl::optional<EthAddress>& from);
+      const absl::optional<EthAddress>& from,
+      TxStateManager::GetTxsByStatusCallback callback);
 
-  std::unique_ptr<EthTxMeta> GetEthTx(const std::string& chain_id,
-                                      const std::string& id);
+  using GetEthTxCallback = base::OnceCallback<void(std::unique_ptr<EthTxMeta>)>;
+  void GetEthTx(const std::string& chain_id,
+                const std::string& id,
+                GetEthTxCallback callback);
   std::unique_ptr<EthTxMeta> ValueToEthTxMeta(const base::Value::Dict& value);
 
  private:

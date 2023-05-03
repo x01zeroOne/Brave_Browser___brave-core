@@ -41,7 +41,8 @@ class WalletNotificationServiceUnitTest : public testing::Test {
     keyring_service_ = std::make_unique<KeyringService>(json_rpc_service_.get(),
                                                         prefs(), local_state());
     tx_service_ = std::make_unique<TxService>(json_rpc_service_.get(),
-                                              keyring_service_.get(), prefs());
+                                              keyring_service_.get(), prefs(),
+                                              profile_.GetPath());
     notification_service_ =
         std::make_unique<WalletNotificationService>(profile());
     tester_ = std::make_unique<NotificationDisplayServiceTester>(profile());

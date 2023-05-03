@@ -30,6 +30,7 @@ constexpr int32_t kAutoLockMinutesMax = 10080;
 constexpr int32_t kAssetDiscoveryMinutesPerRequest = 1;
 
 constexpr char kWalletBaseDirectory[] = "BraveWallet";
+constexpr char kWalletStorage[] = "Brave Wallet Storage";
 constexpr char kImageSourceHost[] = "erc-token-images";
 constexpr char kRampBaseUrl[] = "https://buy.ramp.network";
 constexpr char kOffRampEnabledFlows[] = "ONRAMP,OFFRAMP";

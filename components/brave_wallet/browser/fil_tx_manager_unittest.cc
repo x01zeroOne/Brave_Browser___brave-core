@@ -9,11 +9,12 @@
 
 #include <utility>
 
+#include "base/base_paths.h"
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
+#include "base/path_service.h"
 #include "base/test/bind.h"
 #include "base/test/scoped_feature_list.h"
-#include "base/test/task_environment.h"
 #include "brave/components/brave_wallet/browser/brave_wallet_prefs.h"
 #include "brave/components/brave_wallet/browser/brave_wallet_utils.h"
 #include "brave/components/brave_wallet/browser/fil_transaction.h"
@@ -26,6 +27,7 @@
 #include "brave/components/brave_wallet/common/brave_wallet.mojom.h"
 #include "brave/components/brave_wallet/common/features.h"
 #include "components/sync_preferences/testing_pref_service_syncable.h"
+#include "content/public/test/browser_task_environment.h"
 #include "services/data_decoder/public/cpp/test_support/in_process_data_decoder.h"
 #include "services/network/public/cpp/resource_request.h"
 #include "services/network/public/cpp/weak_wrapper_shared_url_loader_factory.h"
@@ -80,8 +82,11 @@ class FilTxManagerUnitTest : public testing::Test {
         std::make_unique<JsonRpcService>(shared_url_loader_factory_, &prefs_);
     keyring_service_ = std::make_unique<KeyringService>(json_rpc_service_.get(),
                                                         &prefs_, &local_state_);
+    base::FilePath test_data_dir;
+    base::PathService::Get(base::DIR_SRC_TEST_DATA_ROOT, &test_data_dir);
     tx_service_ = std::make_unique<TxService>(json_rpc_service_.get(),
-                                              keyring_service_.get(), &prefs_);
+                                              keyring_service_.get(), &prefs_,
+                                              test_data_dir);
 
     keyring_service_->CreateWallet("testing123", base::DoNothing());
     base::RunLoop().RunUntilIdle();
@@ -119,6 +124,20 @@ class FilTxManagerUnitTest : public testing::Test {
   void ClearInterceptorResponses() {
     responses_.clear();
     url_loader_factory_.ClearResponses();
+  }
+
+  std::unique_ptr<FilTxMeta> GetTxForTesting(const std::string& chain_id,
+                                             const std::string& tx_meta_id) {
+    std::unique_ptr<FilTxMeta> meta_out = nullptr;
+    base::RunLoop run_loop;
+    fil_tx_manager()->GetTxForTesting(
+        chain_id, tx_meta_id,
+        base::BindLambdaForTesting([&](std::unique_ptr<FilTxMeta> meta) {
+          meta_out = std::move(meta);
+          run_loop.Quit();
+        }));
+    run_loop.Run();
+    return meta_out;
   }
 
   void GetTransactionMessageToSign(
@@ -225,7 +244,7 @@ class FilTxManagerUnitTest : public testing::Test {
 
  protected:
   base::test::ScopedFeatureList feature_list_;
-  base::test::TaskEnvironment task_environment_;
+  content::BrowserTaskEnvironment task_environment_;
   sync_preferences::TestingPrefServiceSyncable prefs_;
   sync_preferences::TestingPrefServiceSyncable local_state_;
   network::TestURLLoaderFactory url_loader_factory_;
@@ -251,8 +270,7 @@ TEST_F(FilTxManagerUnitTest, SubmitTransactions) {
   AddUnapprovedTransaction(mojom::kLocalhostChainId, tx_data.Clone(),
                            from_account, absl::nullopt, &meta_id1);
 
-  auto tx_meta1 =
-      fil_tx_manager()->GetTxForTesting(mojom::kLocalhostChainId, meta_id1);
+  auto tx_meta1 = GetTxForTesting(mojom::kLocalhostChainId, meta_id1);
   EXPECT_TRUE(tx_meta1);
   EXPECT_EQ(tx_meta1->chain_id(), mojom::kLocalhostChainId);
 
@@ -265,8 +283,7 @@ TEST_F(FilTxManagerUnitTest, SubmitTransactions) {
   std::string meta_id2;
   AddUnapprovedTransaction(mojom::kLocalhostChainId, tx_data.Clone(),
                            from_account, absl::nullopt, &meta_id2);
-  auto tx_meta2 =
-      fil_tx_manager()->GetTxForTesting(mojom::kLocalhostChainId, meta_id2);
+  auto tx_meta2 = GetTxForTesting(mojom::kLocalhostChainId, meta_id2);
   ASSERT_TRUE(tx_meta2);
   EXPECT_EQ(tx_meta2->chain_id(), mojom::kLocalhostChainId);
   EXPECT_EQ(tx_meta2->from(), from_account);
@@ -291,8 +308,7 @@ TEST_F(FilTxManagerUnitTest, SubmitTransactions) {
                      mojom::FilecoinProviderError::kSuccess, std::string());
   // Wait for tx to be updated.
   base::RunLoop().RunUntilIdle();
-  tx_meta1 =
-      fil_tx_manager()->GetTxForTesting(mojom::kLocalhostChainId, meta_id1);
+  tx_meta1 = GetTxForTesting(mojom::kLocalhostChainId, meta_id1);
   ASSERT_TRUE(tx_meta1);
   EXPECT_FALSE(tx_meta1->tx_hash().empty());
   EXPECT_EQ(tx_meta1->from(), from_account);
@@ -303,8 +319,7 @@ TEST_F(FilTxManagerUnitTest, SubmitTransactions) {
                      mojom::FilecoinProviderError::kSuccess, std::string());
   base::RunLoop().RunUntilIdle();
 
-  tx_meta2 =
-      fil_tx_manager()->GetTxForTesting(mojom::kLocalhostChainId, meta_id2);
+  tx_meta2 = GetTxForTesting(mojom::kLocalhostChainId, meta_id2);
   ASSERT_TRUE(tx_meta2);
   EXPECT_EQ(tx_meta2->from(), from_account);
   EXPECT_FALSE(tx_meta2->tx_hash().empty());
@@ -325,8 +340,7 @@ TEST_F(FilTxManagerUnitTest, SubmitTransactionError) {
   AddUnapprovedTransaction(mojom::kLocalhostChainId, tx_data.Clone(),
                            from_account, absl::nullopt, &meta_id1);
 
-  auto tx_meta1 =
-      fil_tx_manager()->GetTxForTesting(mojom::kLocalhostChainId, meta_id1);
+  auto tx_meta1 = GetTxForTesting(mojom::kLocalhostChainId, meta_id1);
   EXPECT_TRUE(tx_meta1);
 
   EXPECT_EQ(tx_meta1->tx()->gas_fee_cap(), "100820");
@@ -356,8 +370,7 @@ TEST_F(FilTxManagerUnitTest, SubmitTransactionError) {
                      l10n_util::GetStringUTF8(IDS_WALLET_PARSING_ERROR));
   // Wait for tx to be updated.
   base::RunLoop().RunUntilIdle();
-  tx_meta1 =
-      fil_tx_manager()->GetTxForTesting(mojom::kLocalhostChainId, meta_id1);
+  tx_meta1 = GetTxForTesting(mojom::kLocalhostChainId, meta_id1);
   ASSERT_TRUE(tx_meta1);
   EXPECT_TRUE(tx_meta1->tx_hash().empty());
   EXPECT_EQ(tx_meta1->from(), from_account);
@@ -378,8 +391,7 @@ TEST_F(FilTxManagerUnitTest, SubmitTransactionConfirmed) {
   AddUnapprovedTransaction(mojom::kLocalhostChainId, tx_data.Clone(),
                            from_account, absl::nullopt, &meta_id1);
 
-  auto tx_meta1 =
-      fil_tx_manager()->GetTxForTesting(mojom::kLocalhostChainId, meta_id1);
+  auto tx_meta1 = GetTxForTesting(mojom::kLocalhostChainId, meta_id1);
   EXPECT_TRUE(tx_meta1);
   EXPECT_EQ(tx_meta1->chain_id(), mojom::kLocalhostChainId);
 
@@ -418,8 +430,7 @@ TEST_F(FilTxManagerUnitTest, SubmitTransactionConfirmed) {
                      mojom::FilecoinProviderError::kSuccess, std::string());
   // Wait for tx to be updated.
   base::RunLoop().RunUntilIdle();
-  tx_meta1 =
-      fil_tx_manager()->GetTxForTesting(mojom::kLocalhostChainId, meta_id1);
+  tx_meta1 = GetTxForTesting(mojom::kLocalhostChainId, meta_id1);
   ASSERT_TRUE(tx_meta1);
   EXPECT_FALSE(tx_meta1->tx_hash().empty());
   EXPECT_EQ(tx_meta1->from(), from_account);
@@ -437,8 +448,7 @@ TEST_F(FilTxManagerUnitTest, WalletOrigin) {
   AddUnapprovedTransaction(mojom::kLocalhostChainId, std::move(tx_data),
                            from_account, absl::nullopt, &meta_id);
 
-  auto tx_meta =
-      fil_tx_manager()->GetTxForTesting(mojom::kLocalhostChainId, meta_id);
+  auto tx_meta = GetTxForTesting(mojom::kLocalhostChainId, meta_id);
   ASSERT_TRUE(tx_meta);
   EXPECT_EQ(tx_meta->chain_id(), mojom::kLocalhostChainId);
 
@@ -457,8 +467,7 @@ TEST_F(FilTxManagerUnitTest, SomeSiteOrigin) {
       mojom::kLocalhostChainId, std::move(tx_data), from_account,
       url::Origin::Create(GURL("https://some.site.com")), &meta_id);
 
-  auto tx_meta =
-      fil_tx_manager()->GetTxForTesting(mojom::kLocalhostChainId, meta_id);
+  auto tx_meta = GetTxForTesting(mojom::kLocalhostChainId, meta_id);
   ASSERT_TRUE(tx_meta);
   EXPECT_EQ(tx_meta->origin(),
             url::Origin::Create(GURL("https://some.site.com")));
@@ -478,8 +487,7 @@ TEST_F(FilTxManagerUnitTest, AddUnapprovedTransactionWithGroupId) {
   AddUnapprovedTransaction(mojom::kLocalhostChainId, tx_data.Clone(),
                            from_account, absl::nullopt, &meta_id,
                            "mockGroupId");
-  auto tx_meta =
-      fil_tx_manager()->GetTxForTesting(mojom::kLocalhostChainId, meta_id);
+  auto tx_meta = GetTxForTesting(mojom::kLocalhostChainId, meta_id);
   ASSERT_TRUE(tx_meta);
   EXPECT_EQ(tx_meta->group_id(), "mockGroupId");
   EXPECT_EQ(tx_meta->chain_id(), mojom::kLocalhostChainId);
@@ -487,8 +495,7 @@ TEST_F(FilTxManagerUnitTest, AddUnapprovedTransactionWithGroupId) {
   // Transaction with empty group_id
   AddUnapprovedTransaction(mojom::kLocalhostChainId, tx_data.Clone(),
                            from_account, absl::nullopt, &meta_id);
-  tx_meta =
-      fil_tx_manager()->GetTxForTesting(mojom::kLocalhostChainId, meta_id);
+  tx_meta = GetTxForTesting(mojom::kLocalhostChainId, meta_id);
   ASSERT_TRUE(tx_meta);
   EXPECT_EQ(tx_meta->group_id(), absl::nullopt);
   EXPECT_EQ(tx_meta->chain_id(), mojom::kLocalhostChainId);
@@ -505,8 +512,7 @@ TEST_F(FilTxManagerUnitTest, GetTransactionMessageToSign) {
     std::string meta_id;
     AddUnapprovedTransaction(mojom::kLocalhostChainId, std::move(tx_data),
                              from_account, absl::nullopt, &meta_id);
-    auto tx_meta =
-        fil_tx_manager()->GetTxForTesting(mojom::kLocalhostChainId, meta_id);
+    auto tx_meta = GetTxForTesting(mojom::kLocalhostChainId, meta_id);
     ASSERT_TRUE(tx_meta);
     EXPECT_EQ(tx_meta->chain_id(), mojom::kLocalhostChainId);
     EXPECT_EQ(tx_meta->from(), from_account);
@@ -538,8 +544,7 @@ TEST_F(FilTxManagerUnitTest, GetTransactionMessageToSign) {
     std::string meta_id;
     AddUnapprovedTransaction(mojom::kLocalhostChainId, std::move(tx_data),
                              from_account, absl::nullopt, &meta_id);
-    auto tx_meta =
-        fil_tx_manager()->GetTxForTesting(mojom::kLocalhostChainId, meta_id);
+    auto tx_meta = GetTxForTesting(mojom::kLocalhostChainId, meta_id);
     ASSERT_TRUE(tx_meta);
     EXPECT_EQ(tx_meta->chain_id(), mojom::kLocalhostChainId);
     EXPECT_EQ(tx_meta->from(), from_account);
@@ -575,8 +580,7 @@ TEST_F(FilTxManagerUnitTest, ProcessHardwareSignature) {
   std::string meta_id;
   AddUnapprovedTransaction(mojom::kLocalhostChainId, std::move(tx_data),
                            from_account, absl::nullopt, &meta_id);
-  auto tx_meta =
-      fil_tx_manager()->GetTxForTesting(mojom::kLocalhostChainId, meta_id);
+  auto tx_meta = GetTxForTesting(mojom::kLocalhostChainId, meta_id);
   ASSERT_TRUE(tx_meta);
   EXPECT_EQ(tx_meta->chain_id(), mojom::kLocalhostChainId);
   EXPECT_EQ(tx_meta->from(), from_account);
@@ -624,8 +628,7 @@ TEST_F(FilTxManagerUnitTest, ProcessHardwareSignature) {
         ASSERT_EQ(error_union->get_filecoin_provider_error(),
                   mojom::FilecoinProviderError::kSuccess);
         ASSERT_TRUE(err_message.empty());
-        auto fil_tx_meta = fil_tx_manager()->GetTxForTesting(
-            mojom::kLocalhostChainId, meta_id);
+        auto fil_tx_meta = GetTxForTesting(mojom::kLocalhostChainId, meta_id);
         EXPECT_EQ(fil_tx_meta->status(), mojom::TransactionStatus::Submitted);
         run_loop.Quit();
       }));
@@ -642,8 +645,7 @@ TEST_F(FilTxManagerUnitTest, ProcessHardwareSignatureError) {
   std::string meta_id;
   AddUnapprovedTransaction(mojom::kLocalhostChainId, std::move(tx_data),
                            from_account, absl::nullopt, &meta_id);
-  auto tx_meta =
-      fil_tx_manager()->GetTxForTesting(mojom::kLocalhostChainId, meta_id);
+  auto tx_meta = GetTxForTesting(mojom::kLocalhostChainId, meta_id);
   ASSERT_TRUE(tx_meta);
   EXPECT_EQ(tx_meta->chain_id(), mojom::kLocalhostChainId);
   EXPECT_EQ(tx_meta->from(), from_account);

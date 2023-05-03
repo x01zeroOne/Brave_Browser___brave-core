@@ -74,8 +74,9 @@ std::unique_ptr<KeyedService> TxServiceFactory::BuildServiceInstanceFor(
       JsonRpcServiceFactory::GetServiceForState(browser_state);
   auto* keyring_service =
       KeyringServiceFactory::GetServiceForState(browser_state);
-  std::unique_ptr<TxService> tx_service(new TxService(
-      json_rpc_service, keyring_service, browser_state->GetPrefs()));
+  std::unique_ptr<TxService> tx_service(
+      new TxService(json_rpc_service, keyring_service,
+                    browser_state->GetPrefs(), browser_state->GetStatePath()));
   return tx_service;
 }
 

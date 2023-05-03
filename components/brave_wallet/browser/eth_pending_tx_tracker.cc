@@ -8,6 +8,7 @@
 #include <memory>
 #include <utility>
 
+#include "base/barrier_callback.h"
 #include "base/containers/contains.h"
 #include "base/logging.h"
 #include "brave/components/brave_wallet/browser/eth_nonce_tracker.h"
@@ -28,34 +29,84 @@ EthPendingTxTracker::EthPendingTxTracker(EthTxStateManager* tx_state_manager,
       weak_factory_(this) {}
 EthPendingTxTracker::~EthPendingTxTracker() = default;
 
-bool EthPendingTxTracker::UpdatePendingTransactions(
+void EthPendingTxTracker::UpdatePendingTransactions(
     const absl::optional<std::string>& chain_id,
-    std::set<std::string>* pending_chain_ids) {
-  CHECK(pending_chain_ids);
-  auto pending_transactions = tx_state_manager_->GetTransactionsByStatus(
-      chain_id, mojom::TransactionStatus::Submitted, absl::nullopt);
-  auto signed_transactions = tx_state_manager_->GetTransactionsByStatus(
-      chain_id, mojom::TransactionStatus::Signed, absl::nullopt);
+    UpdatePendingTxsCallback callback) {
+  tx_state_manager_->GetTransactionsByStatus(
+      chain_id, mojom::TransactionStatus::Submitted, absl::nullopt,
+      base::BindOnce(
+          &EthPendingTxTracker::ContinueUpdatePendingTransactionsSubmitted,
+          weak_factory_.GetWeakPtr(), chain_id, std::move(callback)));
+}
+
+void EthPendingTxTracker::ContinueUpdatePendingTransactionsSubmitted(
+    const absl::optional<std::string>& chain_id,
+    UpdatePendingTxsCallback callback,
+    std::vector<std::unique_ptr<TxMeta>> pending_transactions) {
+  tx_state_manager_->GetTransactionsByStatus(
+      chain_id, mojom::TransactionStatus::Signed, absl::nullopt,
+      base::BindOnce(
+          &EthPendingTxTracker::ContinueUpdatePendingTransactionsSigned,
+          weak_factory_.GetWeakPtr(), std::move(pending_transactions),
+          std::move(callback)));
+}
+
+void EthPendingTxTracker::ContinueUpdatePendingTransactionsSigned(
+    std::vector<std::unique_ptr<TxMeta>> pending_transactions,
+    UpdatePendingTxsCallback callback,
+    std::vector<std::unique_ptr<TxMeta>> signed_transactions) {
   pending_transactions.insert(
       pending_transactions.end(),
       std::make_move_iterator(signed_transactions.begin()),
       std::make_move_iterator(signed_transactions.end()));
-  for (const auto& pending_transaction : pending_transactions) {
-    if (IsNonceTaken(static_cast<const EthTxMeta&>(*pending_transaction))) {
-      DropTransaction(pending_transaction.get());
-      continue;
-    }
+
+  const auto barrier_callback =
+      base::BarrierCallback<absl::optional<std::string>>(
+          pending_transactions.size(),
+          base::BindOnce(
+              &EthPendingTxTracker::FinalizeUpdatePendingTransactions,
+              weak_factory_.GetWeakPtr(), std::move(callback)));
+  for (auto& pending_transaction : pending_transactions) {
+    tx_state_manager_->GetTransactionsByStatus(
+        pending_transaction->chain_id(), mojom::TransactionStatus::Confirmed,
+        absl::nullopt,
+        base::BindOnce(&EthPendingTxTracker::ContinueUpdatePendingTransactions,
+                       weak_factory_.GetWeakPtr(),
+                       std::move(pending_transaction), barrier_callback));
+  }
+}
+
+void EthPendingTxTracker::ContinueUpdatePendingTransactions(
+    std::unique_ptr<TxMeta> pending_transaction,
+    base::OnceCallback<void(absl::optional<std::string>)> barrier_callback,
+    std::vector<std::unique_ptr<TxMeta>> confirmed_transactions) {
+  CHECK(pending_transaction);
+  if (IsNonceTaken(static_cast<const EthTxMeta&>(*pending_transaction),
+                   confirmed_transactions)) {
+    DropTransaction(pending_transaction.get());
+    std::move(barrier_callback).Run(absl::nullopt);
+  } else {
     const auto& pending_chain_id = pending_transaction->chain_id();
-    pending_chain_ids->emplace(pending_chain_id);
     std::string id = pending_transaction->id();
     json_rpc_service_->GetTransactionReceipt(
         pending_chain_id, pending_transaction->tx_hash(),
         base::BindOnce(&EthPendingTxTracker::OnGetTxReceipt,
                        weak_factory_.GetWeakPtr(), pending_chain_id,
                        std::move(id)));
+    std::move(barrier_callback).Run(pending_chain_id);
   }
+}
 
-  return true;
+void EthPendingTxTracker::FinalizeUpdatePendingTransactions(
+    UpdatePendingTxsCallback callback,
+    const std::vector<absl::optional<std::string>>& pending_chain_ids) {
+  std::set<std::string> result;
+  for (const auto& pending_chain_id : pending_chain_ids) {
+    if (pending_chain_id.has_value()) {
+      result.emplace(*pending_chain_id);
+    }
+  }
+  std::move(callback).Run(std::move(result));
 }
 
 void EthPendingTxTracker::Reset() {
@@ -71,7 +122,15 @@ void EthPendingTxTracker::OnGetTxReceipt(const std::string& chain_id,
   if (error != mojom::ProviderError::kSuccess)
     return;
 
-  std::unique_ptr<EthTxMeta> meta = tx_state_manager_->GetEthTx(chain_id, id);
+  tx_state_manager_->GetEthTx(
+      chain_id, id,
+      base::BindOnce(&EthPendingTxTracker::ContinueOnGetTxReceipt,
+                     weak_factory_.GetWeakPtr(), std::move(receipt)));
+}
+
+void EthPendingTxTracker::ContinueOnGetTxReceipt(
+    TransactionReceipt receipt,
+    std::unique_ptr<EthTxMeta> meta) {
   if (!meta) {
     return;
   }
@@ -84,7 +143,6 @@ void EthPendingTxTracker::OnGetTxReceipt(const std::string& chain_id,
     DropTransaction(meta.get());
   }
 }
-
 void EthPendingTxTracker::OnGetNetworkNonce(const std::string& chain_id,
                                             const std::string& address,
                                             uint256_t result,
@@ -101,9 +159,9 @@ void EthPendingTxTracker::OnSendRawTransaction(
     mojom::ProviderError error,
     const std::string& error_message) {}
 
-bool EthPendingTxTracker::IsNonceTaken(const EthTxMeta& meta) {
-  auto confirmed_transactions = tx_state_manager_->GetTransactionsByStatus(
-      meta.chain_id(), mojom::TransactionStatus::Confirmed, absl::nullopt);
+bool EthPendingTxTracker::IsNonceTaken(
+    const EthTxMeta& meta,
+    const std::vector<std::unique_ptr<TxMeta>>& confirmed_transactions) {
   for (const auto& confirmed_transaction : confirmed_transactions) {
     auto* eth_confirmed_transaction =
         static_cast<EthTxMeta*>(confirmed_transaction.get());

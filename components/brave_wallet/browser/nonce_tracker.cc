@@ -6,7 +6,9 @@
 #include "brave/components/brave_wallet/browser/nonce_tracker.h"
 
 #include <algorithm>
+#include <utility>
 
+#include "base/functional/bind.h"
 #include "brave/components/brave_wallet/browser/json_rpc_service.h"
 #include "brave/components/brave_wallet/browser/tx_meta.h"
 #include "brave/components/brave_wallet/browser/tx_state_manager.h"
@@ -18,28 +20,50 @@ namespace brave_wallet {
 NonceTracker::NonceTracker(TxStateManager* tx_state_manager,
                            JsonRpcService* json_rpc_service)
     : json_rpc_service_(json_rpc_service),
-      tx_state_manager_(tx_state_manager) {}
+      tx_state_manager_(tx_state_manager),
+      weak_factory_(this) {}
 
 NonceTracker::~NonceTracker() = default;
 
-uint256_t NonceTracker::GetFinalNonce(const std::string& chain_id,
-                                      const std::string& from,
-                                      uint256_t network_nonce) {
-  auto confirmed_transactions = tx_state_manager_->GetTransactionsByStatus(
-      chain_id, mojom::TransactionStatus::Confirmed, from);
-  uint256_t local_highest = GetHighestLocallyConfirmed(confirmed_transactions);
+void NonceTracker::GetFinalNonce(const std::string& chain_id,
+                                 const std::string& from,
+                                 uint256_t network_nonce,
+                                 GetFinalNonceCallback callback) {
+  tx_state_manager_->GetTransactionsByStatus(
+      chain_id, mojom::TransactionStatus::Confirmed, from,
+      base::BindOnce(&NonceTracker::ContineGetFinalNonceConfirmed,
+                     weak_factory_.GetWeakPtr(), chain_id, from, network_nonce,
+                     std::move(callback)));
+}
+
+void NonceTracker::ContineGetFinalNonceConfirmed(
+    const std::string& chain_id,
+    const std::string& from,
+    uint256_t network_nonce,
+    GetFinalNonceCallback callback,
+    std::vector<std::unique_ptr<TxMeta>> confirmed_txs) {
+  uint256_t local_highest = GetHighestLocallyConfirmed(confirmed_txs);
 
   uint256_t highest_confirmed = std::max(network_nonce, local_highest);
 
-  auto pending_transactions = tx_state_manager_->GetTransactionsByStatus(
-      chain_id, mojom::TransactionStatus::Submitted, from);
+  tx_state_manager_->GetTransactionsByStatus(
+      chain_id, mojom::TransactionStatus::Submitted, from,
+      base::BindOnce(&NonceTracker::ContineGetFinalNoncePending,
+                     weak_factory_.GetWeakPtr(), highest_confirmed,
+                     network_nonce, std::move(callback)));
+}
 
+void NonceTracker::ContineGetFinalNoncePending(
+    uint256_t highest_confirmed,
+    uint256_t network_nonce,
+    GetFinalNonceCallback callback,
+    std::vector<std::unique_ptr<TxMeta>> pending_txs) {
   uint256_t highest_continuous_from =
-      GetHighestContinuousFrom(pending_transactions, highest_confirmed);
+      GetHighestContinuousFrom(pending_txs, highest_confirmed);
 
   uint256_t nonce = std::max(network_nonce, highest_continuous_from);
 
-  return nonce;
+  std::move(callback).Run(nonce);
 }
 
 }  // namespace brave_wallet

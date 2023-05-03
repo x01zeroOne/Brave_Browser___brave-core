@@ -9,8 +9,9 @@
 #include <utility>
 #include <vector>
 
+#include "base/base_paths.h"
+#include "base/path_service.h"
 #include "base/test/bind.h"
-#include "base/test/task_environment.h"
 #include "brave/components/brave_wallet/browser/brave_wallet_prefs.h"
 #include "brave/components/brave_wallet/browser/solana_account_meta.h"
 #include "brave/components/brave_wallet/browser/solana_instruction.h"
@@ -20,6 +21,7 @@
 #include "brave/components/brave_wallet/common/brave_wallet_constants.h"
 #include "brave/components/brave_wallet/common/brave_wallet_types.h"
 #include "components/sync_preferences/testing_pref_service_syncable.h"
+#include "content/public/test/browser_task_environment.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 namespace brave_wallet {
@@ -33,13 +35,15 @@ class SolanaTxStateManagerUnitTest : public testing::Test {
  protected:
   void SetUp() override {
     brave_wallet::RegisterProfilePrefs(prefs_.registry());
+    base::FilePath test_data_dir;
+    base::PathService::Get(base::DIR_SRC_TEST_DATA_ROOT, &test_data_dir);
     solana_tx_state_manager_ =
-        std::make_unique<SolanaTxStateManager>(GetPrefs());
+        std::make_unique<SolanaTxStateManager>(GetPrefs(), test_data_dir);
   }
 
   PrefService* GetPrefs() { return &prefs_; }
 
-  base::test::TaskEnvironment task_environment_;
+  content::BrowserTaskEnvironment task_environment_;
   sync_preferences::TestingPrefServiceSyncable prefs_;
   std::unique_ptr<SolanaTxStateManager> solana_tx_state_manager_;
 };

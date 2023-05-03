@@ -68,9 +68,14 @@ void EthNonceTracker::OnGetNetworkNonce(const std::string& chain_id,
     std::move(callback).Run(false, network_nonce);
     return;
   }
-  auto nonce = GetFinalNonce(
-      chain_id, EthAddress::FromHex(from).ToChecksumAddress(), network_nonce);
-  std::move(callback).Run(true, nonce);
+
+  GetFinalNonce(chain_id, EthAddress::FromHex(from).ToChecksumAddress(),
+                network_nonce,
+                base::BindOnce(
+                    [](GetNextNonceCallback callback, uint256_t nonce) {
+                      std::move(callback).Run(true, nonce);
+                    },
+                    std::move(callback)));
 }
 
 }  // namespace brave_wallet

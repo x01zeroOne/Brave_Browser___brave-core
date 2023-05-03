@@ -7,10 +7,11 @@
 
 #include "brave/components/brave_wallet/browser/tx_state_manager.h"
 
+#include "base/base_paths.h"
+#include "base/path_service.h"
 #include "base/run_loop.h"
 #include "base/scoped_observation.h"
 #include "base/test/bind.h"
-#include "base/test/task_environment.h"
 #include "base/test/values_test_util.h"
 #include "base/time/time.h"
 #include "base/values.h"
@@ -23,6 +24,7 @@
 #include "brave/components/brave_wallet/common/test_utils.h"
 #include "components/prefs/pref_service.h"
 #include "components/sync_preferences/testing_pref_service_syncable.h"
+#include "content/public/test/browser_task_environment.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -57,10 +59,44 @@ class TxStateManagerUnitTest : public testing::Test {
     // The only different between each coin type's tx state manager in these
     // base functions are their pref paths, so here we just use
     // EthTxStateManager to test common methods in TxStateManager.
-    tx_state_manager_ = std::make_unique<EthTxStateManager>(&prefs_);
+    base::FilePath test_data_dir;
+    base::PathService::Get(base::DIR_SRC_TEST_DATA_ROOT, &test_data_dir);
+    tx_state_manager_ =
+        std::make_unique<EthTxStateManager>(&prefs_, test_data_dir);
   }
 
-  base::test::TaskEnvironment task_environment_;
+  std::unique_ptr<TxMeta> GetTx(const std::string& chain_id,
+                                const std::string& id) {
+    base::RunLoop run_loop;
+    std::unique_ptr<TxMeta> tx_out = nullptr;
+    tx_state_manager_->GetTx(
+        chain_id, id,
+        base::BindLambdaForTesting([&](std::unique_ptr<TxMeta> tx) {
+          tx_out = std::move(tx);
+          run_loop.Quit();
+        }));
+    run_loop.Run();
+    return tx_out;
+  }
+
+  std::vector<std::unique_ptr<TxMeta>> GetTransactionsByStatus(
+      const absl::optional<std::string>& chain_id,
+      const absl::optional<mojom::TransactionStatus>& status,
+      const absl::optional<std::string>& from) {
+    base::RunLoop run_loop;
+    std::vector<std::unique_ptr<TxMeta>> txs_out;
+    tx_state_manager_->GetTransactionsByStatus(
+        chain_id, status, from,
+        base::BindLambdaForTesting(
+            [&](std::vector<std::unique_ptr<TxMeta>> txs) {
+              txs_out = std::move(txs);
+              run_loop.Quit();
+            }));
+    run_loop.Run();
+    return txs_out;
+  }
+
+  content::BrowserTaskEnvironment task_environment_;
   sync_preferences::TestingPrefServiceSyncable prefs_;
   std::unique_ptr<TxStateManager> tx_state_manager_;
 };
@@ -127,20 +163,19 @@ TEST_F(TxStateManagerUnitTest, TxOperations) {
 
   // Get
   {
-    auto meta_fetched = tx_state_manager_->GetTx(mojom::kMainnetChainId, "001");
+    auto meta_fetched = GetTx(mojom::kMainnetChainId, "001");
     ASSERT_NE(meta_fetched, nullptr);
-    ASSERT_EQ(tx_state_manager_->GetTx(mojom::kMainnetChainId, "003"), nullptr);
-    ASSERT_EQ(tx_state_manager_->GetTx(mojom::kGoerliChainId, "001"), nullptr);
+    ASSERT_EQ(GetTx(mojom::kMainnetChainId, "003"), nullptr);
+    ASSERT_EQ(GetTx(mojom::kGoerliChainId, "001"), nullptr);
     EXPECT_EQ(meta_fetched->id(), "001");
     EXPECT_EQ(meta_fetched->tx_hash(), "0xabcd");
 
-    auto meta_fetched2 =
-        tx_state_manager_->GetTx(mojom::kMainnetChainId, "002");
+    auto meta_fetched2 = GetTx(mojom::kMainnetChainId, "002");
     ASSERT_NE(meta_fetched2, nullptr);
     EXPECT_EQ(meta_fetched2->id(), "002");
     EXPECT_EQ(meta_fetched2->tx_hash(), "0xabff");
 
-    auto meta_fetched3 = tx_state_manager_->GetTx(mojom::kMainnetChainId, "");
+    auto meta_fetched3 = GetTx(mojom::kMainnetChainId, "");
     EXPECT_EQ(meta_fetched3, nullptr);
   }
 
@@ -197,89 +232,69 @@ TEST_F(TxStateManagerUnitTest, GetTransactionsByStatus) {
   }
 
   EXPECT_EQ(
-      tx_state_manager_
-          ->GetTransactionsByStatus(
-              absl::nullopt, mojom::TransactionStatus::Approved, absl::nullopt)
+      GetTransactionsByStatus(absl::nullopt, mojom::TransactionStatus::Approved,
+                              absl::nullopt)
           .size(),
       0u);
   EXPECT_EQ(
-      tx_state_manager_
-          ->GetTransactionsByStatus(
-              absl::nullopt, mojom::TransactionStatus::Confirmed, absl::nullopt)
+      GetTransactionsByStatus(
+          absl::nullopt, mojom::TransactionStatus::Confirmed, absl::nullopt)
           .size(),
       10u);
-  EXPECT_EQ(tx_state_manager_
-                ->GetTransactionsByStatus(mojom::kMainnetChainId,
-                                          mojom::TransactionStatus::Confirmed,
-                                          absl::nullopt)
+  EXPECT_EQ(GetTransactionsByStatus(mojom::kMainnetChainId,
+                                    mojom::TransactionStatus::Confirmed,
+                                    absl::nullopt)
                 .size(),
             4u);
-  EXPECT_EQ(tx_state_manager_
-                ->GetTransactionsByStatus(mojom::kGoerliChainId,
-                                          mojom::TransactionStatus::Confirmed,
-                                          absl::nullopt)
+  EXPECT_EQ(GetTransactionsByStatus(mojom::kGoerliChainId,
+                                    mojom::TransactionStatus::Confirmed,
+                                    absl::nullopt)
                 .size(),
             6u);
   EXPECT_EQ(
-      tx_state_manager_
-          ->GetTransactionsByStatus(
-              absl::nullopt, mojom::TransactionStatus::Submitted, absl::nullopt)
+      GetTransactionsByStatus(
+          absl::nullopt, mojom::TransactionStatus::Submitted, absl::nullopt)
           .size(),
       10u);
-  EXPECT_EQ(tx_state_manager_
-                ->GetTransactionsByStatus(mojom::kMainnetChainId,
-                                          mojom::TransactionStatus::Submitted,
-                                          absl::nullopt)
+  EXPECT_EQ(GetTransactionsByStatus(mojom::kMainnetChainId,
+                                    mojom::TransactionStatus::Submitted,
+                                    absl::nullopt)
                 .size(),
             1u);
-  EXPECT_EQ(tx_state_manager_
-                ->GetTransactionsByStatus(mojom::kGoerliChainId,
-                                          mojom::TransactionStatus::Submitted,
-                                          absl::nullopt)
+  EXPECT_EQ(GetTransactionsByStatus(mojom::kGoerliChainId,
+                                    mojom::TransactionStatus::Submitted,
+                                    absl::nullopt)
                 .size(),
             9u);
 
-  EXPECT_EQ(tx_state_manager_
-                ->GetTransactionsByStatus(
-                    absl::nullopt, mojom::TransactionStatus::Approved, addr1)
+  EXPECT_EQ(GetTransactionsByStatus(absl::nullopt,
+                                    mojom::TransactionStatus::Approved, addr1)
                 .size(),
             0u);
 
-  EXPECT_EQ(
-      tx_state_manager_
-          ->GetTransactionsByStatus(absl::nullopt, absl::nullopt, absl::nullopt)
-          .size(),
-      20u);
-  EXPECT_EQ(tx_state_manager_
-                ->GetTransactionsByStatus(absl::nullopt, absl::nullopt, addr1)
+  EXPECT_EQ(GetTransactionsByStatus(absl::nullopt, absl::nullopt, absl::nullopt)
                 .size(),
+            20u);
+  EXPECT_EQ(GetTransactionsByStatus(absl::nullopt, absl::nullopt, addr1).size(),
             5u);
-  EXPECT_EQ(tx_state_manager_
-                ->GetTransactionsByStatus(mojom::kMainnetChainId, absl::nullopt,
-                                          addr1)
-                .size(),
-            2u);
   EXPECT_EQ(
-      tx_state_manager_
-          ->GetTransactionsByStatus(mojom::kGoerliChainId, absl::nullopt, addr1)
-          .size(),
-      3u);
-  EXPECT_EQ(tx_state_manager_
-                ->GetTransactionsByStatus(absl::nullopt, absl::nullopt, addr2)
-                .size(),
-            2u);
-  EXPECT_EQ(tx_state_manager_
-                ->GetTransactionsByStatus(mojom::kMainnetChainId, absl::nullopt,
-                                          addr2)
-                .size(),
-            0u);
-  EXPECT_EQ(
-      tx_state_manager_
-          ->GetTransactionsByStatus(mojom::kGoerliChainId, absl::nullopt, addr2)
+      GetTransactionsByStatus(mojom::kMainnetChainId, absl::nullopt, addr1)
           .size(),
       2u);
+  EXPECT_EQ(GetTransactionsByStatus(mojom::kGoerliChainId, absl::nullopt, addr1)
+                .size(),
+            3u);
+  EXPECT_EQ(GetTransactionsByStatus(absl::nullopt, absl::nullopt, addr2).size(),
+            2u);
+  EXPECT_EQ(
+      GetTransactionsByStatus(mojom::kMainnetChainId, absl::nullopt, addr2)
+          .size(),
+      0u);
+  EXPECT_EQ(GetTransactionsByStatus(mojom::kGoerliChainId, absl::nullopt, addr2)
+                .size(),
+            2u);
 
-  auto confirmed_addr1 = tx_state_manager_->GetTransactionsByStatus(
+  auto confirmed_addr1 = GetTransactionsByStatus(
       absl::nullopt, mojom::TransactionStatus::Confirmed, addr1);
   EXPECT_EQ(confirmed_addr1.size(), 5u);
   for (const auto& meta : confirmed_addr1) {
@@ -288,7 +303,7 @@ TEST_F(TxStateManagerUnitTest, GetTransactionsByStatus) {
     EXPECT_EQ(id % 4, 0u);
   }
 
-  auto submitted_addr2 = tx_state_manager_->GetTransactionsByStatus(
+  auto submitted_addr2 = GetTransactionsByStatus(
       absl::nullopt, mojom::TransactionStatus::Submitted, addr2);
   EXPECT_EQ(submitted_addr2.size(), 2u);
   for (const auto& meta : submitted_addr2) {
@@ -306,11 +321,11 @@ TEST_F(TxStateManagerUnitTest, MultiChainId) {
   meta.set_chain_id(mojom::kMainnetChainId);
   tx_state_manager_->AddOrUpdateTx(meta);
 
-  EXPECT_EQ(tx_state_manager_->GetTx(mojom::kGoerliChainId, "001"), nullptr);
+  EXPECT_EQ(GetTx(mojom::kGoerliChainId, "001"), nullptr);
   meta.set_chain_id(mojom::kGoerliChainId);
   tx_state_manager_->AddOrUpdateTx(meta);
 
-  EXPECT_EQ(tx_state_manager_->GetTx(mojom::kLocalhostChainId, "001"), nullptr);
+  EXPECT_EQ(GetTx(mojom::kLocalhostChainId, "001"), nullptr);
   meta.set_chain_id(mojom::kLocalhostChainId);
   tx_state_manager_->AddOrUpdateTx(meta);
 
@@ -354,35 +369,35 @@ TEST_F(TxStateManagerUnitTest, RetireOldTxMeta) {
     tx_state_manager_->AddOrUpdateTx(meta);
   }
 
-  EXPECT_TRUE(tx_state_manager_->GetTx(mojom::kMainnetChainId, "0"));
+  EXPECT_TRUE(GetTx(mojom::kMainnetChainId, "0"));
   EthTxMeta meta21;
   meta21.set_id("20");
   meta21.set_chain_id(mojom::kMainnetChainId);
   meta21.set_status(mojom::TransactionStatus::Confirmed);
   meta21.set_confirmed_time(base::Time::Now());
   tx_state_manager_->AddOrUpdateTx(meta21);
-  EXPECT_FALSE(tx_state_manager_->GetTx(mojom::kMainnetChainId, "0"));
+  EXPECT_FALSE(GetTx(mojom::kMainnetChainId, "0"));
 
-  EXPECT_TRUE(tx_state_manager_->GetTx(mojom::kMainnetChainId, "1"));
+  EXPECT_TRUE(GetTx(mojom::kMainnetChainId, "1"));
   EthTxMeta meta22;
   meta22.set_id("21");
   meta22.set_chain_id(mojom::kMainnetChainId);
   meta22.set_status(mojom::TransactionStatus::Rejected);
   meta22.set_created_time(base::Time::Now());
   tx_state_manager_->AddOrUpdateTx(meta22);
-  EXPECT_FALSE(tx_state_manager_->GetTx(mojom::kMainnetChainId, "1"));
+  EXPECT_FALSE(GetTx(mojom::kMainnetChainId, "1"));
 
   // Other status doesn't matter
-  EXPECT_TRUE(tx_state_manager_->GetTx(mojom::kMainnetChainId, "2"));
-  EXPECT_TRUE(tx_state_manager_->GetTx(mojom::kMainnetChainId, "3"));
+  EXPECT_TRUE(GetTx(mojom::kMainnetChainId, "2"));
+  EXPECT_TRUE(GetTx(mojom::kMainnetChainId, "3"));
   EthTxMeta meta23;
   meta23.set_id("22");
   meta23.set_chain_id(mojom::kMainnetChainId);
   meta23.set_status(mojom::TransactionStatus::Submitted);
   meta23.set_created_time(base::Time::Now());
   tx_state_manager_->AddOrUpdateTx(meta23);
-  EXPECT_TRUE(tx_state_manager_->GetTx(mojom::kMainnetChainId, "2"));
-  EXPECT_TRUE(tx_state_manager_->GetTx(mojom::kMainnetChainId, "3"));
+  EXPECT_TRUE(GetTx(mojom::kMainnetChainId, "2"));
+  EXPECT_TRUE(GetTx(mojom::kMainnetChainId, "3"));
 
   // Other chain id doesn't matter
   EthTxMeta meta24;
@@ -391,8 +406,8 @@ TEST_F(TxStateManagerUnitTest, RetireOldTxMeta) {
   meta24.set_status(mojom::TransactionStatus::Confirmed);
   meta24.set_created_time(base::Time::Now());
   tx_state_manager_->AddOrUpdateTx(meta24);
-  EXPECT_TRUE(tx_state_manager_->GetTx(mojom::kMainnetChainId, "2"));
-  EXPECT_TRUE(tx_state_manager_->GetTx(mojom::kMainnetChainId, "3"));
+  EXPECT_TRUE(GetTx(mojom::kMainnetChainId, "2"));
+  EXPECT_TRUE(GetTx(mojom::kMainnetChainId, "3"));
 }
 
 TEST_F(TxStateManagerUnitTest, Observer) {

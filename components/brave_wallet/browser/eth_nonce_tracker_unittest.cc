@@ -9,8 +9,9 @@
 #include <string>
 #include <utility>
 
+#include "base/base_paths.h"
+#include "base/path_service.h"
 #include "base/test/bind.h"
-#include "base/test/task_environment.h"
 #include "brave/components/brave_wallet/browser/brave_wallet_constants.h"
 #include "brave/components/brave_wallet/browser/brave_wallet_prefs.h"
 #include "brave/components/brave_wallet/browser/brave_wallet_utils.h"
@@ -94,7 +95,7 @@ class EthNonceTrackerUnitTest : public testing::Test {
   }
 
   uint256_t transaction_count_ = 0;
-  base::test::TaskEnvironment task_environment_;
+  content::BrowserTaskEnvironment task_environment_;
   network::TestURLLoaderFactory url_loader_factory_;
   scoped_refptr<network::SharedURLLoaderFactory> shared_url_loader_factory_;
   sync_preferences::TestingPrefServiceSyncable prefs_;
@@ -104,7 +105,9 @@ class EthNonceTrackerUnitTest : public testing::Test {
 TEST_F(EthNonceTrackerUnitTest, GetNonce) {
   JsonRpcService service(shared_url_loader_factory(), GetPrefs());
 
-  EthTxStateManager tx_state_manager(GetPrefs());
+  base::FilePath test_data_dir;
+  base::PathService::Get(base::DIR_SRC_TEST_DATA_ROOT, &test_data_dir);
+  EthTxStateManager tx_state_manager(GetPrefs(), test_data_dir);
   EthNonceTracker nonce_tracker(&tx_state_manager, &service);
 
   SetTransactionCount(2);

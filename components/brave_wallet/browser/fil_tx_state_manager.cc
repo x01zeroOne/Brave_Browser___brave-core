@@ -18,16 +18,23 @@
 
 namespace brave_wallet {
 
-FilTxStateManager::FilTxStateManager(PrefService* prefs)
-    : TxStateManager(prefs) {}
+FilTxStateManager::FilTxStateManager(PrefService* prefs,
+                                     const base::FilePath& context_path)
+    : TxStateManager(prefs, context_path) {}
 
 FilTxStateManager::~FilTxStateManager() = default;
 
-std::unique_ptr<FilTxMeta> FilTxStateManager::GetFilTx(
-    const std::string& chain_id,
-    const std::string& id) {
-  return std::unique_ptr<FilTxMeta>{
-      static_cast<FilTxMeta*>(TxStateManager::GetTx(chain_id, id).release())};
+void FilTxStateManager::GetFilTx(const std::string& chain_id,
+                                 const std::string& id,
+                                 GetFilTxCallback callback) {
+  TxStateManager::GetTx(
+      chain_id, id,
+      base::BindOnce(
+          [](GetFilTxCallback callback, std::unique_ptr<TxMeta> meta) {
+            std::move(callback).Run(std::unique_ptr<FilTxMeta>{
+                static_cast<FilTxMeta*>(meta.release())});
+          },
+          std::move(callback)));
 }
 
 std::string FilTxStateManager::GetTxPrefPathPrefix(

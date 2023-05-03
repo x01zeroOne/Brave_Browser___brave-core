@@ -13,6 +13,7 @@
 #include "base/gtest_prod_util.h"
 #include "base/memory/weak_ptr.h"
 #include "brave/components/brave_wallet/browser/solana_block_tracker.h"
+#include "brave/components/brave_wallet/browser/solana_tx_state_manager.h"
 #include "brave/components/brave_wallet/browser/tx_manager.h"
 #include "third_party/abseil-cpp/absl/types/optional.h"
 
@@ -24,7 +25,6 @@ class TxService;
 class JsonRpcService;
 class KeyringService;
 class SolanaTxMeta;
-class SolanaTxStateManager;
 struct SolanaSignatureStatus;
 struct SolanaAccountInfo;
 
@@ -33,7 +33,8 @@ class SolanaTxManager : public TxManager, public SolanaBlockTracker::Observer {
   SolanaTxManager(TxService* tx_service,
                   JsonRpcService* json_rpc_service,
                   KeyringService* keyring_service,
-                  PrefService* prefs);
+                  PrefService* prefs,
+                  const base::FilePath& context_path);
   ~SolanaTxManager() override;
 
   using ProcessSolanaHardwareSignatureCallback =
@@ -98,12 +99,13 @@ class SolanaTxManager : public TxManager, public SolanaBlockTracker::Observer {
       const std::vector<uint8_t>& signature_bytes,
       ProcessSolanaHardwareSignatureCallback callback);
 
-  std::unique_ptr<SolanaTxMeta> GetTxForTesting(const std::string& chain_id,
-                                                const std::string& tx_meta_id);
+  void GetTxForTesting(const std::string& chain_id,
+                       const std::string& tx_meta_id,
+                       SolanaTxStateManager::GetSolanaTxCallback callback);
 
  private:
+  friend class SolanaTxManagerUnitTest;
   FRIEND_TEST_ALL_PREFIXES(SolanaTxManagerUnitTest, AddAndApproveTransaction);
-  FRIEND_TEST_ALL_PREFIXES(SolanaTxManagerUnitTest, DropTxWithInvalidBlockhash);
   FRIEND_TEST_ALL_PREFIXES(SolanaTxManagerUnitTest,
                            GetTransactionMessageToSign);
   FRIEND_TEST_ALL_PREFIXES(SolanaTxManagerUnitTest,
@@ -114,11 +116,17 @@ class SolanaTxManager : public TxManager, public SolanaBlockTracker::Observer {
   // TxManager
   void UpdatePendingTransactions(
       const absl::optional<std::string>& chain_id) override;
+  void ContinueUpdatePendingTransactions(
+      std::vector<std::unique_ptr<TxMeta>> pending_transactions);
 
   void OnGetBlockHeight(const std::string& chain_id,
                         uint64_t block_height,
                         mojom::SolanaProviderError error,
                         const std::string& error_message);
+  void ContinueOnGetBlockHeight(
+      const std::string& chain_id,
+      uint64_t block_height,
+      std::vector<std::unique_ptr<TxMeta>> pending_transactions);
 
   void OnGetLatestBlockhash(std::unique_ptr<SolanaTxMeta> meta,
                             ApproveTransactionCallback callback,
@@ -168,6 +176,23 @@ class SolanaTxManager : public TxManager, public SolanaBlockTracker::Observer {
                           uint64_t tx_fee,
                           mojom::SolanaProviderError error,
                           const std::string& error_message);
+  void ContinueApproveTransaction(ApproveTransactionCallback callback,
+                                  std::unique_ptr<SolanaTxMeta> meta);
+  void ContinueOnSendSolanaTransaction(ApproveTransactionCallback callback,
+                                       const std::string& tx_hash,
+                                       mojom::SolanaProviderError error,
+                                       const std::string& error_message,
+                                       std::unique_ptr<TxMeta> meta);
+  void ContinueGetTransactionMessageToSign(
+      const std::string& tx_meta_id,
+      GetTransactionMessageToSignCallback callback,
+      std::unique_ptr<SolanaTxMeta> meta);
+  void ContinueGetEstimatedTxFee(GetEstimatedTxFeeCallback callback,
+                                 std::unique_ptr<SolanaTxMeta> meta);
+  void ContinueProcessSolanaHardwareSignature(
+      const std::vector<uint8_t>& signature_bytes,
+      ProcessSolanaHardwareSignatureCallback callback,
+      std::unique_ptr<SolanaTxMeta> meta);
 
   // SolanaBlockTracker::Observer
   void OnLatestBlockhashUpdated(const std::string& chain_id,

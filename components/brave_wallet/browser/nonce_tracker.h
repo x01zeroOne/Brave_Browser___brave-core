@@ -12,6 +12,7 @@
 
 #include "base/functional/callback.h"
 #include "base/memory/raw_ptr.h"
+#include "base/memory/weak_ptr.h"
 #include "brave/components/brave_wallet/common/brave_wallet_types.h"
 
 namespace brave_wallet {
@@ -40,14 +41,30 @@ class NonceTracker {
       const std::vector<std::unique_ptr<TxMeta>>& metas) = 0;
 
  protected:
-  uint256_t GetFinalNonce(const std::string& chain_id,
-                          const std::string& from,
-                          uint256_t result);
+  using GetFinalNonceCallback = base::OnceCallback<void(uint256_t)>;
+  void GetFinalNonce(const std::string& chain_id,
+                     const std::string& from,
+                     uint256_t network_nonce,
+                     GetFinalNonceCallback callback);
 
   raw_ptr<JsonRpcService> json_rpc_service_ = nullptr;
 
  private:
+  void ContineGetFinalNonceConfirmed(
+      const std::string& chain_id,
+      const std::string& from,
+      uint256_t network_nonce,
+      GetFinalNonceCallback callback,
+      std::vector<std::unique_ptr<TxMeta>> confirmed_txs);
+
+  void ContineGetFinalNoncePending(
+      uint256_t highest_confirmed,
+      uint256_t network_nonce,
+      GetFinalNonceCallback callback,
+      std::vector<std::unique_ptr<TxMeta>> pending_txs);
+
   raw_ptr<TxStateManager> tx_state_manager_ = nullptr;
+  base::WeakPtrFactory<NonceTracker> weak_factory_;
 };
 
 }  // namespace brave_wallet

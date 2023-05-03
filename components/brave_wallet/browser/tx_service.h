@@ -21,6 +21,10 @@
 
 class PrefService;
 
+namespace base {
+class FilePath;
+}  // namespace base
+
 namespace brave_wallet {
 
 class JsonRpcService;
@@ -38,7 +42,8 @@ class TxService : public KeyedService,
  public:
   TxService(JsonRpcService* json_rpc_service,
             KeyringService* keyring_service,
-            PrefService* prefs);
+            PrefService* prefs,
+            const base::FilePath& context_path);
   ~TxService() override;
   TxService(const TxService&) = delete;
   TxService operator=(const TxService&) = delete;

@@ -15,8 +15,9 @@
 
 namespace brave_wallet {
 
-SolanaTxStateManager::SolanaTxStateManager(PrefService* prefs)
-    : TxStateManager(prefs) {}
+SolanaTxStateManager::SolanaTxStateManager(PrefService* prefs,
+                                           const base::FilePath& context_path)
+    : TxStateManager(prefs, context_path) {}
 
 SolanaTxStateManager::~SolanaTxStateManager() = default;
 
@@ -73,11 +74,17 @@ std::string SolanaTxStateManager::GetTxPrefPathPrefix(
   return kSolanaPrefKey;
 }
 
-std::unique_ptr<SolanaTxMeta> SolanaTxStateManager::GetSolanaTx(
-    const std::string& chain_id,
-    const std::string& id) {
-  return std::unique_ptr<SolanaTxMeta>{static_cast<SolanaTxMeta*>(
-      TxStateManager::GetTx(chain_id, id).release())};
+void SolanaTxStateManager::GetSolanaTx(const std::string& chain_id,
+                                       const std::string& id,
+                                       GetSolanaTxCallback callback) {
+  TxStateManager::GetTx(
+      chain_id, id,
+      base::BindOnce(
+          [](GetSolanaTxCallback callback, std::unique_ptr<TxMeta> meta) {
+            std::move(callback).Run(std::unique_ptr<SolanaTxMeta>{
+                static_cast<SolanaTxMeta*>(meta.release())});
+          },
+          std::move(callback)));
 }
 
 }  // namespace brave_wallet

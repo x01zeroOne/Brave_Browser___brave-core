@@ -8,6 +8,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "brave/components/brave_wallet/browser/fil_block_tracker.h"
 #include "brave/components/brave_wallet/browser/fil_tx_state_manager.h"
@@ -31,7 +32,8 @@ class FilTxManager : public TxManager, public FilBlockTracker::Observer {
   FilTxManager(TxService* tx_service,
                JsonRpcService* json_rpc_service,
                KeyringService* keyring_service,
-               PrefService* prefs);
+               PrefService* prefs,
+               const base::FilePath& context_path);
   ~FilTxManager() override;
   FilTxManager(const FilTxManager&) = delete;
   FilTxManager operator=(const FilTxManager&) = delete;
@@ -79,8 +81,9 @@ class FilTxManager : public TxManager, public FilBlockTracker::Observer {
                        const absl::optional<std::string>& group_id,
                        std::unique_ptr<FilTransaction> tx,
                        AddUnapprovedTransactionCallback callback);
-  std::unique_ptr<FilTxMeta> GetTxForTesting(const std::string& chain_id,
-                                             const std::string& tx_meta_id);
+  void GetTxForTesting(const std::string& chain_id,
+                       const std::string& tx_meta_id,
+                       FilTxStateManager::GetFilTxCallback callback);
 
  private:
   friend class FilTxManagerUnitTest;
@@ -101,6 +104,12 @@ class FilTxManager : public TxManager, public FilBlockTracker::Observer {
                                  const std::string& tx_hash,
                                  mojom::FilecoinProviderError error,
                                  const std::string& error_message);
+  void ContinueOnSendFilecoinTransaction(ApproveTransactionCallback callback,
+                                         const std::string& tx_cid,
+                                         mojom::FilecoinProviderError error,
+                                         const std::string& error_message,
+                                         std::unique_ptr<TxMeta> meta);
+
   void ContinueAddUnapprovedTransaction(
       const std::string& chain_id,
       const std::string& from,
@@ -114,11 +123,23 @@ class FilTxManager : public TxManager, public FilBlockTracker::Observer {
       mojom::FilecoinProviderError error,
       const std::string& error_message);
 
+  void ContinueApproveTransaction(ApproveTransactionCallback callback,
+                                  std::unique_ptr<FilTxMeta> meta);
+  void ContinueGetTransactionMessageToSign(
+      const std::string& tx_meta_id,
+      GetTransactionMessageToSignCallback callback,
+      std::unique_ptr<FilTxMeta> meta);
+
   void OnGetFilStateSearchMsgLimited(const std::string& chain_id,
                                      const std::string& tx_meta_id,
                                      int64_t exit_code,
                                      mojom::FilecoinProviderError error,
                                      const std::string& error_message);
+  void ContinueProcessFilHardwareSignature(
+      const std::string& signed_tx,
+      ProcessFilHardwareSignatureCallback callback,
+      std::unique_ptr<FilTxMeta> meta);
+
   FilTxStateManager* GetFilTxStateManager();
   FilBlockTracker* GetFilBlockTracker();
 
@@ -129,6 +150,8 @@ class FilTxManager : public TxManager, public FilBlockTracker::Observer {
   // TxManager
   void UpdatePendingTransactions(
       const absl::optional<std::string>& chain_id) override;
+  void ContinueUpdatePendingTransactions(
+      std::vector<std::unique_ptr<TxMeta>> pending_transactions);
 
   std::unique_ptr<FilNonceTracker> nonce_tracker_;
   base::WeakPtrFactory<FilTxManager> weak_factory_{this};

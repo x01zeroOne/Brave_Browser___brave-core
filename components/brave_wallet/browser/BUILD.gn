@@ -206,6 +206,7 @@ static_library("browser") {
     "//components/keyed_service/core",
     "//components/prefs",
     "//components/sync_preferences",
+    "//components/value_store",
     "//crypto",
     "//services/data_decoder/public/cpp",
     "//services/network/public/cpp",
@@ -219,6 +220,12 @@ static_library("browser") {
 
   if (enable_ipfs) {
     deps += [ "//brave/components/ipfs" ]
+  }
+
+  if (is_ios) {
+    deps += [ "//ios/web/public/thread" ]
+  } else {
+    deps += [ "//content/public/browser" ]
   }
 
   configs += [ ":sardine_config" ]

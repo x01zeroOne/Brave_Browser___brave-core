@@ -7,6 +7,7 @@
 
 #include <utility>
 
+#include "base/files/file_path.h"
 #include "base/json/values_util.h"
 #include "base/values.h"
 #include "brave/components/brave_wallet/browser/brave_wallet_constants.h"
@@ -16,16 +17,20 @@
 #include "brave/components/brave_wallet/browser/tx_meta.h"
 #include "components/prefs/pref_service.h"
 #include "components/prefs/scoped_user_pref_update.h"
+#include "components/value_store/value_store_factory_impl.h"
+#include "components/value_store/value_store_frontend.h"
+#include "components/value_store/value_store_task_runner.h"
 #include "url/origin.h"
 
+#if BUILDFLAG(IS_IOS)
+#include "ios/web/public/thread/web_task_traits.h"
+#include "ios/web/public/thread/web_thread.h"
+#else
+#include "content/public/browser/browser_task_traits.h"
+#include "content/public/browser/browser_thread.h"
+#endif  // BUILDFLAG(IS_IOS)
+
 namespace brave_wallet {
-
-namespace {
-
-constexpr size_t kMaxConfirmedTxNum = 10;
-constexpr size_t kMaxRejectedTxNum = 10;
-
-}  // namespace
 
 // static
 bool TxStateManager::ValueToTxMeta(const base::Value::Dict& value,
@@ -107,71 +112,144 @@ bool TxStateManager::ValueToTxMeta(const base::Value::Dict& value,
   return true;
 }
 
-TxStateManager::TxStateManager(PrefService* prefs)
-    : prefs_(prefs), weak_factory_(this) {}
+TxStateManager::TxStateManager(PrefService* prefs,
+                               const base::FilePath& context_path)
+    : prefs_(prefs), weak_factory_(this) {
+  store_factory_ = base::MakeRefCounted<value_store::ValueStoreFactoryImpl>(
+      context_path.AppendASCII(kWalletBaseDirectory));
+  store_ = std::make_unique<value_store::ValueStoreFrontend>(
+      store_factory_, base::FilePath(FILE_PATH_LITERAL(kWalletStorage)),
+      kWalletStorage,
+#if BUILDFLAG(IS_IOS)
+      web::GetUIThreadTaskRunner({}),
+#else
+      content::GetUIThreadTaskRunner({}),
+#endif
+      value_store::GetValueStoreTaskRunner());
+}
 
 TxStateManager::~TxStateManager() = default;
 
 void TxStateManager::AddOrUpdateTx(const TxMeta& meta) {
-  ScopedDictPrefUpdate update(prefs_, kBraveWalletTransactions);
-  base::Value::Dict& dict = update.Get();
-  const std::string path =
-      base::JoinString({GetTxPrefPathPrefix(meta.chain_id()), meta.id()}, ".");
+  store_->Get(kBraveWalletTransactions,
+              base::BindOnce(&TxStateManager::ContinueAddOrUpdateTx,
+                             weak_factory_.GetWeakPtr(), meta.ToValue()));
+}
+
+void TxStateManager::ContinueAddOrUpdateTx(base::Value::Dict meta_dict,
+                                           absl::optional<base::Value> txs) {
+  base::Value::Dict dict;
+  if (txs) {
+    dict = std::move(txs->GetDict());
+  }
+  auto meta = ValueToTxMeta(std::move(meta_dict));
+  CHECK(meta);
+  const std::string path = base::JoinString(
+      {GetTxPrefPathPrefix(meta->chain_id()), meta->id()}, ".");
 
   bool is_add = dict.FindByDottedPath(path) == nullptr;
-  dict.SetByDottedPath(path, meta.ToValue());
+  dict.SetByDottedPath(path, meta->ToValue());
+  store_->Set(kBraveWalletTransactions, base::Value(std::move(dict)));
   if (!is_add) {
     for (auto& observer : observers_) {
-      observer.OnTransactionStatusChanged(meta.ToTransactionInfo());
+      observer.OnTransactionStatusChanged(meta->ToTransactionInfo());
     }
     return;
   }
 
   for (auto& observer : observers_) {
-    observer.OnNewUnapprovedTx(meta.ToTransactionInfo());
+    observer.OnNewUnapprovedTx(meta->ToTransactionInfo());
   }
-
-  // We only keep most recent 10 confirmed and rejected tx metas per network
-  RetireTxByStatus(meta.chain_id(), mojom::TransactionStatus::Confirmed,
-                   kMaxConfirmedTxNum);
-  RetireTxByStatus(meta.chain_id(), mojom::TransactionStatus::Rejected,
-                   kMaxRejectedTxNum);
 }
 
-std::unique_ptr<TxMeta> TxStateManager::GetTx(const std::string& chain_id,
-                                              const std::string& id) {
-  const auto& dict = prefs_->GetDict(kBraveWalletTransactions);
+void TxStateManager::GetTx(const std::string& chain_id,
+                           const std::string& id,
+                           GetTxCallback callback) {
+  store_->Get(
+      kBraveWalletTransactions,
+      base::BindOnce(&TxStateManager::ContinueGetTx, weak_factory_.GetWeakPtr(),
+                     chain_id, id, std::move(callback)));
+}
+
+void TxStateManager::ContinueGetTx(const std::string& chain_id,
+                                   const std::string& id,
+                                   GetTxCallback callback,
+                                   absl::optional<base::Value> txs) {
+  if (!txs) {
+    std::move(callback).Run(nullptr);
+    return;
+  }
+  const auto& dict = txs->GetDict();
   const base::Value::Dict* value = dict.FindDictByDottedPath(
       base::JoinString({GetTxPrefPathPrefix(chain_id), id}, "."));
   if (!value) {
-    return nullptr;
+    std::move(callback).Run(nullptr);
+    return;
   }
 
-  return ValueToTxMeta(*value);
+  std::move(callback).Run(ValueToTxMeta(*value));
 }
 
 void TxStateManager::DeleteTx(const std::string& chain_id,
                               const std::string& id) {
-  ScopedDictPrefUpdate update(prefs_, kBraveWalletTransactions);
-  update->RemoveByDottedPath(
+  store_->Get(kBraveWalletTransactions,
+              base::BindOnce(&TxStateManager::ContinueDeleteTx,
+                             weak_factory_.GetWeakPtr(), chain_id, id));
+}
+
+void TxStateManager::ContinueDeleteTx(const std::string& chain_id,
+                                      const std::string& id,
+                                      absl::optional<base::Value> txs) {
+  if (!txs) {
+    return;
+  }
+  auto& dict = txs->GetDict();
+  dict.RemoveByDottedPath(
       base::JoinString({GetTxPrefPathPrefix(chain_id), id}, "."));
+  store_->Set(kBraveWalletTransactions, base::Value(std::move(dict)));
 }
 
 void TxStateManager::WipeTxs() {
-  ScopedDictPrefUpdate update(prefs_, kBraveWalletTransactions);
-  update->RemoveByDottedPath(GetTxPrefPathPrefix(absl::nullopt));
+  store_->Remove(kBraveWalletTransactions);
 }
 
-std::vector<std::unique_ptr<TxMeta>> TxStateManager::GetTransactionsByStatus(
+void TxStateManager::GetTransactionsByStatus(
     const absl::optional<std::string>& chain_id,
     const absl::optional<mojom::TransactionStatus>& status,
-    const absl::optional<std::string>& from) {
+    const absl::optional<std::string>& from,
+    GetTxsByStatusCallback callback) {
+  store_->Get(kBraveWalletTransactions,
+              base::BindOnce(&TxStateManager::ContinueGetTransactionsByStatus,
+                             weak_factory_.GetWeakPtr(), chain_id, status, from,
+                             std::move(callback)));
+}
+
+void TxStateManager::ContinueGetTransactionsByStatus(
+    const absl::optional<std::string>& chain_id,
+    const absl::optional<mojom::TransactionStatus>& status,
+    const absl::optional<std::string>& from,
+    GetTxsByStatusCallback callback,
+    absl::optional<base::Value> txs) {
   std::vector<std::unique_ptr<TxMeta>> result;
-  const auto& dict = prefs_->GetDict(kBraveWalletTransactions);
+  if (!txs) {
+    std::move(callback).Run(std::move(result));
+    return;
+  }
+  const auto& dict = txs->GetDict();
+  GetTransactionsByStatusInternal(chain_id, status, from, dict, result);
+  std::move(callback).Run(std::move(result));
+}
+
+void TxStateManager::GetTransactionsByStatusInternal(
+    const absl::optional<std::string>& chain_id,
+    const absl::optional<mojom::TransactionStatus>& status,
+    const absl::optional<std::string>& from,
+    const base::Value::Dict& dict,
+    std::vector<std::unique_ptr<TxMeta>>& result) {
   const base::Value::Dict* network_dict =
       dict.FindDictByDottedPath(GetTxPrefPathPrefix(chain_id));
   if (!network_dict) {
-    return result;
+    return;
   }
 
   for (const auto it : *network_dict) {
@@ -191,39 +269,9 @@ std::vector<std::unique_ptr<TxMeta>> TxStateManager::GetTransactionsByStatus(
       if (!chain_id_from_pref) {
         continue;
       }
-      auto metas = GetTransactionsByStatus(chain_id_from_pref, status, from);
-      result.insert(result.end(), std::make_move_iterator(metas.begin()),
-                    std::make_move_iterator(metas.end()));
+      GetTransactionsByStatusInternal(chain_id_from_pref, status, from, dict,
+                                      result);
     }
-  }
-  return result;
-}
-
-void TxStateManager::RetireTxByStatus(const std::string& chain_id,
-                                      mojom::TransactionStatus status,
-                                      size_t max_num) {
-  if (status != mojom::TransactionStatus::Confirmed &&
-      status != mojom::TransactionStatus::Rejected) {
-    return;
-  }
-  auto tx_metas = GetTransactionsByStatus(chain_id, status, absl::nullopt);
-  if (tx_metas.size() > max_num) {
-    TxMeta* oldest_meta = nullptr;
-    for (const auto& tx_meta : tx_metas) {
-      if (!oldest_meta) {
-        oldest_meta = tx_meta.get();
-      } else {
-        if (tx_meta->status() == mojom::TransactionStatus::Confirmed &&
-            tx_meta->confirmed_time() < oldest_meta->confirmed_time()) {
-          oldest_meta = tx_meta.get();
-        } else if (tx_meta->status() == mojom::TransactionStatus::Rejected &&
-                   tx_meta->created_time() < oldest_meta->created_time()) {
-          oldest_meta = tx_meta.get();
-        }
-      }
-    }
-    DCHECK(oldest_meta);
-    DeleteTx(chain_id, oldest_meta->id());
   }
 }
 
