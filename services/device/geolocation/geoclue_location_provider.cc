@@ -9,6 +9,7 @@
 #include <string>
 #include <utility>
 
+#include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/functional/callback_forward.h"
 #include "base/functional/callback_helpers.h"
@@ -17,6 +18,7 @@
 #include "base/time/time.h"
 #include "components/dbus/thread_linux/dbus_thread_linux.h"
 #include "dbus/property.h"
+#include "services/device/public/cpp/device_features.h"
 #include "services/device/public/cpp/geolocation/geolocation_manager.h"
 #include "services/device/public/cpp/geolocation/geoposition.h"
 
@@ -38,12 +40,12 @@ mojom::Geoposition GetErrorPosition() {
   return response;
 }
 
-}  // namespace
+} // namespace
 
 struct GeoClueProperties : public dbus::PropertySet {
   dbus::Property<std::string> desktop_id;
 
-  explicit GeoClueProperties(dbus::ObjectProxy* proxy)
+  explicit GeoClueProperties(dbus::ObjectProxy *proxy)
       : dbus::PropertySet(proxy, kClientInterfaceName, base::NullCallback()) {
     RegisterProperty("DesktopId", &desktop_id);
   }
@@ -59,7 +61,7 @@ struct GeoClueLocationProperties : public dbus::PropertySet {
   dbus::Property<double> speed;
   dbus::Property<double> heading;
 
-  explicit GeoClueLocationProperties(dbus::ObjectProxy* proxy)
+  explicit GeoClueLocationProperties(dbus::ObjectProxy *proxy)
       : dbus::PropertySet(proxy, kLocationInterfaceName, base::NullCallback()) {
     RegisterProperty("Latitude", &latitude);
     RegisterProperty("Longitude", &longitude);
@@ -79,7 +81,7 @@ struct GeoClueLocationProperties : public dbus::PropertySet {
   }
 
   // dbus::PropertySet:
-  void OnGetAll(dbus::Response* response) override {
+  void OnGetAll(dbus::Response *response) override {
     dbus::PropertySet::OnGetAll(response);
 
     if (on_got_all_) {
@@ -87,7 +89,7 @@ struct GeoClueLocationProperties : public dbus::PropertySet {
     }
   }
 
- private:
+private:
   base::OnceCallback<void()> on_got_all_;
 };
 
@@ -109,7 +111,7 @@ GeoClueLocationProvider::~GeoClueLocationProvider() {
 }
 
 void GeoClueLocationProvider::SetUpdateCallback(
-    const LocationProviderUpdateCallback& callback) {
+    const LocationProviderUpdateCallback &callback) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   position_update_callback_ = callback;
@@ -123,7 +125,7 @@ void GeoClueLocationProvider::StartProvider(bool high_accuracy) {
   }
   client_state_ = kInitializing;
 
-  dbus::ObjectProxy* proxy =
+  dbus::ObjectProxy *proxy =
       bus_->GetObjectProxy(kServiceName, dbus::ObjectPath(kManagerObjectPath));
 
   dbus::MethodCall call(kManagerInterfaceName, "GetClient");
@@ -158,7 +160,7 @@ void GeoClueLocationProvider::StopProvider() {
   gclue_client_.reset();
 }
 
-const mojom::Geoposition& GeoClueLocationProvider::GetPosition() {
+const mojom::Geoposition &GeoClueLocationProvider::GetPosition() {
   return last_position_;
 }
 
@@ -169,7 +171,7 @@ void GeoClueLocationProvider::OnPermissionGranted() {
   StartClient();
 }
 
-void GeoClueLocationProvider::SetPosition(const mojom::Geoposition& position) {
+void GeoClueLocationProvider::SetPosition(const mojom::Geoposition &position) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   last_position_ = position;
@@ -185,7 +187,7 @@ void GeoClueLocationProvider::SetPosition(const mojom::Geoposition& position) {
   position_update_callback_.Run(this, last_position_);
 }
 
-void GeoClueLocationProvider::OnGetClientCompleted(dbus::Response* response) {
+void GeoClueLocationProvider::OnGetClientCompleted(dbus::Response *response) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   if (!response) {
@@ -207,7 +209,7 @@ void GeoClueLocationProvider::OnGetClientCompleted(dbus::Response* response) {
 void GeoClueLocationProvider::SetDesktopId() {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
-  auto* raw_ptr = new GeoClueProperties(gclue_client_.get());
+  auto *raw_ptr = new GeoClueProperties(gclue_client_.get());
   std::unique_ptr<dbus::PropertySet> properties(raw_ptr);
   raw_ptr->desktop_id.Set(
       kBraveDesktopId,
@@ -216,8 +218,7 @@ void GeoClueLocationProvider::SetDesktopId() {
 }
 
 void GeoClueLocationProvider::OnSetDesktopId(
-    std::unique_ptr<dbus::PropertySet> property_set,
-    bool success) {
+    std::unique_ptr<dbus::PropertySet> property_set, bool success) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   if (!success) {
@@ -237,7 +238,7 @@ void GeoClueLocationProvider::ConnectSignal() {
       kClientInterfaceName, "LocationUpdated",
       base::BindRepeating(
           [](base::WeakPtr<GeoClueLocationProvider> provider,
-             dbus::Signal* signal) {
+             dbus::Signal *signal) {
             dbus::MessageReader reader(signal);
             dbus::ObjectPath old_location;
             dbus::ObjectPath new_location;
@@ -259,8 +260,7 @@ void GeoClueLocationProvider::ConnectSignal() {
 }
 
 void GeoClueLocationProvider::OnSignalConnected(
-    const std::string& interface_name,
-    const std::string& signal_name,
+    const std::string &interface_name, const std::string &signal_name,
     bool success) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
@@ -292,14 +292,14 @@ void GeoClueLocationProvider::StartClient() {
                      weak_ptr_factory_.GetWeakPtr()));
 }
 
-void GeoClueLocationProvider::OnClientStarted(dbus::Response* response) {
+void GeoClueLocationProvider::OnClientStarted(dbus::Response *response) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   client_state_ = kStarted;
 }
 
 void GeoClueLocationProvider::ReadGeoClueLocation(
-    const dbus::ObjectPath& location_path) {
+    const dbus::ObjectPath &location_path) {
   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
 
   auto location_properties = std::make_unique<GeoClueLocationProperties>(
@@ -327,8 +327,13 @@ void GeoClueLocationProvider::OnReadGeoClueLocation(
 
 std::unique_ptr<LocationProvider> NewSystemLocationProvider(
     scoped_refptr<base::SingleThreadTaskRunner> main_task_runner,
-    GeolocationManager* geolocation_manager) {
+    GeolocationManager *geolocation_manager) {
+  // TODO: Check whether GeoClue exists.
+  if (!base::FeatureList::IsEnabled(features::kLinuxGeoClueLocationBackend)) {
+    return nullptr;
+  }
+
   return std::make_unique<GeoClueLocationProvider>();
 }
 
-}  // namespace device
+} // namespace device
