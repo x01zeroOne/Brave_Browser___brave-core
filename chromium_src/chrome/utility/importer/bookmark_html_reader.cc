@@ -16,8 +16,4 @@ bool ReencodeFavicon(const unsigned char* src_data,
 }  // namespace importer
 #endif
 
-#define BRAVE_IMPORT_BOOKMARKS_FILE_FAVICONS favicons = nullptr;
-
 #include "src/chrome/utility/importer/bookmark_html_reader.cc"
-
-#undef BRAVE_IMPORT_BOOKMARKS_FILE_FAVICONS
