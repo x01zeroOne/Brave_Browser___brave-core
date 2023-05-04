@@ -13,11 +13,6 @@ public class BraveBookmarkManagerMediatorClassAdapter extends BraveClassVisitor 
     static String sBraveBookmarkManagerMediatorClassName =
             "org/chromium/chrome/browser/bookmarks/BraveBookmarkManagerMediator";
 
-    /*    static String sBookmarkToolbarPropertiesClassName =
-                "org/chromium/chrome/browser/bookmarks/BookmarkToolbarProperties";
-        static String sBraveBookmarkToolbarPropertiesClassName =
-                "org/chromium/chrome/browser/bookmarks/BraveBookmarkToolbarProperties";*/
-
     public BraveBookmarkManagerMediatorClassAdapter(ClassVisitor visitor) {
         super(visitor);
 
@@ -28,8 +23,5 @@ public class BraveBookmarkManagerMediatorClassAdapter extends BraveClassVisitor 
         makeProtectedField(sBookmarkManagerMediatorClassName, "mBookmarkModel");
         deleteField(sBraveBookmarkManagerMediatorClassName, "mContext");
         makeProtectedField(sBookmarkManagerMediatorClassName, "mContext");
-
-        // redirectConstructor(sBookmarkToolbarPropertiesClassName,
-        // sBraveBookmarkToolbarPropertiesClassName);
     }
 }

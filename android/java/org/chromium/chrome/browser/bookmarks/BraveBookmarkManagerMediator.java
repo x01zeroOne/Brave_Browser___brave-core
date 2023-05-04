@@ -171,17 +171,29 @@ class BraveBookmarkManagerMediator
     }
 
     private void doExportBookmarks() {
-        File downloadDir =
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-        int num = 1;
-        String exportFileName = "bookmarks.html";
-        File file = new File(downloadDir, exportFileName);
-        while (file.exists()) {
-            exportFileName = "bookmarks (" + (num++) + ").html";
-            file = new File(downloadDir, exportFileName);
-        }
-        if (mBookmarkModel instanceof BraveBookmarkModel) {
-            ((BraveBookmarkModel) mBookmarkModel).exportBookmarks(mWindowAndroid, file.getPath());
-        }
+        PostTask.postTask(TaskTraits.BEST_EFFORT_MAY_BLOCK, () -> {
+            File downloadDir =
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            int num = 1;
+            String exportFileName = "bookmarks.html";
+            File file = new File(downloadDir, exportFileName);
+            while (file.exists()) {
+                exportFileName = "bookmarks (" + (num++) + ").html";
+                file = new File(downloadDir, exportFileName);
+            }
+            doExportBookmarksOnUI(file);
+        });
+    }
+
+    private void doExportBookmarksOnUI(File file) {
+        ((AppCompatActivity) mWindowAndroid.getContext().get()).runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (mBookmarkModel instanceof BraveBookmarkModel) {
+                    ((BraveBookmarkModel) mBookmarkModel)
+                            .exportBookmarks(mWindowAndroid, file.getPath());
+                }
+            }
+        });
     }
 }
