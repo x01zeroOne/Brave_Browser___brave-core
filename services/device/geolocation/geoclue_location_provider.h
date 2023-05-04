@@ -54,6 +54,7 @@ class GeoClueLocationProvider : public LocationProvider {
 
   // Stores whether or not permission has been granted.
   bool permission_granted_ = false;
+  bool high_accuracy_requested_ = false;
 
   void SetPosition(const mojom::Geoposition& position);
 
@@ -62,8 +63,8 @@ class GeoClueLocationProvider : public LocationProvider {
   // for location changes:
   // 1. Get the current GeoClue2.Manager
   // 2. Call Manager.GetClient(), which returns a client
-  // 3. Set the DesktopId for ourselves. This is basically just an identifier
-  // for the current app.
+  // 3. SetClientProperties - we need to set an accuracy, and an identifier for
+  // ourselves.
   // 4. Connect to the `LocationUpdated` signal, which will fire when we get a
   // location.
   // 5. Finally, we can call GeoClue2.Client.Start(), which will let us access
@@ -80,9 +81,9 @@ class GeoClueLocationProvider : public LocationProvider {
   void OnGetClientCompleted(dbus::Response* response);
 
   // Step 3
-  void SetDesktopId();
-  void OnSetDesktopId(std::unique_ptr<dbus::PropertySet> property_set,
-                      bool success);
+  void SetClientProperties();
+  void OnSetClientProperties(std::unique_ptr<dbus::PropertySet> property_set,
+                             std::vector<bool> success);
 
   // Step 4
   void ConnectSignal();

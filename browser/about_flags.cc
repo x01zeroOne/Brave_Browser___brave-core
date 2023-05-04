@@ -38,8 +38,8 @@
 #include "components/flags_ui/flags_state.h"
 #include "components/translate/core/browser/translate_prefs.h"
 #include "net/base/features.h"
-#include "third_party/blink/public/common/features.h"
 #include "services/device/public/cpp/device_features.h"
+#include "third_party/blink/public/common/features.h"
 
 #if !BUILDFLAG(IS_ANDROID)
 #include "brave/components/ai_chat/features.h"
@@ -75,32 +75,32 @@
 #define EXPAND_FEATURE_ENTRIES(...) __VA_ARGS__,
 
 #if BUILDFLAG(ENABLE_BRAVE_VPN)
-#define BRAVE_VPN_FEATURE_ENTRIES                                              \
-  EXPAND_FEATURE_ENTRIES({                                                     \
-      kBraveVPNFeatureInternalName,                                            \
-      "Enable experimental Brave VPN",                                         \
-      "Experimental native VPN support",                                       \
-      kOsMac | kOsWin,                                                         \
-      FEATURE_VALUE_TYPE(brave_vpn::features::kBraveVPN),                      \
+#define BRAVE_VPN_FEATURE_ENTRIES                         \
+  EXPAND_FEATURE_ENTRIES({                                \
+      kBraveVPNFeatureInternalName,                       \
+      "Enable experimental Brave VPN",                    \
+      "Experimental native VPN support",                  \
+      kOsMac | kOsWin,                                    \
+      FEATURE_VALUE_TYPE(brave_vpn::features::kBraveVPN), \
   })
 #if BUILDFLAG(IS_WIN)
-#define BRAVE_VPN_WIREGUARD_FEATURE_ENTRIES                                    \
-  EXPAND_FEATURE_ENTRIES({                                                     \
-      kBraveVPNWireguardFeatureInternalName,                                   \
-      "Enable experimental Wireguard Brave VPN service",                       \
-      "Experimental Wireguard VPN support. Not implemented yet",               \
-      kOsWin,                                                                  \
-      FEATURE_VALUE_TYPE(brave_vpn::features::kBraveVPNUseWireguardService),   \
+#define BRAVE_VPN_WIREGUARD_FEATURE_ENTRIES                                  \
+  EXPAND_FEATURE_ENTRIES({                                                   \
+      kBraveVPNWireguardFeatureInternalName,                                 \
+      "Enable experimental Wireguard Brave VPN service",                     \
+      "Experimental Wireguard VPN support. Not implemented yet",             \
+      kOsWin,                                                                \
+      FEATURE_VALUE_TYPE(brave_vpn::features::kBraveVPNUseWireguardService), \
   })
 
-#define BRAVE_VPN_DNS_FEATURE_ENTRIES                                          \
-  EXPAND_FEATURE_ENTRIES({                                                     \
-      kBraveVPNDnsFeatureInternalName,                                         \
-      "Enable DoH for Brave VPN",                                              \
-      "Override DoH settings with Cloudflare dns if necessary to avoid "       \
-      "leaking requests due to Smart Multi-Home Named Resolution",             \
-      kOsWin,                                                                  \
-      FEATURE_VALUE_TYPE(brave_vpn::features::kBraveVPNDnsProtection),         \
+#define BRAVE_VPN_DNS_FEATURE_ENTRIES                                    \
+  EXPAND_FEATURE_ENTRIES({                                               \
+      kBraveVPNDnsFeatureInternalName,                                   \
+      "Enable DoH for Brave VPN",                                        \
+      "Override DoH settings with Cloudflare dns if necessary to avoid " \
+      "leaking requests due to Smart Multi-Home Named Resolution",       \
+      kOsWin,                                                            \
+      FEATURE_VALUE_TYPE(brave_vpn::features::kBraveVPNDnsProtection),   \
   })
 #else
 #define BRAVE_VPN_DNS_FEATURE_ENTRIES
@@ -112,125 +112,125 @@
 #define BRAVE_VPN_WIREGUARD_FEATURE_ENTRIES
 #endif
 
-#define BRAVE_SKU_SDK_FEATURE_ENTRIES                                          \
-  EXPAND_FEATURE_ENTRIES({                                                     \
-      "skus-sdk",                                                              \
-      "Enable experimental SKU SDK",                                           \
-      "Experimental SKU SDK support",                                          \
-      kOsMac | kOsWin | kOsAndroid,                                            \
-      FEATURE_VALUE_TYPE(skus::features::kSkusFeature),                        \
+#define BRAVE_SKU_SDK_FEATURE_ENTRIES                   \
+  EXPAND_FEATURE_ENTRIES({                              \
+      "skus-sdk",                                       \
+      "Enable experimental SKU SDK",                    \
+      "Experimental SKU SDK support",                   \
+      kOsMac | kOsWin | kOsAndroid,                     \
+      FEATURE_VALUE_TYPE(skus::features::kSkusFeature), \
   })
 
-#define SPEEDREADER_FEATURE_ENTRIES                                            \
-  IF_BUILDFLAG(                                                                \
-      ENABLE_SPEEDREADER,                                                      \
-      EXPAND_FEATURE_ENTRIES({                                                 \
-          "brave-speedreader",                                                 \
-          "Enable SpeedReader",                                                \
-          "Enables faster loading of simplified article-style web pages.",     \
-          kOsDesktop | kOsAndroid,                                             \
-          FEATURE_VALUE_TYPE(speedreader::kSpeedreaderFeature),                \
+#define SPEEDREADER_FEATURE_ENTRIES                                        \
+  IF_BUILDFLAG(                                                            \
+      ENABLE_SPEEDREADER,                                                  \
+      EXPAND_FEATURE_ENTRIES({                                             \
+          "brave-speedreader",                                             \
+          "Enable SpeedReader",                                            \
+          "Enables faster loading of simplified article-style web pages.", \
+          kOsDesktop | kOsAndroid,                                         \
+          FEATURE_VALUE_TYPE(speedreader::kSpeedreaderFeature),            \
       }))
 
-#define BRAVE_MODULE_FILENAME_PATCH                                            \
-  IF_BUILDFLAG(IS_WIN,                                                         \
-               EXPAND_FEATURE_ENTRIES({                                        \
-                   "brave-module-filename-patch",                              \
-                   "Enable Module Filename patch",                             \
-                   "Enables patching of executable's name from brave.exe to "  \
-                   "chrome.exe in sandboxed processes.",                       \
-                   kOsWin,                                                     \
-                   FEATURE_VALUE_TYPE(sandbox::kModuleFileNamePatch),          \
+#define BRAVE_MODULE_FILENAME_PATCH                                           \
+  IF_BUILDFLAG(IS_WIN,                                                        \
+               EXPAND_FEATURE_ENTRIES({                                       \
+                   "brave-module-filename-patch",                             \
+                   "Enable Module Filename patch",                            \
+                   "Enables patching of executable's name from brave.exe to " \
+                   "chrome.exe in sandboxed processes.",                      \
+                   kOsWin,                                                    \
+                   FEATURE_VALUE_TYPE(sandbox::kModuleFileNamePatch),         \
                }))
 
-#define BRAVE_REWARDS_GEMINI_FEATURE_ENTRIES                                   \
-  IF_BUILDFLAG(                                                                \
-      ENABLE_GEMINI_WALLET,                                                    \
-      EXPAND_FEATURE_ENTRIES({                                                 \
-          "brave-rewards-gemini",                                              \
-          "Enable Gemini for Brave Rewards",                                   \
-          "Enables support for Gemini as an external wallet provider for "     \
-          "Brave",                                                             \
-          kOsDesktop,                                                          \
-          FEATURE_VALUE_TYPE(brave_rewards::features::kGeminiFeature),         \
+#define BRAVE_REWARDS_GEMINI_FEATURE_ENTRIES                               \
+  IF_BUILDFLAG(                                                            \
+      ENABLE_GEMINI_WALLET,                                                \
+      EXPAND_FEATURE_ENTRIES({                                             \
+          "brave-rewards-gemini",                                          \
+          "Enable Gemini for Brave Rewards",                               \
+          "Enables support for Gemini as an external wallet provider for " \
+          "Brave",                                                         \
+          kOsDesktop,                                                      \
+          FEATURE_VALUE_TYPE(brave_rewards::features::kGeminiFeature),     \
       }))
 
-#define BRAVE_IPFS_FEATURE_ENTRIES                                             \
-  IF_BUILDFLAG(ENABLE_IPFS,                                                    \
-               EXPAND_FEATURE_ENTRIES({                                        \
-                   "brave-ipfs",                                               \
-                   "Enable IPFS",                                              \
-                   "Enable native support of IPFS.",                           \
-                   kOsDesktop | kOsAndroid,                                    \
-                   FEATURE_VALUE_TYPE(ipfs::features::kIpfsFeature),           \
+#define BRAVE_IPFS_FEATURE_ENTRIES                                   \
+  IF_BUILDFLAG(ENABLE_IPFS,                                          \
+               EXPAND_FEATURE_ENTRIES({                              \
+                   "brave-ipfs",                                     \
+                   "Enable IPFS",                                    \
+                   "Enable native support of IPFS.",                 \
+                   kOsDesktop | kOsAndroid,                          \
+                   FEATURE_VALUE_TYPE(ipfs::features::kIpfsFeature), \
                }))
 
-#define BRAVE_NATIVE_WALLET_FEATURE_ENTRIES                                    \
-  EXPAND_FEATURE_ENTRIES(                                                      \
-      {                                                                        \
-          "enable-nft-pinning",                                                \
-          "Enable NFT pinning",                                                \
-          "Enable NFT pinning for Brave Wallet",                               \
-          kOsDesktop,                                                          \
-          FEATURE_VALUE_TYPE(                                                  \
-              brave_wallet::features::kBraveWalletNftPinningFeature),          \
-      },                                                                       \
-      {                                                                        \
-          "enable-panel-v2",                                                   \
-          "Enable Panel v2",                                                   \
-          "Enable Panel v2 for Brave Wallet",                                  \
-          kOsDesktop,                                                          \
-          FEATURE_VALUE_TYPE(                                                  \
-              brave_wallet::features::kBraveWalletPanelV2Feature),             \
-      },                                                                       \
-      {                                                                        \
-          "native-brave-wallet",                                               \
-          "Enable Brave Wallet",                                               \
-          "Native cryptocurrency wallet support without the use of "           \
-          "extensions",                                                        \
-          kOsDesktop | kOsAndroid,                                             \
-          FEATURE_VALUE_TYPE(                                                  \
-              brave_wallet::features::kNativeBraveWalletFeature),              \
-      },                                                                       \
-      {                                                                        \
-          "brave-wallet-filecoin",                                             \
-          "Enable Brave Wallet Filecoin support",                              \
-          "Filecoin support for native Brave Wallet",                          \
-          kOsDesktop | kOsAndroid,                                             \
-          FEATURE_VALUE_TYPE(                                                  \
-              brave_wallet::features::kBraveWalletFilecoinFeature),            \
-      },                                                                       \
-      {                                                                        \
-          "brave-wallet-solana",                                               \
-          "Enable Brave Wallet Solana support",                                \
-          "Solana support for native Brave Wallet",                            \
-          kOsDesktop | kOsAndroid,                                             \
-          FEATURE_VALUE_TYPE(                                                  \
-              brave_wallet::features::kBraveWalletSolanaFeature),              \
-      },                                                                       \
-      {                                                                        \
-          "brave-wallet-solana-provider",                                      \
-          "Enable Brave Wallet Solana provider support",                       \
-          "Solana provider support for native Brave Wallet",                   \
-          kOsDesktop | kOsAndroid,                                             \
-          FEATURE_VALUE_TYPE(                                                  \
-              brave_wallet::features::kBraveWalletSolanaProviderFeature),      \
-      },                                                                       \
-      {                                                                        \
-          "brave-wallet-sns",                                                  \
-          "Enable Solana Name Service support",                                \
-          "Enable Solana Name Service(.sol) support for Wallet and omnibox "   \
-          "address resolution",                                                \
-          kOsDesktop | kOsAndroid,                                             \
-          FEATURE_VALUE_TYPE(brave_wallet::features::kBraveWalletSnsFeature),  \
-      },                                                                       \
-      {                                                                        \
-          "brave-wallet-dapps-support",                                        \
-          "Enable Brave Wallet Dapps support",                                 \
-          "Brave Wallet Dapps support",                                        \
-          kOsDesktop | kOsAndroid,                                             \
-          FEATURE_VALUE_TYPE(                                                  \
-              brave_wallet::features::kBraveWalletDappsSupportFeature),        \
+#define BRAVE_NATIVE_WALLET_FEATURE_ENTRIES                                   \
+  EXPAND_FEATURE_ENTRIES(                                                     \
+      {                                                                       \
+          "enable-nft-pinning",                                               \
+          "Enable NFT pinning",                                               \
+          "Enable NFT pinning for Brave Wallet",                              \
+          kOsDesktop,                                                         \
+          FEATURE_VALUE_TYPE(                                                 \
+              brave_wallet::features::kBraveWalletNftPinningFeature),         \
+      },                                                                      \
+      {                                                                       \
+          "enable-panel-v2",                                                  \
+          "Enable Panel v2",                                                  \
+          "Enable Panel v2 for Brave Wallet",                                 \
+          kOsDesktop,                                                         \
+          FEATURE_VALUE_TYPE(                                                 \
+              brave_wallet::features::kBraveWalletPanelV2Feature),            \
+      },                                                                      \
+      {                                                                       \
+          "native-brave-wallet",                                              \
+          "Enable Brave Wallet",                                              \
+          "Native cryptocurrency wallet support without the use of "          \
+          "extensions",                                                       \
+          kOsDesktop | kOsAndroid,                                            \
+          FEATURE_VALUE_TYPE(                                                 \
+              brave_wallet::features::kNativeBraveWalletFeature),             \
+      },                                                                      \
+      {                                                                       \
+          "brave-wallet-filecoin",                                            \
+          "Enable Brave Wallet Filecoin support",                             \
+          "Filecoin support for native Brave Wallet",                         \
+          kOsDesktop | kOsAndroid,                                            \
+          FEATURE_VALUE_TYPE(                                                 \
+              brave_wallet::features::kBraveWalletFilecoinFeature),           \
+      },                                                                      \
+      {                                                                       \
+          "brave-wallet-solana",                                              \
+          "Enable Brave Wallet Solana support",                               \
+          "Solana support for native Brave Wallet",                           \
+          kOsDesktop | kOsAndroid,                                            \
+          FEATURE_VALUE_TYPE(                                                 \
+              brave_wallet::features::kBraveWalletSolanaFeature),             \
+      },                                                                      \
+      {                                                                       \
+          "brave-wallet-solana-provider",                                     \
+          "Enable Brave Wallet Solana provider support",                      \
+          "Solana provider support for native Brave Wallet",                  \
+          kOsDesktop | kOsAndroid,                                            \
+          FEATURE_VALUE_TYPE(                                                 \
+              brave_wallet::features::kBraveWalletSolanaProviderFeature),     \
+      },                                                                      \
+      {                                                                       \
+          "brave-wallet-sns",                                                 \
+          "Enable Solana Name Service support",                               \
+          "Enable Solana Name Service(.sol) support for Wallet and omnibox "  \
+          "address resolution",                                               \
+          kOsDesktop | kOsAndroid,                                            \
+          FEATURE_VALUE_TYPE(brave_wallet::features::kBraveWalletSnsFeature), \
+      },                                                                      \
+      {                                                                       \
+          "brave-wallet-dapps-support",                                       \
+          "Enable Brave Wallet Dapps support",                                \
+          "Brave Wallet Dapps support",                                       \
+          kOsDesktop | kOsAndroid,                                            \
+          FEATURE_VALUE_TYPE(                                                 \
+              brave_wallet::features::kBraveWalletDappsSupportFeature),       \
       })
 
 #define BRAVE_NEWS_FEATURE_ENTRIES                                             \
@@ -271,76 +271,76 @@
       FEATURE_VALUE_TYPE(brave_federated::features::kFederatedLearning),       \
   })
 
-#define CRYPTO_WALLETS_FEATURE_ENTRIES                                         \
-  IF_BUILDFLAG(                                                                \
-      ETHEREUM_REMOTE_CLIENT_ENABLED,                                          \
-      EXPAND_FEATURE_ENTRIES({                                                 \
-          "ethereum_remote-client_new-installs",                               \
-          "Enable Crypto Wallets option in settings",                          \
-          "Crypto Wallets extension is deprecated but with this option it "    \
-          "can "                                                               \
-          "still be enabled in settings. If it was previously used, this "     \
-          "flag is "                                                           \
-          "ignored.",                                                          \
-          kOsDesktop,                                                          \
-          FEATURE_VALUE_TYPE(ethereum_remote_client::features::                \
-                                 kCryptoWalletsForNewInstallsFeature),         \
+#define CRYPTO_WALLETS_FEATURE_ENTRIES                                      \
+  IF_BUILDFLAG(                                                             \
+      ETHEREUM_REMOTE_CLIENT_ENABLED,                                       \
+      EXPAND_FEATURE_ENTRIES({                                              \
+          "ethereum_remote-client_new-installs",                            \
+          "Enable Crypto Wallets option in settings",                       \
+          "Crypto Wallets extension is deprecated but with this option it " \
+          "can "                                                            \
+          "still be enabled in settings. If it was previously used, this "  \
+          "flag is "                                                        \
+          "ignored.",                                                       \
+          kOsDesktop,                                                       \
+          FEATURE_VALUE_TYPE(ethereum_remote_client::features::             \
+                                 kCryptoWalletsForNewInstallsFeature),      \
       }))
 
-#define PLAYLIST_FEATURE_ENTRIES                                               \
-  IF_BUILDFLAG(                                                                \
-      ENABLE_PLAYLIST,                                                         \
-      EXPAND_FEATURE_ENTRIES(                                                  \
-          {                                                                    \
-              kPlaylistFeatureInternalName,                                    \
-              "Playlist",                                                      \
-              "Enables Playlist",                                              \
-              kOsMac | kOsWin | kOsLinux | kOsAndroid,                         \
-              FEATURE_VALUE_TYPE(playlist::features::kPlaylist),               \
-          },                                                                   \
-          {                                                                    \
-              kPlaylistFakeUAFeatureInternalName,                              \
-              "PlaylistFakeUA",                                                \
-              "Use fake UA for playlist",                                      \
-              kOsMac | kOsWin | kOsLinux | kOsAndroid,                         \
-              FEATURE_VALUE_TYPE(playlist::features::kPlaylistFakeUA),         \
+#define PLAYLIST_FEATURE_ENTRIES                                       \
+  IF_BUILDFLAG(                                                        \
+      ENABLE_PLAYLIST,                                                 \
+      EXPAND_FEATURE_ENTRIES(                                          \
+          {                                                            \
+              kPlaylistFeatureInternalName,                            \
+              "Playlist",                                              \
+              "Enables Playlist",                                      \
+              kOsMac | kOsWin | kOsLinux | kOsAndroid,                 \
+              FEATURE_VALUE_TYPE(playlist::features::kPlaylist),       \
+          },                                                           \
+          {                                                            \
+              kPlaylistFakeUAFeatureInternalName,                      \
+              "PlaylistFakeUA",                                        \
+              "Use fake UA for playlist",                              \
+              kOsMac | kOsWin | kOsLinux | kOsAndroid,                 \
+              FEATURE_VALUE_TYPE(playlist::features::kPlaylistFakeUA), \
           }))
 
 #if !BUILDFLAG(IS_ANDROID)
-#define BRAVE_COMMANDS_FEATURE_ENTRIES                                         \
-  EXPAND_FEATURE_ENTRIES({                                                     \
-      "brave-commands",                                                        \
-      "Brave Commands",                                                        \
-      "Enable experimental page for viewing and executing commands in Brave",  \
-      kOsWin | kOsMac | kOsLinux,                                              \
-      FEATURE_VALUE_TYPE(commands::features::kBraveCommands),                  \
+#define BRAVE_COMMANDS_FEATURE_ENTRIES                                        \
+  EXPAND_FEATURE_ENTRIES({                                                    \
+      "brave-commands",                                                       \
+      "Brave Commands",                                                       \
+      "Enable experimental page for viewing and executing commands in Brave", \
+      kOsWin | kOsMac | kOsLinux,                                             \
+      FEATURE_VALUE_TYPE(commands::features::kBraveCommands),                 \
   })
 #else
 #define BRAVE_COMMANDS_FEATURE_ENTRIES
 #endif
 
 #if defined(TOOLKIT_VIEWS)
-#define BRAVE_VERTICAL_TABS_FEATURE_ENTRY                                      \
-  EXPAND_FEATURE_ENTRIES({                                                     \
-      "brave-vertical-tabs",                                                   \
-      "Vertical tabs",                                                         \
-      "Move tab strip to be a vertical panel on the side of the window "       \
-      "instead of horizontal at the top of the window.",                       \
-      kOsWin | kOsMac | kOsLinux,                                              \
-      FEATURE_VALUE_TYPE(tabs::features::kBraveVerticalTabs),                  \
+#define BRAVE_VERTICAL_TABS_FEATURE_ENTRY                                \
+  EXPAND_FEATURE_ENTRIES({                                               \
+      "brave-vertical-tabs",                                             \
+      "Vertical tabs",                                                   \
+      "Move tab strip to be a vertical panel on the side of the window " \
+      "instead of horizontal at the top of the window.",                 \
+      kOsWin | kOsMac | kOsLinux,                                        \
+      FEATURE_VALUE_TYPE(tabs::features::kBraveVerticalTabs),            \
   })
 #else
 #define BRAVE_VERTICAL_TABS_FEATURE_ENTRY
 #endif
 
 #if BUILDFLAG(IS_LINUX)
-#define BRAVE_CHANGE_ACTIVE_TAB_ON_SCROLL_EVENT_FEATURE_ENTRIES                \
-  EXPAND_FEATURE_ENTRIES({                                                     \
-      "brave-change-active-tab-on-scroll-event",                               \
-      "Change active tab on scroll event",                                     \
-      "Change the active tab when scroll events occur on tab strip.",          \
-      kOsLinux,                                                                \
-      FEATURE_VALUE_TYPE(tabs::features::kBraveChangeActiveTabOnScrollEvent),  \
+#define BRAVE_CHANGE_ACTIVE_TAB_ON_SCROLL_EVENT_FEATURE_ENTRIES               \
+  EXPAND_FEATURE_ENTRIES({                                                    \
+      "brave-change-active-tab-on-scroll-event",                              \
+      "Change active tab on scroll event",                                    \
+      "Change the active tab when scroll events occur on tab strip.",         \
+      kOsLinux,                                                               \
+      FEATURE_VALUE_TYPE(tabs::features::kBraveChangeActiveTabOnScrollEvent), \
   })
 #else
 #define BRAVE_CHANGE_ACTIVE_TAB_ON_SCROLL_EVENT_FEATURE_ENTRIES
@@ -358,41 +358,41 @@
       FEATURE_VALUE_TYPE(                                                      \
           preferences::features::kBraveBackgroundVideoPlayback),               \
   })
-#define BRAVE_SAFE_BROWSING_ANDROID                                            \
-  EXPAND_FEATURE_ENTRIES({                                                     \
-      "brave-safe-browsing",                                                   \
-      "Safe Browsing",                                                         \
-      "Enables Google Safe Browsing for determining whether a URL has been "   \
-      "marked as a known threat.",                                             \
-      kOsAndroid,                                                              \
-      FEATURE_VALUE_TYPE(safe_browsing::features::kBraveAndroidSafeBrowsing),  \
+#define BRAVE_SAFE_BROWSING_ANDROID                                           \
+  EXPAND_FEATURE_ENTRIES({                                                    \
+      "brave-safe-browsing",                                                  \
+      "Safe Browsing",                                                        \
+      "Enables Google Safe Browsing for determining whether a URL has been "  \
+      "marked as a known threat.",                                            \
+      kOsAndroid,                                                             \
+      FEATURE_VALUE_TYPE(safe_browsing::features::kBraveAndroidSafeBrowsing), \
   })
 #else
 #define BRAVE_BACKGROUND_VIDEO_PLAYBACK_ANDROID
 #define BRAVE_SAFE_BROWSING_ANDROID
-#endif // BUILDFLAG(IS_ANDROID)
+#endif  // BUILDFLAG(IS_ANDROID)
 
 #if !BUILDFLAG(IS_ANDROID)
-#define BRAVE_SHARED_PINNED_TABS                                               \
-  EXPAND_FEATURE_ENTRIES({                                                     \
-      "brave-shared-pinned-tabs",                                              \
-      "Shared pinned tab",                                                     \
-      "Pinned tabs are shared across windows",                                 \
-      kOsWin | kOsMac | kOsLinux,                                              \
-      FEATURE_VALUE_TYPE(tabs::features::kBraveSharedPinnedTabs),              \
+#define BRAVE_SHARED_PINNED_TABS                                  \
+  EXPAND_FEATURE_ENTRIES({                                        \
+      "brave-shared-pinned-tabs",                                 \
+      "Shared pinned tab",                                        \
+      "Pinned tabs are shared across windows",                    \
+      kOsWin | kOsMac | kOsLinux,                                 \
+      FEATURE_VALUE_TYPE(tabs::features::kBraveSharedPinnedTabs), \
   })
 #else
 #define BRAVE_SHARED_PINNED_TABS
 #endif
 
 #if !BUILDFLAG(IS_ANDROID)
-#define BRAVE_AI_CHAT                                                          \
-  EXPAND_FEATURE_ENTRIES({                                                     \
-      "brave-ai-chat",                                                         \
-      "Brave AI Chat",                                                         \
-      "Summarize articles and engage in conversation with AI",                 \
-      kOsWin | kOsMac | kOsLinux,                                              \
-      FEATURE_VALUE_TYPE(ai_chat::features::kAIChat),                          \
+#define BRAVE_AI_CHAT                                          \
+  EXPAND_FEATURE_ENTRIES({                                     \
+      "brave-ai-chat",                                         \
+      "Brave AI Chat",                                         \
+      "Summarize articles and engage in conversation with AI", \
+      kOsWin | kOsMac | kOsLinux,                              \
+      FEATURE_VALUE_TYPE(ai_chat::features::kAIChat),          \
   })
 #else
 #define BRAVE_AI_CHAT
@@ -813,7 +813,7 @@
   BRAVE_CHANGE_ACTIVE_TAB_ON_SCROLL_EVENT_FEATURE_ENTRIES                      \
   BRAVE_SHARED_PINNED_TABS                                                     \
   BRAVE_AI_CHAT                                                                \
-  LAST_BRAVE_FEATURE_ENTRIES_ITEM // Keep it as the last item.
+  LAST_BRAVE_FEATURE_ENTRIES_ITEM  // Keep it as the last item.
 
 namespace flags_ui {
 namespace {
@@ -831,5 +831,5 @@ namespace {
           .size());
 }
 
-} // namespace
-} // namespace flags_ui
+}  // namespace
+}  // namespace flags_ui

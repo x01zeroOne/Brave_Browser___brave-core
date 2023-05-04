@@ -13,10 +13,11 @@ namespace features {
 OVERRIDE_FEATURE_DEFAULT_STATES({{
 #if BUILDFLAG(IS_WIN)
     {kWinrtGeolocationImplementation, base::FEATURE_ENABLED_BY_DEFAULT},
-#endif // BUILDFLAG(IS_WIN)
+#endif  // BUILDFLAG(IS_WIN)
 }});
 
-BASE_FEATURE(kLinuxGeoClueLocationBackend, "LinuxGeoClueLocationBackend",
+BASE_FEATURE(kLinuxGeoClueLocationBackend,
+             "LinuxGeoClueLocationBackend",
              base::FEATURE_ENABLED_BY_DEFAULT);
 
-} // namespace features
+}  // namespace features
