@@ -163,7 +163,7 @@ const Config = function () {
   this.git_cache_path = getNPMConfig(['git_cache_path'])
   this.sccache = getNPMConfig(['sccache'])
   this.gomaServerHost = getNPMConfig(['goma_server_host'])
-  this.isCI = process.env.BUILD_ID !== undefined
+  this.isCI = process.env.BUILD_ID !== undefined || process.env.TEAMCITY_VERSION !== undefined
   this.braveStatsApiKey = getNPMConfig(['brave_stats_api_key']) || ''
   this.braveStatsUpdaterUrl = getNPMConfig(['brave_stats_updater_url']) || ''
   this.p3aJsonUploadUrl = getNPMConfig(['p3a_json_upload_url']) || ''
@@ -1015,19 +1015,7 @@ Object.defineProperty(Config.prototype, 'defaultOptions', {
     }
 
     if (this.getCachePath()) {
-      console.log("using git cache path " + this.getCachePath())
       env.GIT_CACHE_PATH = path.join(this.getCachePath())
-    }
-
-    if (!this.use_goma && this.sccache) {
-      env.CC_WRAPPER = this.sccache
-      console.log('using cc wrapper ' + path.basename(this.sccache))
-      if (path.basename(this.sccache) === 'ccache') {
-        env.CCACHE_CPP2 = 'yes'
-        env.CCACHE_SLOPPINESS = 'pch_defines,time_macros,include_file_mtime'
-        env.CCACHE_BASEDIR = this.srcDir
-        env = this.addPathToEnv(env, path.join(this.srcDir, 'third_party', 'llvm-build', 'Release+Asserts', 'bin'))
-      }
     }
 
     if (this.gomaServerHost) {
