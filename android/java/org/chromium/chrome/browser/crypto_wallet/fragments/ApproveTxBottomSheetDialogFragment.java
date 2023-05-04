@@ -273,7 +273,8 @@ public class ApproveTxBottomSheetDialogFragment extends BottomSheetDialogFragmen
         jsonRpcService.getNetwork(mCoinType, null, selectedNetwork -> {
             networkName.setText(selectedNetwork.chainName);
             keyringService.getKeyringInfo(
-                    AssetUtils.getKeyringForChainId(selectedNetwork.chainId), keyringInfo -> {
+                    AssetUtils.getKeyring(selectedNetwork.coin, selectedNetwork.chainId),
+                    keyringInfo -> {
                         final AccountInfo[] accounts = keyringInfo.accountInfos;
                         // First fill in data that does not require remote queries
                         TokenUtils.getAllTokensFiltered(getBraveWalletService(),
