@@ -68,8 +68,9 @@ std::u16string GetSpeedreaderData(
   return result + u"}\n\n";
 }
 
-constexpr const char* kPropertyPrefNames[] = {
-    kSpeedreaderPrefTheme, kSpeedreaderPrefFontSize, kSpeedreaderPrefFontFamily};
+constexpr const char* kPropertyPrefNames[] = {kSpeedreaderPrefTheme,
+                                              kSpeedreaderPrefFontSize,
+                                              kSpeedreaderPrefFontFamily};
 
 SpeedreaderTabHelper::SpeedreaderTabHelper(content::WebContents* web_contents)
     : content::WebContentsObserver(web_contents),
@@ -301,8 +302,7 @@ void SpeedreaderTabHelper::ShowReaderModeToolbar() {
 
 void SpeedreaderTabHelper::HideReaderModeToolbar() {
   Browser* browser = chrome::FindBrowserWithWebContents(web_contents());
-  static_cast<BraveBrowserWindow*>(browser->window())
-      ->HideReaderModeToolbar();
+  static_cast<BraveBrowserWindow*>(browser->window())->HideReaderModeToolbar();
 }
 
 Profile* SpeedreaderTabHelper::GetProfile() const {
