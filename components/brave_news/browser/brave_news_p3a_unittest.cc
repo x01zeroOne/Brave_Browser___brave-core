@@ -395,5 +395,17 @@ TEST_F(BraveNewsP3ATest, TestNewUserReturningNotFollowingDay) {
   histogram_tester_.ExpectBucketCount(kNewUserReturningHistogramName, 1, 1);
 }
 
+TEST_F(BraveNewsP3ATest, TestOptIn) {
+  PrefService* prefs = GetPrefs();
+
+  prefs->SetBoolean(prefs::kBraveNewsOptedIn, true);
+  RecordOptInChange(prefs);
+  histogram_tester_.ExpectUniqueSample(kOptInHistogramName, 1, 1);
+
+  prefs->SetBoolean(prefs::kBraveNewsOptedIn, false);
+  RecordOptInChange(prefs);
+  histogram_tester_.ExpectBucketCount(kOptInHistogramName, 0, 1);
+}
+
 }  // namespace p3a
 }  // namespace brave_news

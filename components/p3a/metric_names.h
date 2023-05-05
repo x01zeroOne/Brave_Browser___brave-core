@@ -193,6 +193,7 @@ constexpr inline auto kCollectedSlowHistograms =
 constexpr inline auto kCollectedExpressHistograms =
   base::MakeFixedFlatSet<base::StringPiece>({
     "Brave.Core.UsageDaily",
+    "Brave.Today.OptIn",
     "Brave.Rewards.EnabledInstallationTime",
     "Brave.Wallet.UsageDaily"
 });
@@ -201,6 +202,7 @@ constexpr inline auto kCollectedExpressHistograms =
 // Once the metric value has been sent, the value will be removed from the log store.
 constexpr inline auto kEphemeralHistograms =
   base::MakeFixedFlatSet<base::StringPiece>({
+    "Brave.Today.OptIn",
     "Brave.Playlist.UsageDaysInWeek",
     "Brave.Playlist.FirstTimeOffset",
     "Brave.Rewards.EnabledInstallationTime",
