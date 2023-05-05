@@ -9,7 +9,7 @@ import {
   HardwareWalletConnectOpts
 } from '../../components/desktop/popup-modals/add-account-modal/hardware-wallet-connect/types'
 import {
-  AccountTransactions,
+  // AccountTransactions,
   BraveWallet,
   BalancePayload,
   WalletAccountType,
@@ -33,7 +33,7 @@ import {
 } from '../../utils/network-utils'
 import { getTokenParam, getFlattenedAccountBalances } from '../../utils/api-utils'
 import Amount from '../../utils/amount'
-import { sortTransactionByDate } from '../../utils/tx-utils'
+// import { sortTransactionByDate } from '../../utils/tx-utils'
 import { getBatTokensFromList, getNativeTokensFromList, getUniqueAssets } from '../../utils/asset-utils'
 import { loadTimeData } from '../../../common/loadTimeData'
 import { getVisibleNetworksList } from '../slices/api.slice'
@@ -48,7 +48,10 @@ import { AllNetworksOption, AllNetworksOptionDefault } from '../../options/netwo
 import { AllAccountsOption } from '../../options/account-filter-options'
 import SolanaLedgerBridgeKeyring from '../hardware/ledgerjs/sol_ledger_bridge_keyring'
 import FilecoinLedgerBridgeKeyring from '../hardware/ledgerjs/fil_ledger_bridge_keyring'
-import { deserializeOrigin, makeSerializableTransaction } from '../../utils/model-serialization-utils'
+import {
+  deserializeOrigin,
+  // makeSerializableTransaction
+} from '../../utils/model-serialization-utils'
 import { WalletPageActions } from '../../page/actions'
 import { LOCAL_STORAGE_KEYS } from '../../common/constants/local-storage-keys'
 import { IPFS_PROTOCOL, isIpfs, stripERC20TokenImageURL } from '../../utils/string-utils'
@@ -816,33 +819,6 @@ export function refreshTokenPriceHistory (selectedPortfolioTimeline: BraveWallet
         })
     })
     dispatch(WalletActions.portfolioPriceHistoryUpdated(priceHistoryWithBalances))
-  }
-}
-
-export function refreshTransactionHistory (address?: string) {
-  return async (dispatch: Dispatch, getState: () => State) => {
-    const apiProxy = getAPIProxy()
-    const { txService } = apiProxy
-    const { wallet: { accounts, transactions } } = getState()
-
-    const accountsToUpdate = address !== undefined
-      ? accounts.filter(account => account.address === address)
-      : accounts
-
-    const freshTransactions: AccountTransactions = await accountsToUpdate.reduce<Promise<AccountTransactions>>(
-      async (acc, account) => acc.then(async (obj) => {
-        const { transactionInfos } =
-          await txService.getAllTransactionInfo(
-            account.coin, null, account.address)
-        const serializedTransactionInfos = transactionInfos.map(makeSerializableTransaction)
-        obj[account.address] = sortTransactionByDate(serializedTransactionInfos, 'descending')
-        return obj
-      }), Promise.resolve({}))
-
-    dispatch(WalletActions.setAccountTransactions({
-      ...transactions,
-      ...freshTransactions
-    }))
   }
 }
 

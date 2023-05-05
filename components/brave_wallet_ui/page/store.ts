@@ -17,12 +17,14 @@ import { walletApi } from '../common/slices/api.slice'
 import walletReducer from '../common/slices/wallet.slice'
 import accountsTabReducer from './reducers/accounts-tab-reducer'
 import pageReducer from './reducers/page_reducer'
+import uiReducer from '../common/slices/ui.slice'
 
 export const store = configureStore({
   reducer: {
     page: pageReducer,
     wallet: walletReducer,
     accountsTab: accountsTabReducer,
+    ui: uiReducer,
     [walletApi.reducerPath]: walletApi.reducer
   },
   middleware: (getDefaultMiddleware) => getDefaultMiddleware({
@@ -34,7 +36,8 @@ export const store = configureStore({
   )
 })
 
-export type WalletPageRootStore = ReturnType<typeof store.getState>
+export type WalletPageRootStore = typeof store
+export type WalletPageRootStoreState = ReturnType<typeof store.getState>
 export type RootStoreState = ReturnType<typeof store.getState>
 
 const proxy = getWalletPageApiProxy()

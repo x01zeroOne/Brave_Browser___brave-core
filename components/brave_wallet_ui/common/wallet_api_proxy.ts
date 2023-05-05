@@ -11,6 +11,7 @@ import { objectEquals } from '../utils/object-utils'
 import { makeSerializableOriginInfo, makeSerializableTransaction } from '../utils/model-serialization-utils'
 import { WalletPageActions } from '../page/actions'
 import { walletApi } from './slices/api.slice'
+import { getCoinFromTxDataUnion } from '../utils/network-utils'
 
 export class WalletApiProxy {
   walletHandler = new BraveWallet.WalletHandlerRemote()
@@ -89,13 +90,46 @@ export class WalletApiProxy {
   addTxServiceObserver (store: Store) {
     const txServiceManagerObserverReceiver = new BraveWallet.TxServiceObserverReceiver({
       onNewUnapprovedTx: function (txInfo) {
-        store.dispatch(WalletActions.newUnapprovedTxAdded({ txInfo: makeSerializableTransaction(txInfo) }))
+        store.dispatch(
+          walletApi.endpoints.newUnapprovedTxAdded.initiate(
+            makeSerializableTransaction(txInfo)
+          )
+        )
       },
       onUnapprovedTxUpdated: function (txInfo) {
-        store.dispatch(WalletActions.unapprovedTxUpdated({ txInfo: makeSerializableTransaction(txInfo) }))
+        store.dispatch(
+          walletApi.endpoints.unapprovedTxUpdated.initiate(
+            makeSerializableTransaction(txInfo)
+          )
+        )
       },
-      onTransactionStatusChanged: function (txInfo) {
-        store.dispatch(WalletActions.transactionStatusChanged({ txInfo: makeSerializableTransaction(txInfo) }))
+      onTransactionStatusChanged: (txInfo) => {
+        store.dispatch(
+          walletApi.endpoints.transactionStatusChanged.initiate({
+            chainId: txInfo.chainId,
+            coinType: getCoinFromTxDataUnion(txInfo.txDataUnion),
+            fromAddress: txInfo.fromAddress,
+            id: txInfo.id,
+            txStatus: txInfo.txStatus
+          })
+        )
+        if (
+          [
+            BraveWallet.TransactionStatus.Submitted,
+            BraveWallet.TransactionStatus.Signed,
+            BraveWallet.TransactionStatus.Rejected,
+            BraveWallet.TransactionStatus.Approved
+          ].includes(txInfo.txStatus)
+        ) {
+          const state = store.getState()
+          if (
+            (state.panel?.selectedPanel === 'approveTransaction' ||
+              txInfo.txStatus === BraveWallet.TransactionStatus.Rejected) &&
+            state.ui.selectedPendingTransactionId === undefined
+          ) {
+            store.dispatch(walletApi.endpoints.closePanelUI.initiate())
+          }
+        }
       },
       onTxServiceReset: function () {
       }

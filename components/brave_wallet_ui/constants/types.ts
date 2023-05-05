@@ -227,6 +227,11 @@ export interface AssetPriceWithContractAndChainId extends BraveWallet.AssetPrice
   chainId: string
 }
 
+export interface UIState {
+  selectedPendingTransactionId?: string | undefined
+  transactionProviderErrorRegistry: TransactionProviderErrorRegistry
+}
+
 export interface WalletState {
   hasInitialized: boolean
   isFilecoinEnabled: boolean
@@ -239,13 +244,9 @@ export interface WalletState {
   hasIncorrectPassword: boolean
   selectedAccount?: WalletAccountType
   accounts: WalletAccountType[]
-  transactions: AccountTransactions
   userVisibleTokensInfo: BraveWallet.BlockchainToken[]
   fullTokenList: BraveWallet.BlockchainToken[]
   portfolioPriceHistory: PriceDataObjectType[]
-  pendingTransactions: SerializableTransactionInfo[]
-  knownTransactions: SerializableTransactionInfo[]
-  selectedPendingTransaction: SerializableTransactionInfo | undefined
   isFetchingPortfolioPriceHistory: boolean
   selectedPortfolioTimeline: BraveWallet.AssetPriceTimeframe
   transactionSpotPrices: AssetPriceWithContractAndChainId[]
@@ -259,7 +260,6 @@ export interface WalletState {
   connectedAccounts: WalletAccountType[]
   isMetaMaskInstalled: boolean
   defaultCurrencies: DefaultCurrencies
-  transactionProviderErrorRegistry: TransactionProviderErrorRegistry
   isLoadingCoinMarketData: boolean
   coinMarketData: BraveWallet.CoinMarket[]
   selectedNetworkFilter: NetworkFilterType
@@ -292,7 +292,8 @@ export interface PanelState {
   switchChainRequest: SerializableSwitchChainRequest
   hardwareWalletCode?: HardwareWalletResponseCodeType
   suggestedTokenRequest?: SerializableAddSuggestTokenRequest
-  selectedTransaction: SerializableTransactionInfo | undefined
+  // selectedTransaction: SerializableTransactionInfo | undefined
+  selectedTransactionId?: string
 }
 
 export interface PageState {
@@ -331,11 +332,13 @@ export interface PageState {
 export interface WalletPageState {
   wallet: WalletState
   page: PageState
+  ui: UIState
 }
 
 export interface WalletPanelState {
   wallet: WalletState
   panel: PanelState
+  ui: UIState
 }
 
 export interface WalletInfoBase {
@@ -585,10 +588,6 @@ export type SerializableGetEncryptionPublicKeyRequest = WithSerializableOriginIn
 export type SerializableDecryptRequest = WithSerializableOriginInfo<BraveWallet.DecryptRequest>
 
 export type SerializableSwitchChainRequest = WithSerializableOriginInfo<BraveWallet.SwitchChainRequest>
-
-export type AccountTransactions = {
-  [accountId: string]: SerializableTransactionInfo[]
-}
 
 export type GetEthAddrReturnInfo = BraveWallet.JsonRpcService_EnsGetEthAddr_ResponseParams
 export type GetSolAddrReturnInfo = BraveWallet.JsonRpcService_SnsGetSolAddr_ResponseParams

@@ -8,9 +8,12 @@ import * as React from 'react'
 // utils
 import Amount from '../../../utils/amount'
 import { getLocale } from '../../../../common/locale'
-import { usePendingTransactions } from '../../../common/hooks/use-pending-transaction'
 import { useSafeWalletSelector } from '../../../common/hooks/use-safe-selector'
 import { WalletSelectors } from '../../../common/selectors'
+
+// types
+import type { ParsedTransaction } from '../../../utils/tx-utils'
+import type { BraveWallet } from '../../../constants/types'
 
 // style
 import {
@@ -22,17 +25,20 @@ import {
 } from './style'
 
 interface Erc20TransactionInfoProps {
+  currentTokenAllowance?: string
+  isCurrentAllowanceUnlimited: boolean
   onToggleEditGas: () => void
+  transactionDetails?: ParsedTransaction
+  transactionsNetwork?: BraveWallet.NetworkInfo
 }
 
-export const Erc20ApproveTransactionInfo = ({ onToggleEditGas }: Erc20TransactionInfoProps) => {
-  const {
-    isCurrentAllowanceUnlimited,
-    currentTokenAllowance,
-    transactionDetails,
-    transactionsNetwork
-  } = usePendingTransactions()
-
+export const Erc20ApproveTransactionInfo = ({
+  currentTokenAllowance,
+  isCurrentAllowanceUnlimited,
+  onToggleEditGas,
+  transactionDetails,
+  transactionsNetwork
+}: Erc20TransactionInfoProps) => {
   // redux
   const defaultFiatCurrency = useSafeWalletSelector(
     WalletSelectors.defaultFiatCurrency

@@ -8,18 +8,12 @@ import * as React from 'react'
 // Constants
 import {
   BraveWallet,
-  SerializableTransactionInfo,
-  SolFeeEstimates,
-  TransactionInfo
+  SerializableTransactionInfo
 } from '../../constants/types'
 
 // Utils
-import { getLocale } from '../../../common/locale'
 import {
-  getGasFeeFiatValue,
   ParsedTransaction,
-  ParsedTransactionFees,
-  parseTransactionFeesWithoutPrices,
   parseTransactionWithPrices
 } from '../../utils/tx-utils'
 import { WalletSelectors } from '../selectors'
@@ -27,27 +21,6 @@ import { WalletSelectors } from '../selectors'
 // Hooks
 import { useUnsafeWalletSelector } from './use-safe-selector'
 import { useGetSelectedChainQuery } from '../slices/api.slice'
-
-export function useTransactionFeesParser (selectedNetwork?: BraveWallet.NetworkInfo, networkSpotPrice?: string, solFeeEstimates?: SolFeeEstimates) {
-  return React.useCallback((transactionInfo: TransactionInfo): ParsedTransactionFees => {
-    const txFeesBase = parseTransactionFeesWithoutPrices(
-      transactionInfo,
-      solFeeEstimates
-    )
-
-    return {
-      ...txFeesBase,
-      gasFeeFiat: getGasFeeFiatValue({
-        gasFee: txFeesBase.gasFee,
-        networkSpotPrice,
-        txNetwork: selectedNetwork
-      }),
-      missingGasLimitError: txFeesBase.isMissingGasLimit
-        ? getLocale('braveWalletMissingGasLimitError')
-        : undefined
-    }
-  }, [selectedNetwork, networkSpotPrice])
-}
 
 export function useTransactionParser (
   transactionNetwork?: BraveWallet.NetworkInfo
@@ -76,7 +49,7 @@ export function useTransactionParser (
       transactionNetwork: selectedNetwork,
       tx,
       userVisibleTokensList: visibleTokens,
-      solFeeEstimates,
+      solFeeEstimate: solFeeEstimates?.fee,
       spotPrices
     })
   }, [

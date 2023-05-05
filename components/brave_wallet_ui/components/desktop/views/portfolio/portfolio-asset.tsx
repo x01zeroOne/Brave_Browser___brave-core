@@ -6,6 +6,7 @@
 import * as React from 'react'
 import { useDispatch } from 'react-redux'
 import { Redirect, useHistory, useParams } from 'react-router'
+import { skipToken } from '@reduxjs/toolkit/dist/query'
 
 // types
 import {
@@ -76,7 +77,8 @@ import {
 import { useNftPin } from '../../../../common/hooks/nft-pin'
 import {
   useGetNetworkQuery,
-  useGetSelectedChainQuery
+  useGetSelectedChainQuery,
+  useGetTransactionsQuery
 } from '../../../../common/slices/api.slice'
 
 // Styled Components
@@ -146,7 +148,6 @@ export const PortfolioAsset = (props: Props) => {
   const portfolioPriceHistory = useUnsafeWalletSelector(WalletSelectors.portfolioPriceHistory)
   const selectedPortfolioTimeline = useSafeWalletSelector(WalletSelectors.selectedPortfolioTimeline)
   const accounts = useUnsafeWalletSelector(WalletSelectors.accounts)
-  const transactions = useUnsafeWalletSelector(WalletSelectors.transactions)
   const isFetchingPortfolioPriceHistory = useSafeWalletSelector(WalletSelectors.isFetchingPortfolioPriceHistory)
   const transactionSpotPrices = useUnsafeWalletSelector(WalletSelectors.transactionSpotPrices)
   const selectedNetworkFilter = useUnsafeWalletSelector(WalletSelectors.selectedNetworkFilter)
@@ -174,6 +175,16 @@ export const PortfolioAsset = (props: Props) => {
     skip: !!assetsNetwork
   })
   const selectedAssetsNetwork = assetsNetwork || selectedNetwork
+
+  const { data: transactionsByNetwork = [] } = useGetTransactionsQuery(
+    selectedAsset
+      ? {
+          address: null,
+          chainId: selectedAsset.chainId,
+          coinType: selectedAsset.coin
+        }
+      : skipToken
+  )
 
   // custom hooks
   const { allAssetOptions, isReduxSelectedAssetBuySupported, getAllBuyOptionsAllChains } = useMultiChainBuyAssets()
@@ -323,22 +334,6 @@ export const PortfolioAsset = (props: Props) => {
       return portfolioPriceHistory
     }
   }, [portfolioPriceHistory, fullPortfolioFiatBalance])
-
-  const accountsByNetwork = React.useMemo(() => {
-    if (selectedAssetsNetwork?.coin !== undefined) {
-      return []
-    }
-    return accounts.filter((account) => account.coin === selectedAssetsNetwork?.coin)
-  }, [selectedAssetsNetwork?.coin, accounts])
-
-  const transactionsByNetwork = React.useMemo(() => {
-    return accountsByNetwork.map((account) => {
-      return transactions[account.address]
-    }).flat(1)
-  }, [
-    accountsByNetwork,
-    transactions
-  ])
 
   const selectedAssetTransactions = React.useMemo(() => {
     if (selectedAsset) {

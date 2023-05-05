@@ -9,7 +9,6 @@ import { EntityState } from '@reduxjs/toolkit'
 import {
   BraveWallet,
   P3ASendTransactionTypes,
-  SolFeeEstimates,
   SupportedTestNetworks,
   WalletAccountType,
   SerializableTransactionInfo,
@@ -758,13 +757,13 @@ export const isEIP1559Transaction = (transaction: TransactionInfo): transaction 
  */
 export const getTransactionGasFee = (
   transaction: TransactionInfo,
-  solFeeEstimates: { fee: string | bigint } | undefined
+  solFeeEstimate?: string | bigint
 ): string => {
   const { maxFeePerGas, gasPrice } = getTransactionGas(transaction)
   const gasLimit = getTransactionGasLimit(transaction)
 
   if (isSolanaTransaction(transaction)) {
-    return new Amount(solFeeEstimates?.fee.toString() ?? '')
+    return new Amount(solFeeEstimate?.toString() ?? '')
       .format()
   }
 
@@ -796,12 +795,12 @@ export const isTransactionGasLimitMissing = (tx: TransactionInfo): boolean => {
 
 export const parseTransactionFeesWithoutPrices = (
   tx: TransactionInfo,
-  solFeeEstimates?: { fee: string | bigint }
+  solFeeEstimate?: string | bigint
 ) => {
   const gasLimit = getTransactionGasLimit(tx)
   const { gasPrice, maxFeePerGas, maxPriorityFeePerGas } = getTransactionGas(tx)
 
-  const gasFee = getTransactionGasFee(tx, solFeeEstimates)
+  const gasFee = getTransactionGasFee(tx, solFeeEstimate)
 
   return {
     gasLimit: Amount.normalize(gasLimit),
@@ -1539,7 +1538,7 @@ export const parseTransactionWithoutPrices = ({
 }: {
   accounts: WalletAccountType[]
   fullTokenList: BraveWallet.BlockchainToken[]
-  solFeeEstimates?: SolFeeEstimates
+  solFeeEstimates?: bigint | string
   tx: TransactionInfo
   transactionNetwork?: BraveWallet.NetworkInfo
   userVisibleTokensList: BraveWallet.BlockchainToken[]
@@ -1747,12 +1746,12 @@ export const parseTransactionWithPrices = ({
   tx,
   transactionNetwork,
   userVisibleTokensList,
-  solFeeEstimates,
+  solFeeEstimate,
   spotPrices
 }: {
   accounts: WalletAccountType[]
   fullTokenList: BraveWallet.BlockchainToken[]
-  solFeeEstimates?: SolFeeEstimates
+  solFeeEstimate?: bigint | string
   tx: TransactionInfo
   transactionNetwork?: BraveWallet.NetworkInfo
   userVisibleTokensList: BraveWallet.BlockchainToken[]
@@ -1780,7 +1779,7 @@ export const parseTransactionWithPrices = ({
     transactionNetwork,
     tx,
     userVisibleTokensList,
-    solFeeEstimates
+    solFeeEstimates: solFeeEstimate
   })
 
   return {

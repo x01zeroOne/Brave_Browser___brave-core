@@ -6,9 +6,10 @@
 import * as React from 'react'
 import { useDispatch } from 'react-redux'
 import { create } from 'ethereum-blockies'
+import { skipToken } from '@reduxjs/toolkit/dist/query'
 
 // actions
-import * as WalletActions from '../actions/wallet_actions'
+import { UIActions } from '../slices/ui.slice'
 
 // utils
 import Amount from '../../utils/amount'
@@ -16,7 +17,8 @@ import { findAccountName } from '../../utils/account-utils'
 import { getLocale } from '../../../common/locale'
 import { getCoinFromTxDataUnion } from '../../utils/network-utils'
 import { reduceAddress } from '../../utils/reduce-address'
-import { WalletSelectors } from '../selectors'
+import { UISelectors, WalletSelectors } from '../selectors'
+import { selectPendingTransactions } from '../slices/entities/transaction.entity'
 
 // Custom Hooks
 import { useTransactionParser } from './transaction-parser'
@@ -24,13 +26,23 @@ import usePricing from './pricing'
 import useTokenInfo from './token'
 import { useLib } from './useLib'
 import {
+  useSafeUISelector,
   useSafeWalletSelector,
   useUnsafeWalletSelector
 } from './use-safe-selector'
-import { useGetNetworkQuery } from '../slices/api.slice'
+import {
+  useGetGasEstimation1559Query,
+  useGetNetworkQuery,
+  useGetSolanaEstimatedFeeQuery,
+  useGetTransactionsQuery,
+  walletApi
+} from '../slices/api.slice'
 
 // Constants
-import { BraveWallet } from '../../constants/types'
+import {
+  BraveWallet,
+  SerializableTransactionInfo
+} from '../../constants/types'
 import {
   UpdateUnapprovedTransactionGasFieldsType,
   UpdateUnapprovedTransactionNonceType
@@ -38,13 +50,28 @@ import {
 import { isSolanaTransaction, sortTransactionByDate } from '../../utils/tx-utils'
 import { MAX_UINT256 } from '../constants/magics'
 
+const emptyPendingTxs: SerializableTransactionInfo[] = []
+
+export const usePendingTransactionsQuery = (
+  arg: Parameters<typeof useGetTransactionsQuery>[0]
+) => {
+  return useGetTransactionsQuery(arg, {
+    selectFromResult: (res) => ({
+      isLoading: res.isLoading,
+      transactions: res.data || emptyPendingTxs,
+      pendingTransactions: res.data
+        ? selectPendingTransactions(res.data)
+        : emptyPendingTxs
+    })
+  })
+}
+
 export const usePendingTransactions = () => {
   // redux
   const dispatch = useDispatch()
   const accounts = useUnsafeWalletSelector(WalletSelectors.accounts)
-  const transactions = useUnsafeWalletSelector(WalletSelectors.transactions)
-  const transactionInfo = useUnsafeWalletSelector(
-    WalletSelectors.selectedPendingTransaction
+  const selectedPendingTransactionId = useSafeUISelector(
+    UISelectors.selectedPendingTransactionId
   )
   const visibleTokens = useUnsafeWalletSelector(
     WalletSelectors.userVisibleTokensInfo
@@ -52,27 +79,62 @@ export const usePendingTransactions = () => {
   const transactionSpotPrices = useUnsafeWalletSelector(
     WalletSelectors.transactionSpotPrices
   )
-  const gasEstimates = useUnsafeWalletSelector(WalletSelectors.gasEstimates)
   const fullTokenList = useUnsafeWalletSelector(WalletSelectors.fullTokenList)
-  const pendingTransactions = useUnsafeWalletSelector(
-    WalletSelectors.pendingTransactions
-  )
   const hasFeeEstimatesError = useSafeWalletSelector(
     WalletSelectors.hasFeeEstimatesError
   )
 
   // queries
+  const { pendingTransactions } = usePendingTransactionsQuery({
+    address: null,
+    chainId: null,
+    coinType: null
+  })
+
+  const transactionInfo = React.useMemo(() => {
+    return (
+      pendingTransactions.find(
+        (tx) => tx.id === selectedPendingTransactionId
+      ) || pendingTransactions[0]
+    )
+  }, [pendingTransactions, selectedPendingTransactionId])
+
+  const txCoinType = transactionInfo
+    ? getCoinFromTxDataUnion(transactionInfo.txDataUnion)
+    : undefined
+
   const { data: transactionsNetwork } = useGetNetworkQuery(
-    transactionInfo
+    transactionInfo && txCoinType !== undefined
       ? {
           chainId: transactionInfo.chainId,
-          coin: getCoinFromTxDataUnion(transactionInfo.txDataUnion)
+          coin: txCoinType
         }
       : undefined,
-    { skip: !transactionInfo }
+    { skip: !transactionInfo && txCoinType !== undefined }
   )
 
-  const transactionGasEstimates = transactionInfo?.txDataUnion.ethTxData1559?.gasEstimation
+  const { data: gasEstimates } = useGetGasEstimation1559Query(undefined, {
+    refetchOnFocus: true,
+    pollingInterval: 15000,
+    refetchOnMountOrArgChange: 15000,
+    refetchOnReconnect: true,
+  })
+
+  useGetSolanaEstimatedFeeQuery(
+    transactionInfo && txCoinType === BraveWallet.CoinType.SOL
+      ? {
+          chainId: transactionInfo.chainId,
+          txId: transactionInfo.id
+        }
+      : skipToken,
+    {
+      refetchOnFocus: true,
+      pollingInterval: 15000,
+      refetchOnMountOrArgChange: 15000,
+      refetchOnReconnect: true,
+      skip: !transactionInfo || txCoinType !== BraveWallet.CoinType.SOL
+    }
+  )
 
   // custom hooks
   const { getBlockchainTokenInfo, getERC20Allowance } = useLib()
@@ -84,18 +146,28 @@ export const usePendingTransactions = () => {
   } = useTokenInfo(getBlockchainTokenInfo, visibleTokens, fullTokenList, transactionsNetwork)
 
   // state
-  const [suggestedMaxPriorityFeeChoices, setSuggestedMaxPriorityFeeChoices] = React.useState<string[]>([
-    transactionGasEstimates?.slowMaxPriorityFeePerGas || '0',
-    transactionGasEstimates?.avgMaxPriorityFeePerGas || '0',
-    transactionGasEstimates?.fastMaxPriorityFeePerGas || '0'
-  ])
-  const [baseFeePerGas, setBaseFeePerGas] = React.useState<string>(transactionGasEstimates?.baseFeePerGas || '')
   const [erc20AllowanceResult, setERC20AllowanceResult] = React.useState<
     string | undefined
   >(undefined)
 
   // computed state
-  const transactionDetails = transactionInfo ? parseTransaction(transactionInfo) : undefined
+  const transactionDetails = React.useMemo(() => {
+    return transactionInfo ? parseTransaction(transactionInfo) : undefined
+  }, [parseTransaction, transactionInfo])
+
+  const { suggestedMaxPriorityFeeChoices, baseFeePerGas } = React.useMemo(
+    () => ({
+      suggestedMaxPriorityFeeChoices: [
+        gasEstimates?.slowMaxPriorityFeePerGas || '0',
+        gasEstimates?.avgMaxPriorityFeePerGas || '0',
+        gasEstimates?.fastMaxPriorityFeePerGas || '0'
+      ],
+      baseFeePerGas: gasEstimates?.baseFeePerGas || '0'
+    }),
+    [gasEstimates]
+  )
+
+
   const transactionQueueNumber = pendingTransactions.findIndex(tx => tx.id === transactionInfo?.id) + 1
   const transactionsQueueLength = pendingTransactions.length
 
@@ -119,38 +191,77 @@ export const usePendingTransactions = () => {
   // methods
   const onEditAllowanceSave = React.useCallback((allowance: string) => {
     if (transactionInfo?.id && transactionDetails) {
-      dispatch(WalletActions.updateUnapprovedTransactionSpendAllowance({
-        chainId: transactionInfo.chainId,
-        txMetaId: transactionInfo.id,
-        spenderAddress: transactionDetails.approvalTarget || '',
-        allowance: new Amount(allowance)
-          .multiplyByDecimals(transactionDetails.decimals)
-          .toHex()
-      }))
+      dispatch(
+        walletApi.endpoints.updateUnapprovedTransactionSpendAllowance.initiate({
+          chainId: transactionInfo.chainId,
+          txMetaId: transactionInfo.id,
+          spenderAddress: transactionDetails.approvalTarget || '',
+          allowance: new Amount(allowance)
+            .multiplyByDecimals(transactionDetails.decimals)
+            .toHex()
+        })
+      )
     }
   }, [transactionInfo?.id, transactionDetails])
 
-  const updateUnapprovedTransactionNonce = React.useCallback((args: UpdateUnapprovedTransactionNonceType) => {
-    dispatch(WalletActions.updateUnapprovedTransactionNonce(args))
-  }, [])
+  const updateUnapprovedTransactionNonce = React.useCallback(
+    (args: UpdateUnapprovedTransactionNonceType) => {
+      dispatch(
+        walletApi.endpoints.updateUnapprovedTransactionNonce.initiate(args)
+      )
+    },
+    []
+  )
 
-  const queueNextTransaction = React.useCallback(() => dispatch(WalletActions.queueNextTransaction()), [])
+  const queueNextTransaction = React.useCallback(() => {
+    // if id hasn't been set, start at beginning of tx list
+    const currentIndex = selectedPendingTransactionId
+      ? pendingTransactions.findIndex(
+          (tx) => tx.id === selectedPendingTransactionId
+        )
+      : 0
 
-  const rejectAllTransactions = React.useCallback(() => dispatch(WalletActions.rejectAllTransactions()), [])
+    const nextIndex = currentIndex + 1
 
-  const updateUnapprovedTransactionGasFields = React.useCallback((payload: UpdateUnapprovedTransactionGasFieldsType) => {
-    dispatch(WalletActions.updateUnapprovedTransactionGasFields(payload))
-  }, [])
+    const newSelectedPendingTransactionId =
+      nextIndex === pendingTransactions.length // at end of list?
+        ? pendingTransactions[0]?.id // go to first item in list
+        : pendingTransactions[nextIndex]?.id // go to next item in list
+
+    dispatch(
+      UIActions.setPendingTransactionId(newSelectedPendingTransactionId)
+    )
+  }, [selectedPendingTransactionId, pendingTransactions])
+
+  const rejectAllTransactions = React.useCallback(
+    () => dispatch(walletApi.endpoints.rejectAllTransactions.initiate()),
+    []
+  )
+
+  const updateUnapprovedTransactionGasFields = React.useCallback(
+    (payload: UpdateUnapprovedTransactionGasFieldsType) => {
+      dispatch(
+        walletApi.endpoints.updateUnapprovedTransactionGasFields.initiate(
+          payload
+        )
+      )
+    },
+    []
+  )
 
   // List of all transactions that belong to the same group as the selected
   // pending transaction.
-  const groupTransactions = React.useMemo(() =>
-    transactionInfo?.groupId && transactionInfo?.fromAddress
-      ? sortTransactionByDate(
-          transactions[transactionInfo.fromAddress]
-            .filter(txn => txn.groupId === transactionInfo.groupId))
-      : [],
-    [transactionInfo, transactions])
+  const groupTransactions = React.useMemo(
+    () =>
+      transactionInfo?.groupId && transactionInfo?.fromAddress
+        ? sortTransactionByDate(
+            pendingTransactions.filter(
+              (txn) => txn.groupId === transactionInfo.groupId
+            )
+          )
+        : [],
+    [transactionInfo, pendingTransactions]
+  )
 
   const unconfirmedGroupTransactionIds = React.useMemo(() =>
     groupTransactions
@@ -172,8 +283,12 @@ export const usePendingTransactions = () => {
 
   // memos
   const fromOrb = React.useMemo(() => {
-    return create({ seed: transactionDetails?.sender.toLowerCase(), size: 8, scale: 16 }).toDataURL()
-  }, [transactionDetails?.sender])
+    return create({
+      seed: transactionInfo?.fromAddress.toLowerCase(),
+      size: 8,
+      scale: 16
+    }).toDataURL()
+  }, [transactionInfo?.fromAddress])
 
   const toOrb = React.useMemo(() => {
     return create({
@@ -215,8 +330,8 @@ export const usePendingTransactions = () => {
       !!transactionDetails?.contractAddressError ||
       transactionDetails?.insufficientFundsForGasError === undefined ||
       transactionDetails?.insufficientFundsError === undefined ||
-      transactionDetails?.insufficientFundsForGasError ||
-      transactionDetails?.insufficientFundsError ||
+      !!transactionDetails?.insufficientFundsForGasError ||
+      !!transactionDetails?.insufficientFundsError ||
       !!transactionDetails?.missingGasLimitError ||
       !canSelectedPendingTransactionBeApproved
     )
@@ -247,33 +362,6 @@ export const usePendingTransactions = () => {
 
   // effects
   React.useEffect(() => {
-    const interval = setInterval(() => {
-      if (transactionInfo) {
-        dispatch(WalletActions.refreshGasEstimates(transactionInfo))
-      }
-    }, 15000)
-
-    if (transactionInfo) {
-      dispatch(WalletActions.refreshGasEstimates(transactionInfo))
-    }
-
-    return () => clearInterval(interval) // cleanup on component unmount
-  }, [transactionInfo])
-
-  React.useEffect(
-    () => {
-      setSuggestedMaxPriorityFeeChoices([
-        gasEstimates?.slowMaxPriorityFeePerGas || '0',
-        gasEstimates?.avgMaxPriorityFeePerGas || '0',
-        gasEstimates?.fastMaxPriorityFeePerGas || '0'
-      ])
-
-      setBaseFeePerGas(gasEstimates?.baseFeePerGas || '0')
-    },
-    [gasEstimates]
-  )
-
-  React.useEffect(() => {
     let subscribed = true
     if (transactionInfo?.txType !== BraveWallet.TransactionType.ERC20Approve) {
       return
@@ -285,17 +373,24 @@ export const usePendingTransactions = () => {
 
     getERC20Allowance(
       transactionDetails.recipient,
-      transactionDetails.sender,
+      transactionInfo.fromAddress,
       transactionDetails.approvalTarget
-    ).then(result => {
-      subscribed && setERC20AllowanceResult(result)
-    }).catch(e => console.error(e))
+    )
+      .then((result) => {
+        subscribed && setERC20AllowanceResult(result)
+      })
+      .catch((e) => console.error(e))
 
     // cleanup
     return () => {
       subscribed = false
     }
-  }, [transactionInfo?.txType, transactionDetails, getERC20Allowance])
+  }, [
+    transactionInfo?.txType,
+    transactionInfo?.fromAddress,
+    transactionDetails,
+    getERC20Allowance
+  ])
 
   React.useEffect(() => {
     if (

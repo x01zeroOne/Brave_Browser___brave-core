@@ -21,7 +21,7 @@ import { BraveWallet, SerializableTransactionInfo } from '../../../constants/typ
 import { SwapExchangeProxy } from '../../../common/constants/registry'
 
 // Hooks
-import { useTransactionParser } from '../../../common/hooks'
+import { useTransactionParser } from '../../../common/hooks/transaction-parser'
 import { useSafeWalletSelector } from '../../../common/hooks/use-safe-selector'
 import { useGetNetworkQuery } from '../../../common/slices/api.slice'
 
@@ -80,8 +80,12 @@ export const TransactionsListItem = ({
   )
 
   const fromOrb = React.useMemo(() => {
-    return EthereumBlockies.create({ seed: transactionDetails.sender.toLowerCase(), size: 8, scale: 16 }).toDataURL()
-  }, [transactionDetails.sender])
+    return EthereumBlockies.create({
+      seed: transaction.fromAddress.toLowerCase(),
+      size: 8,
+      scale: 16
+    }).toDataURL()
+  }, [transaction.fromAddress])
 
   const toOrb = React.useMemo(() => {
     return EthereumBlockies.create({ seed: transactionDetails.recipient.toLowerCase(), size: 8, scale: 16 }).toDataURL()
@@ -122,7 +126,7 @@ export const TransactionsListItem = ({
 
   const transactionIntentDescription = React.useMemo(() => {
     // default or when: [ETHSend, ERC20Transfer, ERC721TransferFrom, ERC721SafeTransferFrom].includes(transaction.txType)
-    let from = `${reduceAddress(transactionDetails.sender)} `
+    let from = `${reduceAddress(transaction.fromAddress)} `
     let to = reduceAddress(transactionDetails.recipient)
     const wrapFromText =
       transaction.txType === ERC20Approve ||
@@ -161,21 +165,21 @@ export const TransactionsListItem = ({
             </span>
             <StatusAndTimeRow>
               <DetailTextDarkBold>
-                {formatDateAsRelative(serializedTimeDeltaToJSDate(transactionDetails.createdTime))}
+                {formatDateAsRelative(
+                  serializedTimeDeltaToJSDate(transaction.createdTime)
+                )}
               </DetailTextDarkBold>
 
               <StatusRow>
-                <StatusBubble status={transactionDetails.status} />
+                <StatusBubble status={transaction.txStatus} />
                 <DetailTextDarkBold>
-                  {getTransactionStatusString(transactionDetails.status)}
+                  {getTransactionStatusString(transaction.txStatus)}
                 </DetailTextDarkBold>
               </StatusRow>
             </StatusAndTimeRow>
           </DetailColumn>
-
         </TransactionDetailRow>
       </DetailColumn>
-
     </StyledWrapper>
   )
 }

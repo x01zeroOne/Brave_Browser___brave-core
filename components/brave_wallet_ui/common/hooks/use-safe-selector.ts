@@ -7,9 +7,10 @@ import { useSelector } from 'react-redux'
 
 import { WalletPageState, WalletPanelState } from '../../constants/types'
 
-type WalletStoreState = Omit<WalletPageState, 'page'>
-type PageStoreState = Omit<WalletPageState, 'wallet'>
-type PanelStoreState = Omit<WalletPanelState, 'wallet'>
+type WalletStoreState = Omit<WalletPageState, 'page' | 'ui'>
+type PageStoreState = Omit<WalletPageState, 'wallet' | 'ui'>
+type PanelStoreState = Omit<WalletPanelState, 'wallet' | 'ui'>
+type UIStoreState = Omit<WalletPanelState, 'wallet' | 'page'>
 
 type PrimitiveType = string | boolean | number | null
 
@@ -42,6 +43,13 @@ export const useUnsafePageSelector: TypedUseSelectorHookWithBannedSelections<
   PrimitiveType
 > = useSelector
 
+export const useUnsafeUISelector: TypedUseSelectorHookWithBannedSelections<
+  UIStoreState,
+  PrimitiveType
+> = useSelector
+
 export const useSafeWalletSelector: TypedUseSafeSelectorHook<WalletStoreState> = useSelector
 export const useSafePanelSelector: TypedUseSafeSelectorHook<PanelStoreState> = useSelector
 export const useSafePageSelector: TypedUseSafeSelectorHook<PageStoreState> = useSelector
+export const useSafeUISelector: TypedUseSafeSelectorHook<UIStoreState> =
+  useSelector

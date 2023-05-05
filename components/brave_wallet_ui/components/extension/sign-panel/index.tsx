@@ -3,6 +3,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this file,
 // you can obtain one at https://mozilla.org/MPL/2.0/.
 import * as React from 'react'
+import { useDispatch } from 'react-redux'
+import { skipToken } from '@reduxjs/toolkit/dist/query'
 
 // Types
 import {
@@ -14,6 +16,9 @@ import {
 import { getLocale } from '../../../../common/locale'
 import { unicodeEscape, hasUnicode } from '../../../utils/string-utils'
 import { useGetNetworkQuery } from '../../../common/slices/api.slice'
+import { PanelActions } from '../../../panel/actions'
+import { useAccountQuery } from '../../../common/hooks/use-account'
+import { isHardwareAccount } from '../../../utils/account-utils'
 
 // Components
 import { NavButton, PanelTab } from '../'
@@ -54,7 +59,6 @@ import {
 export interface Props {
   accounts: WalletAccountType[]
   signMessageData: SerializableSignMessageRequest[]
-  onSign: () => void
   onCancel: () => void
   showWarning: boolean
 }
@@ -78,16 +82,25 @@ export const SignPanel = (props: Props) => {
   const {
     accounts,
     signMessageData,
-    onSign,
     onCancel,
     showWarning
   } = props
+
+  // redux
+  const dispatch = useDispatch()
 
   // queries
   const { data: network } = useGetNetworkQuery({
     chainId: signMessageData[0].chainId,
     coin: signMessageData[0].coin
   })
+
+  const { account: txAccount } = useAccountQuery(
+    signMessageData[0].address ? signMessageData[0].address : skipToken,
+    {
+      skip: !signMessageData[0].address
+    }
+  )
 
   // state
   const [signStep, setSignStep] = React.useState<SignDataSteps>(SignDataSteps.SignData)
@@ -127,6 +140,23 @@ export const SignPanel = (props: Props) => {
       return
     }
     setSelectedQueueData(signMessageData[signMessageQueueInfo.queueNumber])
+  }
+
+  const onSign = () => {
+    if (!txAccount) {
+      return
+    }
+
+    if (isHardwareAccount(txAccount)) {
+      dispatch(PanelActions.signMessageHardware(signMessageData[0]))
+    } else {
+      dispatch(
+        PanelActions.signMessageProcessed({
+          approved: true,
+          id: signMessageData[0].id
+        })
+      )
+    }
   }
 
   // effects

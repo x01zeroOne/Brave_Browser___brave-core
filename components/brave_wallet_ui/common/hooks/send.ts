@@ -17,10 +17,9 @@ import {
   GetSolAddrReturnInfo,
   CoinTypesMap
 } from '../../constants/types'
-import { getLocale } from '../../../common/locale'
-import * as WalletActions from '../actions/wallet_actions'
 
 // Utils
+import { getLocale } from '../../../common/locale'
 import { isValidAddress, isValidFilAddress } from '../../utils/address-utils'
 import { endsWithAny } from '../../utils/string-utils'
 import Amount from '../../utils/amount'
@@ -28,7 +27,7 @@ import Amount from '../../utils/amount'
 // hooks
 import { useLib } from './useLib'
 import { useAssets } from './assets'
-import { useGetSelectedChainQuery } from '../slices/api.slice'
+import { useGetSelectedChainQuery, walletApi } from '../slices/api.slice'
 
 // constants
 import {
@@ -348,45 +347,56 @@ export default function useSend (isSendTab?: boolean) {
       return
     }
 
-    selectedSendAsset.isErc20 && dispatch(WalletActions.sendERC20Transfer({
-      from: selectedAccount.address,
-      to: toAddress,
-      value: new Amount(sendAmount)
-        .multiplyByDecimals(selectedSendAsset.decimals) // ETH → Wei conversion
-        .toHex(),
-      contractAddress: selectedSendAsset.contractAddress,
-      coin: selectedAccount.coin
-    }))
+    selectedSendAsset.isErc20 &&
+      dispatch(
+        walletApi.endpoints.sendERC20Transfer.initiate({
+          from: selectedAccount.address,
+          to: toAddress,
+          // ETH → Wei conversion
+          value: new Amount(sendAmount)
+            .multiplyByDecimals(selectedSendAsset.decimals)
+            .toHex(),
+          contractAddress: selectedSendAsset.contractAddress,
+          coin: selectedAccount.coin
+        })
+      )
 
-    selectedSendAsset.isErc721 && dispatch(WalletActions.sendERC721TransferFrom({
-      from: selectedAccount.address,
-      to: toAddress,
-      value: '',
-      contractAddress: selectedSendAsset.contractAddress,
-      tokenId: selectedSendAsset.tokenId ?? '',
-      coin: selectedAccount.coin
-    }))
+    selectedSendAsset.isErc721 &&
+      dispatch(
+        walletApi.endpoints.sendERC721TransferFrom.initiate({
+          from: selectedAccount.address,
+          to: toAddress,
+          value: '',
+          contractAddress: selectedSendAsset.contractAddress,
+          tokenId: selectedSendAsset.tokenId ?? '',
+          coin: selectedAccount.coin
+        })
+      )
 
     if (
       selectedAccount.coin === BraveWallet.CoinType.SOL &&
       selectedSendAsset.contractAddress !== '' &&
       !selectedSendAsset.isErc20 && !selectedSendAsset.isErc721
     ) {
-      dispatch(WalletActions.sendSPLTransfer({
-        from: selectedAccount.address,
-        to: toAddress,
-        value: !selectedSendAsset.isNft ? new Amount(sendAmount)
-          .multiplyByDecimals(selectedSendAsset.decimals)
-          .toHex() : new Amount(sendAmount).toHex(),
-        coin: selectedAccount.coin,
-        splTokenMintAddress: selectedSendAsset.contractAddress
-      }))
+      dispatch(
+        walletApi.endpoints.sendSPLTransfer.initiate({
+          from: selectedAccount.address,
+          to: toAddress,
+          value: !selectedSendAsset.isNft
+            ? new Amount(sendAmount)
+                .multiplyByDecimals(selectedSendAsset.decimals)
+                .toHex()
+            : new Amount(sendAmount).toHex(),
+          coin: selectedAccount.coin,
+          splTokenMintAddress: selectedSendAsset.contractAddress
+        })
+      )
       resetSendFields(true)
       return
     }
 
     if (selectedAccount.coin === BraveWallet.CoinType.FIL) {
-      dispatch(WalletActions.sendTransaction({
+      dispatch(walletApi.endpoints.sendTransaction.initiate({
         from: selectedAccount.address,
         to: toAddress,
         value: new Amount(sendAmount)
@@ -404,7 +414,7 @@ export default function useSend (isSendTab?: boolean) {
       return
     }
 
-    dispatch(WalletActions.sendTransaction({
+    dispatch(walletApi.endpoints.sendTransaction.initiate({
       from: selectedAccount.address,
       to: toAddress,
       coin: selectedAccount.coin,

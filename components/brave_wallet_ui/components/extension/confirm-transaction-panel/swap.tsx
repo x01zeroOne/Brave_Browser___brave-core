@@ -4,12 +4,19 @@
 // you can obtain one at https://mozilla.org/MPL/2.0/.
 
 import * as React from 'react'
+import { useDispatch } from 'react-redux'
+import { ThunkDispatch } from '@reduxjs/toolkit'
+import { skipToken } from '@reduxjs/toolkit/dist/query'
 
 // Utils
 import { WalletSelectors } from '../../../common/selectors'
 import { getLocale } from '../../../../common/locale'
 import Amount from '../../../utils/amount'
 import { openBlockExplorerURL } from '../../../utils/block-explorer-utils'
+import { getCoinFromTxDataUnion } from '../../../utils/network-utils'
+import { isHardwareAccount } from '../../../utils/account-utils'
+import { PanelActions } from '../../../panel/actions'
+import { UIActions } from '../../../common/slices/ui.slice'
 
 // Styled components
 import {
@@ -56,28 +63,20 @@ import { UNKNOWN_TOKEN_COINGECKO_ID } from '../../../common/constants/magics'
 
 // Hooks
 import { usePendingTransactions } from '../../../common/hooks/use-pending-transaction'
-import { useGetNetworkQuery } from '../../../common/slices/api.slice'
+import { useGetNetworkQuery, walletApi } from '../../../common/slices/api.slice'
 import {
   useSafeWalletSelector,
   useUnsafeWalletSelector
 } from '../../../common/hooks/use-safe-selector'
+import { useAccountQuery } from '../../../common/hooks/use-account'
 
-interface Props {
-  onConfirm: () => void
-  onReject: () => void
-}
-
-export function ConfirmSwapTransaction (props: Props) {
-  const { onConfirm, onReject } = props
-
+export function ConfirmSwapTransaction () {
   // redux
+  const dispatch = useDispatch<ThunkDispatch<any, any, any>>()
   const defaultFiatCurrency = useSafeWalletSelector(
     WalletSelectors.defaultFiatCurrency
   )
   const activeOrigin = useUnsafeWalletSelector(WalletSelectors.activeOrigin)
-  const transactionInfo = useUnsafeWalletSelector(
-    WalletSelectors.selectedPendingTransaction
-  )
 
   // state
   const [showAdvancedTransactionSettings, setShowAdvancedTransactionSettings] =
@@ -90,7 +89,8 @@ export function ConfirmSwapTransaction (props: Props) {
     transactionsNetwork,
     fromOrb,
     toOrb,
-    updateUnapprovedTransactionNonce
+    updateUnapprovedTransactionNonce,
+    selectedPendingTransaction
   } = usePendingTransactions()
 
   // queries
@@ -108,8 +108,17 @@ export function ConfirmSwapTransaction (props: Props) {
     }
   )
 
+  const { account: txAccount } = useAccountQuery(
+    selectedPendingTransaction?.fromAddress
+      ? selectedPendingTransaction?.fromAddress
+      : skipToken,
+    {
+      skip: !selectedPendingTransaction?.fromAddress
+    }
+  )
+
   // computed
-  const originInfo = transactionInfo?.originInfo ?? activeOrigin
+  const originInfo = selectedPendingTransaction?.originInfo ?? activeOrigin
 
   // Methods
   const onToggleAdvancedTransactionSettings = () => {
@@ -117,14 +126,68 @@ export function ConfirmSwapTransaction (props: Props) {
   }
   const onToggleEditGas = () => setIsEditingGas(!isEditingGas)
 
+  const onReject = React.useCallback(() => {
+    if (selectedPendingTransaction) {
+      dispatch(
+        walletApi.endpoints.rejectTransaction.initiate({
+          chainId: selectedPendingTransaction.chainId,
+          coinType: getCoinFromTxDataUnion(
+            selectedPendingTransaction.txDataUnion
+          ),
+          id: selectedPendingTransaction.id
+        })
+      )
+    }
+  }, [selectedPendingTransaction])
+
+  const onConfirm = async () => {
+    if (!selectedPendingTransaction || !txAccount) {
+      return
+    }
+    if (isHardwareAccount(txAccount)) {
+      dispatch(
+        PanelActions.approveHardwareTransaction(selectedPendingTransaction)
+      )
+    } else {
+      try {
+        await dispatch(
+          walletApi.endpoints.approveTransaction.initiate({
+            chainId: selectedPendingTransaction.chainId,
+            id: selectedPendingTransaction.id,
+            coinType: getCoinFromTxDataUnion(
+              selectedPendingTransaction.txDataUnion
+            ),
+            txType: selectedPendingTransaction.txType
+          })
+        )
+        .unwrap()
+        dispatch(
+          PanelActions.setSelectedTransactionId(selectedPendingTransaction.id)
+        )
+        dispatch(PanelActions.navigateTo('transactionStatus'))
+      } catch (error) {
+        dispatch(
+          UIActions.setTransactionProviderError({
+            providerError: error.toString(),
+            transactionId: selectedPendingTransaction.id
+          })
+        )
+      }
+    }
+  }
+
   // render
-  if (showAdvancedTransactionSettings && transactionDetails && transactionInfo) {
+  if (
+    showAdvancedTransactionSettings &&
+    transactionDetails &&
+    selectedPendingTransaction
+  ) {
     return (
       <AdvancedTransactionSettings
         onCancel={onToggleAdvancedTransactionSettings}
         nonce={transactionDetails.nonce}
-        chainId={transactionInfo.chainId}
-        txMetaId={transactionInfo.id}
+        chainId={selectedPendingTransaction.chainId}
+        txMetaId={selectedPendingTransaction.id}
         updateUnapprovedTransactionNonce={updateUnapprovedTransactionNonce}
       />
     )

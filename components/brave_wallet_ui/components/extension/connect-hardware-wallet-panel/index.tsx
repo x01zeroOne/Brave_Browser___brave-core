@@ -4,9 +4,17 @@
 // you can obtain one at https://mozilla.org/MPL/2.0/.
 
 import * as React from 'react'
+import { ThunkDispatch } from '@reduxjs/toolkit'
+import { skipToken } from '@reduxjs/toolkit/query/react'
 
 // utils
 import { getLocale } from '../../../../common/locale'
+import { isHardwareAccount } from '../../../utils/account-utils'
+import { PanelSelectors } from '../../../panel/selectors'
+import { UISelectors } from '../../../common/selectors'
+import { PanelActions } from '../../../panel/actions'
+import { getCoinFromTxDataUnion } from '../../../utils/network-utils'
+import { UIActions } from '../../../common/slices/ui.slice'
 
 // types
 import { BraveWallet } from '../../../constants/types'
@@ -14,6 +22,15 @@ import { HardwareWalletResponseCodeType } from '../../../common/hardware/types'
 
 // hooks
 import useInterval from '../../../common/hooks/interval'
+import { useDispatch } from 'react-redux'
+import {
+  useGetAccountInfosRegistryQuery, walletApi
+} from '../../../common/slices/api.slice'
+import {
+  useSafeUISelector,
+  useUnsafePanelSelector
+} from '../../../common/hooks/use-safe-selector'
+import { useTransactionQuery } from '../../../common/hooks/use-transaction'
 
 // components
 import { NavButton } from '../buttons/nav-button/index'
@@ -30,13 +47,13 @@ import {
   Indicator,
   ConnectionRow
 } from './style'
+
 export interface Props {
   onCancel: (accountAddress: string, coinType: BraveWallet.CoinType) => void
   walletName: string
   accountAddress: string
   coinType: BraveWallet.CoinType
   hardwareWalletCode: HardwareWalletResponseCodeType | undefined
-  retryCallable: () => void
   onClickInstructions: () => void
 }
 
@@ -57,12 +74,51 @@ export const ConnectHardwareWalletPanel = ({
   accountAddress,
   coinType,
   hardwareWalletCode,
-  retryCallable,
   onClickInstructions
 }: Props) => {
+  // redux
+  const dispatch = useDispatch<ThunkDispatch<any, any, any>>()
+
+  /**
+   * signMessageData by default initialized as:
+   *
+   * ```[{ id: -1, address: '', message: '' }]```
+   */
+  const signMessageData = useUnsafePanelSelector(PanelSelectors.signMessageData)
+  const selectedPendingTransactionId = useSafeUISelector(
+    UISelectors.selectedPendingTransactionId
+  )
+  const isSigning =
+    signMessageData && signMessageData.length && signMessageData[0].id !== -1
+
+  const isConfirming = !!selectedPendingTransactionId
+
+  // queries
+  const { transaction: selectedPendingTransaction } = useTransactionQuery(
+    selectedPendingTransactionId || skipToken
+  )
+
+  const { messageAccount, txAccount } = useGetAccountInfosRegistryQuery(
+    signMessageData[0].address || selectedPendingTransaction?.fromAddress
+      ? undefined
+      : skipToken,
+    {
+      selectFromResult: (res) => ({
+        messageAccount: res.data?.entities[signMessageData[0].address],
+        txAccount: selectedPendingTransaction?.fromAddress
+          ? res.data?.entities[selectedPendingTransaction?.fromAddress]
+          : undefined
+      }),
+      skip: !signMessageData[0]?.address
+    }
+  )
+
   // memos
   const isConnected = React.useMemo((): boolean => {
-    return hardwareWalletCode !== 'deviceNotConnected' && hardwareWalletCode !== 'unauthorized'
+    return (
+      hardwareWalletCode !== 'deviceNotConnected' &&
+      hardwareWalletCode !== 'unauthorized'
+    )
   }, [hardwareWalletCode])
 
   const title = React.useMemo(() => {
@@ -71,8 +127,14 @@ export const ConnectHardwareWalletPanel = ({
     }
 
     // Not connected
-    if (hardwareWalletCode === 'deviceNotConnected' || hardwareWalletCode === 'unauthorized') {
-      return getLocale('braveWalletConnectHardwarePanelConnect').replace('$1', walletName)
+    if (
+      hardwareWalletCode === 'deviceNotConnected' ||
+      hardwareWalletCode === 'unauthorized'
+    ) {
+      return getLocale('braveWalletConnectHardwarePanelConnect').replace(
+        '$1',
+        walletName
+      )
     }
 
     const network = getAppName(coinType)
@@ -81,13 +143,86 @@ export const ConnectHardwareWalletPanel = ({
       .replace('$2', walletName)
   }, [hardwareWalletCode])
 
-  // custom hooks
-  useInterval(retryCallable, 3000, !isConnected ? 5000 : null)
-
   // methods
   const onCancelConnect = React.useCallback(() => {
     onCancel(accountAddress, coinType)
   }, [onCancel, accountAddress, coinType])
+
+  const onSignData = React.useCallback(() => {
+    if (!messageAccount) {
+      return
+    }
+
+    if (isHardwareAccount(messageAccount)) {
+      dispatch(PanelActions.signMessageHardware(signMessageData[0]))
+    } else {
+      dispatch(
+        PanelActions.signMessageProcessed({
+          approved: true,
+          id: signMessageData[0].id
+        })
+      )
+    }
+  }, [messageAccount, signMessageData[0]])
+
+  const onConfirmTransaction = React.useCallback(async () => {
+    if (!selectedPendingTransaction || !txAccount) {
+      return
+    }
+
+    if (isHardwareAccount(txAccount)) {
+      dispatch(
+        PanelActions.approveHardwareTransaction(
+          selectedPendingTransaction
+        )
+      )
+    } else {
+      try {
+        await dispatch(
+          walletApi.endpoints.approveTransaction.initiate({
+            chainId: selectedPendingTransaction.chainId,
+            id: selectedPendingTransaction.id,
+            coinType: getCoinFromTxDataUnion(
+              selectedPendingTransaction.txDataUnion
+            ),
+            txType: selectedPendingTransaction.txType
+          })
+        )
+        .unwrap()
+        dispatch(
+          PanelActions.setSelectedTransactionId(
+            selectedPendingTransaction.id
+          )
+        )
+        dispatch(PanelActions.navigateTo('transactionStatus'))
+      } catch (error) {
+        dispatch(
+          UIActions.setTransactionProviderError({
+            providerError: error.toString(),
+            transactionId: selectedPendingTransaction.id
+          })
+        )
+      }
+    }
+  }, [txAccount, selectedPendingTransaction])
+
+  const retryHardwareOperation = React.useCallback(() => {
+    if (isSigning) {
+      onSignData()
+    }
+    if (isConfirming && selectedPendingTransaction) {
+      onConfirmTransaction()
+    }
+  }, [
+    isSigning,
+    isConfirming,
+    selectedPendingTransaction,
+    onSignData,
+    onConfirmTransaction
+  ])
+
+  // custom hooks
+  useInterval(retryHardwareOperation, 3000, !isConnected ? 5000 : null)
 
   // render
   return (

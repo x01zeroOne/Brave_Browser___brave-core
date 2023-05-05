@@ -3,18 +3,20 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this file,
 // you can obtain one at https://mozilla.org/MPL/2.0/.
 import * as React from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
+import { skipToken } from '@reduxjs/toolkit/dist/query'
 
 // Constants
-import { BraveWallet, SerializableTransactionInfo, TransactionProviderError, WalletState } from '../../../constants/types'
+import { BraveWallet } from '../../../constants/types'
 
 // Utils
 import { getLocale } from '$web-common/locale'
 
 // Hooks
-import { useTransactionParser } from '../../../common/hooks'
+import { useTransactionParser } from '../../../common/hooks/transaction-parser'
 import { useTransactionsNetwork } from '../../../common/hooks/use-transactions-network'
 import { usePendingTransactions } from '../../../common/hooks/use-pending-transaction'
+import { useGetTransactionsQuery } from '../../../common/slices/api.slice'
 
 // Actions
 import * as WalletPanelActions from '../../../panel/actions/wallet_panel_actions'
@@ -25,57 +27,75 @@ import { TransactionSubmittedOrSigned } from './submitted_or_signed'
 import { TransactionComplete } from './complete'
 import { TransactionFailed } from './failed'
 import { Loader } from './common/common.style'
+import { Skeleton } from '../../shared/loading-skeleton/styles'
 
 interface Props {
-  transaction: SerializableTransactionInfo
+  transactionId: string
 }
 
 export function TransactionStatus (props: Props) {
-  const { transaction } = props
+  const { transactionId } = props
 
-  // redux
-  const { transactions, transactionProviderErrorRegistry } = useSelector(
-    (state: { wallet: WalletState }) => state.wallet
-  )
-
-  const liveTransaction: SerializableTransactionInfo = React.useMemo(
-    () => transactions[transaction.fromAddress].find(tx => tx.id === transaction.id) || transaction,
-    [transactions, transaction]
-  )
+  // queries
+  const { tx, error: errorDetailContent } =
+    useGetTransactionsQuery(
+      transactionId
+        ? {
+            address: null,
+            chainId: null,
+            coinType: BraveWallet.CoinType.ETH // TODO: change to null
+          }
+        : skipToken,
+      {
+        selectFromResult: (res) => ({
+          isLoading: res.isLoading,
+          tx: res.data?.find((tx) => tx.id === transactionId),
+          error: res.error as string | undefined
+        }),
+        skip: !transactionId
+      }
+    )
 
   // hooks
   const dispatch = useDispatch()
-  const transactionsNetwork = useTransactionsNetwork(liveTransaction)
+  const transactionsNetwork = useTransactionsNetwork(tx)
   const transactionParser = useTransactionParser(transactionsNetwork)
   const { transactionsQueueLength } = usePendingTransactions()
 
-  const parsedTransaction = React.useMemo(
-    () => transactionParser(liveTransaction),
-    [transactionParser, liveTransaction]
-  )
+  // memos
+  const transactionIntent = React.useMemo(() => {
+    return tx ? transactionParser(tx).intent : ''
+  }, [tx, transactionParser])
 
+  // methods
   const viewTransactionDetail = () => dispatch(WalletPanelActions.navigateTo('transactionDetails'))
-  const onClose = () => dispatch(WalletPanelActions.setSelectedTransaction(undefined))
+  const onClose = () =>
+    dispatch(WalletPanelActions.setSelectedTransactionId(undefined))
   const completePrimaryCTAText =
     transactionsQueueLength === 0
       ? getLocale('braveWalletButtonClose')
       : getLocale('braveWalletButtonNext')
 
-  if (liveTransaction.txStatus === BraveWallet.TransactionStatus.Submitted ||
-      liveTransaction.txStatus === BraveWallet.TransactionStatus.Signed) {
+  // render
+  if (!tx) {
+    return <Skeleton />
+  }
+
+  if (tx.txStatus === BraveWallet.TransactionStatus.Submitted ||
+      tx.txStatus === BraveWallet.TransactionStatus.Signed) {
     return (
       <TransactionSubmittedOrSigned
-        headerTitle={parsedTransaction.intent}
-        transaction={liveTransaction}
+        headerTitle={transactionIntent}
+        transaction={tx}
         onClose={onClose}
       />
     )
   }
 
-  if (liveTransaction.txStatus === BraveWallet.TransactionStatus.Confirmed) {
+  if (tx.txStatus === BraveWallet.TransactionStatus.Confirmed) {
     return (
       <TransactionComplete
-        headerTitle={parsedTransaction.intent}
+        headerTitle={transactionIntent}
         description={getLocale('braveWalletTransactionCompleteDescription')}
         isPrimaryCTADisabled={false}
         onClose={onClose}
@@ -86,14 +106,10 @@ export function TransactionStatus (props: Props) {
     )
   }
 
-  if (liveTransaction.txStatus === BraveWallet.TransactionStatus.Error) {
-    const providerError: TransactionProviderError | undefined =
-      transactionProviderErrorRegistry[liveTransaction.id]
-    const errorDetailContent = providerError && `${providerError.code}: ${providerError.message}`
-
+  if (tx.txStatus === BraveWallet.TransactionStatus.Error) {
     return (
       <TransactionFailed
-        headerTitle={parsedTransaction.intent}
+        headerTitle={transactionIntent}
         isPrimaryCTADisabled={false}
         errorDetailTitle={getLocale('braveWalletTransactionFailedModalSubtitle')}
         errorDetailContent={errorDetailContent}
@@ -104,7 +120,7 @@ export function TransactionStatus (props: Props) {
   }
 
   return (
-    <Panel navAction={onClose} title={parsedTransaction.intent} headerStyle='slim'>
+    <Panel navAction={onClose} title={transactionIntent} headerStyle='slim'>
       <Loader />
     </Panel>
   )
