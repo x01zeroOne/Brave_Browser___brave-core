@@ -1,8 +1,8 @@
 diff --git a/chrome/browser/about_flags.cc b/chrome/browser/about_flags.cc
-index 89ca3f5e0c27d8e67e7bca165bc7e79b46a3c284..bcd3fa0a15f3f5c1cf136e993580e33b66eff866 100644
+index 1e4a97b55e946dfd1aa406127185e231bb812bbb..16787d326f35e6ccf1cfa0aef7ba59f78865a255 100644
 --- a/chrome/browser/about_flags.cc
 +++ b/chrome/browser/about_flags.cc
-@@ -3552,6 +3552,7 @@ const FeatureEntry::FeatureVariation kVcSegmentationModelVariations[] = {
+@@ -3560,6 +3560,7 @@ const FeatureEntry::FeatureVariation kVcSegmentationModelVariations[] = {
  //
  // When adding a new choice, add it to the end of the list.
  const FeatureEntry kFeatureEntries[] = {

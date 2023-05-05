@@ -1,8 +1,8 @@
 diff --git a/components/omnibox/browser/autocomplete_controller.cc b/components/omnibox/browser/autocomplete_controller.cc
-index f04e562f8416331cc7d9fe4baf54495dfb6ea4d5..d326c767100a3bc9d91211e7d3d5ec28addfdbea 100644
+index e4f20c1e9650141b802d212b1094fe7809d7a6c7..cf5a282d13928f8dd73ad878e0b3b3fe8290ed94 100644
 --- a/components/omnibox/browser/autocomplete_controller.cc
 +++ b/components/omnibox/browser/autocomplete_controller.cc
-@@ -832,6 +832,7 @@ void AutocompleteController::InitializeAsyncProviders(int provider_types) {
+@@ -824,6 +824,7 @@ void AutocompleteController::InitializeAsyncProviders(int provider_types) {
    if (provider_types & AutocompleteProvider::TYPE_SEARCH) {
      search_provider_ = new SearchProvider(provider_client_.get(), this);
      providers_.push_back(search_provider_.get());
@@ -10,7 +10,7 @@ index f04e562f8416331cc7d9fe4baf54495dfb6ea4d5..d326c767100a3bc9d91211e7d3d5ec28
    }
    // Providers run in the order they're added.  Add `HistoryURLProvider` after
    // `SearchProvider` because:
-@@ -1041,6 +1042,7 @@ void AutocompleteController::UpdateResult(
+@@ -1039,6 +1040,7 @@ void AutocompleteController::UpdateResult(
    // `SortCullAndAnnotateResult()`. Here, the result is sorted, trimmed to a
    // small number of "best" matches, and annotated with relevant information
    // before notifying listeners that the result is ready.
