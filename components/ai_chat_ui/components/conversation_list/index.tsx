@@ -8,7 +8,6 @@ import classnames from 'classnames'
 
 import styles from './style.module.scss'
 import { ConversationTurn, CharacterType } from '../../api/page_handler'
-import { getLocale } from '$web-common/locale'
 
 interface ConversationListProps {
   list: ConversationTurn[]
@@ -24,22 +23,17 @@ function ConversationList (props: ConversationListProps) {
           [styles.turnHuman]: turn.characterType === CharacterType.HUMAN,
         })
 
+        const isLoading = props.isLoading && turn.characterType === CharacterType.ASSISTANT && (id === props.list.length-1)
+
         return (
           <div key={id} className={turnClass}>
             <p>
               {turn.text}
+              {isLoading && <span className={styles.caret}/>}
             </p>
           </div>
         )
       })}
-      {props.isLoading && (
-        <div className={styles.turnAI}>
-          <p>
-            {getLocale('loadingLabel')}
-            <span className={styles.caret}/>
-          </p>
-        </div>
-      )}
     </div>
   )
 }
