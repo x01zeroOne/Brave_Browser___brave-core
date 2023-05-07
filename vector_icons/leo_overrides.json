@@ -9,12 +9,15 @@
   "extension": "leo_browser_extensions",
   "browser_tools": "leo_hamburger_menu",
   "https_valid": "leo_lock_plain",
-  "share": "leo_share_browser",
+  "share": "leo_share",
+  "share_win": "leo_share_windows",
+  "share_mac": "leo_share_macos",
   "download_in_progress": "leo_download",
   "download_toolbar_button": "leo_download",
   "battery_saver": "leo_energy_saver",
   "zoom_plus": "leo_search_zoom_in",
   "zoom_minus": "leo_search_zoom_out",
   "not_secure_warning": "leo_warning_triangle_filled",
-  "http": "leo_warning_circle_filled"
+  "http": "leo_warning_circle_filled",
+  "find_in_page": "leo_window_search"
 }
