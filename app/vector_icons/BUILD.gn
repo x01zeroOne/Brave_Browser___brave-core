@@ -26,7 +26,6 @@ aggregate_vector_icons("brave_vector_icons") {
     "sidebar_toolbar_button.icon",
     "sidebar_toolbar_button_right.icon",
     "vpn_indicator.icon",
-    "wallet_toolbar_button.icon",
     "web_discovery_infobar_close_button.icon",
   ]
 
@@ -37,6 +36,7 @@ aggregate_vector_icons("brave_vector_icons") {
     "leo_heart_filled.icon",
     "leo_heart_outline.icon",
     "leo_rss.icon",
+    "leo_product_brave_wallet.icon",
   ]
 
   if (toolkit_views) {
