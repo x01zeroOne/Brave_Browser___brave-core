@@ -1,5 +1,5 @@
 diff --git a/chrome/common/BUILD.gn b/chrome/common/BUILD.gn
-index fe62a13434fc1bc3b33ccabcb8ff52ce0ba4e376..7375c10f7fdf55105324d4ad33c08347f3eceb23 100644
+index fe62a13434fc1bc3b33ccabcb8ff52ce0ba4e376..aed5aac890e8b663728f4c44f20a8ead413bab53 100644
 --- a/chrome/common/BUILD.gn
 +++ b/chrome/common/BUILD.gn
 @@ -89,6 +89,7 @@ source_set("channel_info") {
@@ -10,15 +10,17 @@ index fe62a13434fc1bc3b33ccabcb8ff52ce0ba4e376..7375c10f7fdf55105324d4ad33c08347
  }
  
  source_set("ini_parser") {
-@@ -276,6 +277,7 @@ static_library("common_lib") {
+@@ -276,6 +277,9 @@ static_library("common_lib") {
    if (enable_ppapi) {
      public_deps += [ "//ppapi/shared_impl" ]
    }
-+  import("//brave/common/sources.gni") sources += brave_common_sources
++  if (is_android) {
++    import("//brave/common/sources.gni") sources += brave_common_sources
++  }
  
    if (enable_extensions) {
      sources += [
-@@ -541,6 +543,7 @@ static_library("non_code_constants") {
+@@ -541,6 +545,7 @@ static_library("non_code_constants") {
      "//printing/buildflags",
      "//ui/base:buildflags",
    ]

@@ -3,19 +3,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+#include "chrome/browser/bookmarks/android/bookmark_bridge.h"
+
 #include <utility>
 
 #include "base/task/thread_pool.h"
 #include "base/threading/thread.h"
-#include "chrome/browser/bookmarks/android/bookmark_bridge.h"
 #include "chrome/browser/bookmarks/bookmark_html_writer.h"
 #include "chrome/browser/importer/profile_writer.h"
 #include "chrome/common/url_constants.h"
 #include "chrome/utility/importer/bookmark_html_reader.h"
 #include "components/url_formatter/url_fixer.h"
+
 #define BraveBookmarkBridge BookmarkBridge
 #include "brave/build/android/jni_headers/BraveBookmarkBridge_jni.h"
 #undef BraveBookmarkBridge
+
 #include "src/chrome/browser/bookmarks/android/bookmark_bridge.cc"
 #include "ui/android/window_android.h"
 
