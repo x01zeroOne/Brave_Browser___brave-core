@@ -86,7 +86,7 @@ import org.chromium.chrome.browser.BraveRewardsHelper;
 import org.chromium.chrome.browser.BraveRewardsNativeWorker;
 import org.chromium.chrome.browser.BraveRewardsObserver;
 import org.chromium.chrome.browser.BraveRewardsOnboardingPagerAdapter;
-import org.chromium.chrome.browser.BraveRewardsSiteBannerActivity;
+import org.chromium.chrome.browser.rewards.tipping.RewardsTippingBannerActivity;
 import org.chromium.chrome.browser.BraveRewardsUserWalletActivity;
 import org.chromium.chrome.browser.BraveRewardsVerifyWalletActivity;
 import org.chromium.chrome.browser.BraveWalletProvider;

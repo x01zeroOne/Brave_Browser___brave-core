@@ -156,7 +156,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:contentDescription="@null"
+        android:contentDescription="@string/exchange_button"
         app:layout_constraintBottom_toBottomOf="@+id/exchange_amount1"
         app:layout_constraintStart_toEndOf="@id/currency2"
         app:layout_constraintTop_toTopOf="@+id/exchange_amount1"
