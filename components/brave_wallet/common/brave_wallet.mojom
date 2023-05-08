@@ -652,6 +652,7 @@ struct BlockchainToken {
 };
 
 struct AllowanceInfo {
+  string chain_id;
   string contract_address;
   string approver_address;
   string spender_address;
@@ -1505,10 +1506,6 @@ interface BraveWalletServiceObserver {
 
   // Fired when wallet service is being reset
   OnResetWallet();
-
-  //Fired when Ethereum discovered allowance query completes
-  OnDiscoverEthAllowancesCompleted(array<AllowanceInfo> allowances);
-
 };
 
 interface BraveWalletServiceTokenObserver {
@@ -1721,7 +1718,7 @@ interface BraveWalletService {
   Reset();
 
   // Used for UI to trigger the allowance discovery
-  DiscoverEthAllowances();
+  DiscoverEthAllowances() => (array<AllowanceInfo> allowances, ProviderError error, string error_message);
 };
 
 // For reporting wallet related P3A metrics.

@@ -1686,13 +1686,4 @@ GURL GetActiveEndpointUrl(const mojom::NetworkInfo& chain) {
   return GURL();
 }
 
-// Returns vector of chain_ids supported by allowance discovering.
-const std::vector<std::string>& GetChainIdsForAlowanceDiscovering() {
-  static base::NoDestructor<std::vector<std::string>> supported_chain_ids(
-      {mojom::kMainnetChainId, mojom::kPolygonMainnetChainId,
-       mojom::kAvalancheMainnetChainId, mojom::kCeloMainnetChainId,
-       mojom::kArbitrumMainnetChainId, mojom::kOptimismMainnetChainId});
-  return *supported_chain_ids;
-}
-
 }  // namespace brave_wallet

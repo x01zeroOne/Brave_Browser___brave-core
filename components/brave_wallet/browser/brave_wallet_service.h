@@ -238,14 +238,12 @@ class BraveWalletService : public KeyedService,
 
   void OnDiscoverAssetsCompleted(
       std::vector<mojom::BlockchainTokenPtr> discovered_assets);
-  void OnDiscoverEthAllowancesCompleted(
-      const std::vector<mojom::AllowanceInfoPtr>& allowances);
 
   // Resets things back to the original state of BraveWalletService.
   // To be used when the Wallet is reset / erased
   void Reset() override;
 
-  void DiscoverEthAllowances() override;
+  void DiscoverEthAllowances(DiscoverEthAllowancesCallback callback) override;
 
   void AddSignMessageRequest(mojom::SignMessageRequestPtr request,
                              SignMessageRequestCallback callback);

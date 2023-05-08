@@ -1301,17 +1301,6 @@ void BraveWalletService::OnDiscoverAssetsCompleted(
   }
 }
 
-void BraveWalletService::OnDiscoverEthAllowancesCompleted(
-    const std::vector<mojom::AllowanceInfoPtr>& allowances) {
-  for (const auto& observer : observers_) {
-    std::vector<mojom::AllowanceInfoPtr> allowances_copy;
-    for (auto& allowance : allowances) {
-      allowances_copy.push_back(allowance.Clone());
-    }
-    observer->OnDiscoverEthAllowancesCompleted(std::move(allowances_copy));
-  }
-}
-
 void BraveWalletService::OnGetImportInfo(
     const std::string& new_password,
     base::OnceCallback<void(bool, const absl::optional<std::string>&)> callback,
@@ -1798,10 +1787,10 @@ void BraveWalletService::Reset() {
   }
 }
 
-void BraveWalletService::DiscoverEthAllowances() {
-  if (eth_allowance_manager_) {
-    eth_allowance_manager_->DiscoverEthAllowancesOnAllSupportedChains();
-  }
+void BraveWalletService::DiscoverEthAllowances(
+    DiscoverEthAllowancesCallback callback) {
+  eth_allowance_manager_->DiscoverEthAllowancesOnAllSupportedChains(
+      std::move(callback));
 }
 
 }  // namespace brave_wallet

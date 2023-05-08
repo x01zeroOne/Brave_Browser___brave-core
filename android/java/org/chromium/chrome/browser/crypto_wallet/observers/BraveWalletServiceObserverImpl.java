@@ -5,7 +5,6 @@
 
 package org.chromium.chrome.browser.crypto_wallet.observers;
 
-import org.chromium.brave_wallet.mojom.AllowanceInfo;
 import org.chromium.brave_wallet.mojom.BlockchainToken;
 import org.chromium.brave_wallet.mojom.BraveWalletServiceObserver;
 import org.chromium.brave_wallet.mojom.OriginInfo;
@@ -82,9 +81,6 @@ public class BraveWalletServiceObserverImpl implements BraveWalletServiceObserve
     public void onResetWallet() {
         if (isActive()) getRef().onResetWallet();
     }
-
-    @Override
-    public void onDiscoverEthAllowancesCompleted(AllowanceInfo[] allowances) {}
 
     @Override
     public void close() {

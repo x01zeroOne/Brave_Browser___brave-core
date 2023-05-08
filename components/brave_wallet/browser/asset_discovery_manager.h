@@ -27,6 +27,7 @@ namespace brave_wallet {
 class BraveWalletService;
 class JsonRpcService;
 class KeyringService;
+
 class AssetDiscoveryManager : public mojom::KeyringServiceObserver {
  public:
   using APIRequestHelper = api_request_helper::APIRequestHelper;
