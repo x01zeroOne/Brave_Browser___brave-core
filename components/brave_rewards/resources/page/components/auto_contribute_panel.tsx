@@ -27,7 +27,11 @@ import * as style from './auto_contribute_panel.style'
 
 const maxTableSize = 5
 
-export function AutoContributePanel () {
+interface Props {
+  showConfigOnLoad: boolean
+}
+
+export function AutoContributePanel(props: Props) {
   const { getString, getPluralString } = React.useContext(LocaleContext)
   const actions = useActions()
 
@@ -47,7 +51,7 @@ export function AutoContributePanel () {
 
   const [showModal, setShowModal] = React.useState(false)
   const [modalTab, setModalTab] = React.useState(0)
-  const [showConfig, setShowConfig] = React.useState(false)
+  const [showConfig, setShowConfig] = React.useState(props.showConfigOnLoad)
   const [publisherCountText, setPublisherCountText] = React.useState('')
 
   React.useEffect(() => {

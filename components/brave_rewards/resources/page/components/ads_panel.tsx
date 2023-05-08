@@ -33,7 +33,11 @@ import { AlertIcon } from './icons/alert_icon'
 import * as urls from '../../shared/lib/rewards_urls'
 import * as style from './ads_panel.style'
 
-export function AdsPanel () {
+interface Props {
+  showConfigOnLoad: boolean
+}
+
+export function AdsPanel(props: Props) {
   const { getString } = React.useContext(LocaleContext)
   const actions = useActions()
 
@@ -48,7 +52,7 @@ export function AdsPanel () {
   }))
 
   const [showModal, setShowModal] = React.useState(false)
-  const [showConfig, setShowConfig] = React.useState(false)
+  const [showConfig, setShowConfig] = React.useState(props.showConfigOnLoad)
 
   React.useEffect(() => {
     if (showModal) {

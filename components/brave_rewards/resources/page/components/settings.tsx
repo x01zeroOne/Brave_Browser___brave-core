@@ -37,6 +37,40 @@ export function Settings () {
 
   const [showRewardsTour, setShowRewardsTour] = React.useState(false)
 
+  class ScrollRefs {
+    top: HTMLDivElement | null = null;
+    adsPanel: HTMLDivElement | null = null;
+    autoContributePanel: HTMLDivElement | null = null;
+    contributionsPanel: HTMLDivElement | null = null;
+  }
+  const scrollRefs = React.useRef(new ScrollRefs());
+
+  const scrollToRef = (ref: HTMLDivElement | null) => {
+    if (ref) {
+      ref.scrollIntoView()
+    }
+  }
+
+  const isAdsSettingsPath = () => {
+    return location.pathname === '/ads-settings'
+  }
+
+  const isAutoContributePath = () => {
+    return location.pathname === '/auto-contribute'
+  }
+
+  const isContributionsPath = () => {
+    return location.pathname === '/contributions'
+  }
+
+  const isMonthlyStatementsPath = () => {
+    return location.pathname === '/monthly-statements'
+  }
+
+  const isResetPath = () => {
+    return location.pathname === '/reset'
+  }
+
   const handleURL = () => {
     const { pathname } = location
 
@@ -49,6 +83,32 @@ export function Settings () {
     if (pathname.includes('authorization')) {
       actions.connectExternalWallet(pathname, location.search)
       return true
+    }
+
+    if (isAdsSettingsPath()) {
+      scrollToRef(scrollRefs.current.adsPanel)
+      return false;
+    }
+
+    if (isAutoContributePath()) {
+      scrollToRef(scrollRefs.current.autoContributePanel)
+      return false;
+    }
+
+    if (isContributionsPath()) {
+      scrollToRef(scrollRefs.current.contributionsPanel)
+      return false;
+    }
+
+    if (isMonthlyStatementsPath()) {
+      scrollToRef(scrollRefs.current.top)
+      return false;
+    }
+
+    if (isResetPath()) {
+      scrollToRef(scrollRefs.current.top)
+      actions.onModalResetOpen()
+      return false;
     }
 
     return false
@@ -216,7 +276,7 @@ export function Settings () {
     }
 
     return (
-      <style.content>
+      <style.content ref={el => scrollRefs.current.top = el}>
         <style.main>
           <style.header>
             <style.title>
@@ -235,20 +295,23 @@ export function Settings () {
             }
           </style.header>
           {renderVBATNotice()}
-          <style.settingGroup>
-            <AdsPanel />
+          <style.settingGroup ref={el => scrollRefs.current.adsPanel = el}>
+            <AdsPanel showConfigOnLoad={isAdsSettingsPath()} />
           </style.settingGroup>
           {
             rewardsData.userType !== 'unconnected' &&
-              <style.settingGroup data-test-id='auto-contribute-settings'>
-                <AutoContributePanel />
+            <style.settingGroup data-test-id='auto-contribute-settings'
+              ref={el => scrollRefs.current.autoContributePanel = el}>
+                <AutoContributePanel
+                  showConfigOnLoad={isAutoContributePath()} />
               </style.settingGroup>
           }
           {
             rewardsData.userType !== 'unconnected' &&
               <>
-                <style.settingGroup>
-                  <TipsPanel />
+                <style.settingGroup
+                  ref={el => scrollRefs.current.contributionsPanel = el}>
+                  <TipsPanel showConfigOnLoad={isContributionsPath()} />
                 </style.settingGroup>
                 <style.settingGroup>
                   <MonthlyTipsPanel />
@@ -258,7 +321,8 @@ export function Settings () {
         </style.main>
         <style.sidebar>
           {rewardsData.userType !== 'unconnected' && <GrantList />}
-          <PageWallet layout={layoutKind} />
+          <PageWallet layout={layoutKind}
+            showActivityOnLoad={isMonthlyStatementsPath()} />
           <SidebarPromotionPanel onTakeRewardsTour={onTakeTour} />
         </style.sidebar>
       </style.content>

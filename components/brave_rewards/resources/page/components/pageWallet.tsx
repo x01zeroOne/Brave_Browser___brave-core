@@ -41,6 +41,7 @@ interface State {
 
 interface Props extends Rewards.ComponentProps {
   layout: LayoutKind
+  showActivityOnLoad: boolean
 }
 
 class PageWallet extends React.Component<Props, State> {
@@ -61,6 +62,9 @@ class PageWallet extends React.Component<Props, State> {
     this.isVerifyUrl()
     this.actions.getMonthlyReportIds()
     this.actions.getExternalWalletProviders()
+    if (this.props.showActivityOnLoad) {
+      this.onModalActivityToggle()
+    }
   }
 
   onModalResetClose = () => {

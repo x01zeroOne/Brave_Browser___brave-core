@@ -30,7 +30,11 @@ import * as style from './tips_panel.style'
 
 const maxTableSize = 5
 
-export function TipsPanel () {
+interface Props {
+  showConfigOnLoad: boolean
+}
+
+export function TipsPanel(props: Props) {
   const { isAndroid } = React.useContext(PlatformContext)
   const { getString } = React.useContext(LocaleContext)
   const actions = useActions()
@@ -43,7 +47,7 @@ export function TipsPanel () {
   }))
 
   const [showAllModal, setShowAllModal] = React.useState(false)
-  const [showConfig, setShowConfig] = React.useState(false)
+  const [showConfig, setShowConfig] = React.useState(props.showConfigOnLoad)
   const [needsRestart, setNeedsRestart] = React.useState(false)
 
   const totalTips = data.tipsList.reduce(
