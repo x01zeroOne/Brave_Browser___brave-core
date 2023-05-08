@@ -29,6 +29,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -100,6 +101,7 @@ public class RewardsTippingPanelFragment
     private double rate;
     private boolean mIsBatCurrency;
     private BraveRewardsExternalWallet mExternalWallet;
+    private ProgressBar mTipProgressBar;
 
     public static RewardsTippingPanelFragment newInstance(int tabId, String web3Url) {
         RewardsTippingPanelFragment fragment = new RewardsTippingPanelFragment();
@@ -153,6 +155,7 @@ public class RewardsTippingPanelFragment
         }
         mContentView = view;
         mSendButton = view.findViewById(R.id.send_tip_button);
+        mTipProgressBar = view.findViewById(R.id.send_tip_progress_bar);
 
         init(view);
         setBalanceText(view);
@@ -319,9 +322,12 @@ public class RewardsTippingPanelFragment
         if (result) {
             RewardsTippingSuccessContributionFragment.showTippingSuccessContributionUi(
                     (AppCompatActivity) getActivity(), mAmountSelected);
+            mSendButton.setText(R.string.send);
         } else {
             showErrorLayout();
         }
+        mSendButton.setEnabled(true);
+        mTipProgressBar.setVisibility(View.GONE);
     }
 
     private void showErrorLayout() {
@@ -440,10 +446,16 @@ public class RewardsTippingPanelFragment
             } else {
                 SwitchCompat isMonthly = view.findViewById(R.id.monthly_switch);
                 mAmountSelected = selectedAmount();
+
                 if (mSendButton.isEnabled()) {
                     mBraveRewardsNativeWorker.Donate(
                             mBraveRewardsNativeWorker.GetPublisherId(mCurrentTabId),
                             mAmountSelected, isMonthly.isChecked());
+                    mSendButton.setEnabled(false);
+                    mSendButton.setBackground(ResourcesCompat.getDrawable(
+                        getActivity().getResources(), R.drawable.tipping_send_button_background, /* theme= */ null));
+                    mSendButton.setText("");
+                    mTipProgressBar.setVisibility(View.VISIBLE);
                 }
             }
         });
@@ -583,9 +595,9 @@ public class RewardsTippingPanelFragment
             currency1ValueTextView.setText(String.valueOf(roundExchangeUp(usdValue)));
             currency2ValueTextView.setText(String.valueOf(batValue));
         }
-        mTipChoices[0] = mTipChoices[0] ;
-        mTipChoices[1] = mTipChoices[1] ;
-        mTipChoices[2] = mTipChoices[2] ;
+        mTipChoices[0] = mTipChoices[0];
+        mTipChoices[1] = mTipChoices[1];
+        mTipChoices[2] = mTipChoices[2];
         for (int i = 0; i < 3; i++) {
             radio_tip_amount[i].setText(String.valueOf(roundExchangeUp(mTipChoices[i])));
         }

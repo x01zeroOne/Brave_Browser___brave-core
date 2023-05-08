@@ -4,7 +4,8 @@
 
 package org.chromium.chrome.browser;
 
-import org.chromium.chrome.R;
+import static java.util.Locale.getDefault;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -19,13 +20,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import org.chromium.base.IntentUtils;
-import org.chromium.chrome.browser.tab.Tab;
+import org.chromium.chrome.R;
 import org.chromium.chrome.browser.BraveRewardsHelper;
 import org.chromium.chrome.browser.BraveRewardsNativeWorker;
 import org.chromium.chrome.browser.BraveRewardsObserver;
 import org.chromium.chrome.browser.rewards.tipping.RewardsTippingBannerActivity;
+import org.chromium.chrome.browser.tab.Tab;
 
-import static java.util.Locale.getDefault;
 import java.text.DateFormat;
 
 public class BraveRewardsDonationSentActivity extends Activity implements BraveRewardsHelper.LargeIconReadyCallback, BraveRewardsObserver  {
@@ -132,12 +133,15 @@ public class BraveRewardsDonationSentActivity extends Activity implements BraveR
     private void SetData() {
         Intent intent = getIntent();
         if (-1 == currentTabId_) {
-            currentTabId_ = IntentUtils.safeGetIntExtra(intent, RewardsTippingBannerActivity.TAB_ID_EXTRA, -1);
+            currentTabId_ = IntentUtils.safeGetIntExtra(
+                    intent, RewardsTippingBannerActivity.TAB_ID_EXTRA, -1);
         }
 
         mPublisher_name_ = mBraveRewardsNativeWorker.GetPublisherName(currentTabId_);
-        mAmount_ = IntentUtils.safeGetIntExtra (intent, RewardsTippingBannerActivity.TIP_AMOUNT_EXTRA, 0);
-        mMonthly_tip_ = IntentUtils.safeGetBooleanExtra (intent, RewardsTippingBannerActivity.TIP_MONTHLY_EXTRA, false);
+        mAmount_ = IntentUtils.safeGetIntExtra(
+                intent, RewardsTippingBannerActivity.TIP_AMOUNT_EXTRA, 0);
+        mMonthly_tip_ = IntentUtils.safeGetBooleanExtra(
+                intent, RewardsTippingBannerActivity.TIP_MONTHLY_EXTRA, false);
 
         //set the data
         String strAmount = String.format(

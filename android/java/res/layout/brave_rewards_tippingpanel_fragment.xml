@@ -88,4 +88,18 @@
         <include layout="@layout/tipping_banner_tipping_panel_inside_layout" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <ProgressBar
+        android:id="@+id/send_tip_progress_bar"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_centerInParent="true"
+        app:layout_constraintTop_toTopOf="@+id/send_tip_button"
+        app:layout_constraintStart_toStartOf="@+id/send_tip_button"
+        app:layout_constraintEnd_toEndOf="@+id/send_tip_button"
+        app:layout_constraintBottom_toBottomOf="@id/send_tip_button"
+        android:indeterminateTint="@android:color/white"
+        android:visibility="gone"
+        android:elevation="9dp"
+         />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

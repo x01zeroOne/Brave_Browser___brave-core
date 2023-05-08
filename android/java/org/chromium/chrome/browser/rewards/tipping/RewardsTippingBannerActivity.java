@@ -40,8 +40,8 @@ import java.util.Map;
 public class RewardsTippingBannerActivity
         extends AsyncInitializationActivity implements BraveRewardsObserver {
     public static final String TAB_ID_EXTRA = "currentTabId";
-    public static final String TIP_MONTHLY_EXTRA="tipMonthly";
-    public static final String TIP_AMOUNT_EXTRA="tipAmount";
+    public static final String TIP_MONTHLY_EXTRA = "tipMonthly";
+    public static final String TIP_AMOUNT_EXTRA = "tipAmount";
     private BraveRewardsNativeWorker mBraveRewardsNativeWorker;
     private final int PUBLISHER_ICON_SIDE_LEN = 64; // dp
     private static final String TAG = "TippingBanner";
