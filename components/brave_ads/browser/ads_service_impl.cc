@@ -113,7 +113,7 @@ int GetDataResourceId(const std::string& name) {
 }
 
 std::string URLMethodToRequestType(mojom::UrlRequestMethodType method) {
-  CHECK(mojom::IsKnownEnumValue(method));
+  DCHECK(mojom::IsKnownEnumValue(method));
 
   switch (method) {
     case mojom::UrlRequestMethodType::kGet: {
@@ -130,16 +130,13 @@ std::string URLMethodToRequestType(mojom::UrlRequestMethodType method) {
   }
 }
 
-std::string LoadOnFileTaskRunner(const base::FilePath& path) {
-  std::string data;
-  const bool success = base::ReadFileToString(path, &data);
-
-  // Make sure the file isn't empty.
-  if (!success || data.empty()) {
-    return "";
+absl::optional<std::string> LoadOnFileTaskRunner(const base::FilePath& path) {
+  std::string value;
+  if (!base::ReadFileToString(path, &value)) {
+    return absl::nullopt;
   }
 
-  return data;
+  return value;
 }
 
 bool EnsureBaseDirectoryExistsOnFileTaskRunner(const base::FilePath& path) {
@@ -238,8 +235,8 @@ bool MigrateConfirmationStateOnFileTaskRunner(const base::FilePath& path) {
 mojom::DBCommandResponseInfoPtr RunDBTransactionOnFileTaskRunner(
     mojom::DBTransactionInfoPtr transaction,
     Database* database) {
-  CHECK(transaction);
-  CHECK(database);
+  DCHECK(transaction);
+  DCHECK(database);
 
   mojom::DBCommandResponseInfoPtr command_response =
       mojom::DBCommandResponseInfo::New();
@@ -315,12 +312,12 @@ AdsServiceImpl::AdsServiceImpl(
       rewards_service_(rewards_service),
       notification_ad_timing_data_store_(notification_ad_timing_data_store),
       bat_ads_client_(this) {
-  CHECK(profile_);
-  CHECK(adaptive_captcha_service_);
-  CHECK(device_id_);
-  CHECK(history_service_);
-  CHECK(rewards_service_);
-  CHECK(brave::IsRegularProfile(profile_));
+  DCHECK(profile_);
+  DCHECK(adaptive_captcha_service_);
+  DCHECK(device_id_);
+  DCHECK(history_service_);
+  DCHECK(rewards_service_);
+  DCHECK(brave::IsRegularProfile(profile_));
 
   InitializeNotificationsForCurrentProfile();
 
@@ -402,14 +399,14 @@ void AdsServiceImpl::MaybeStartBatAdsService() {
 }
 
 void AdsServiceImpl::StartBatAdsService() {
-  CHECK(!bat_ads_service_.is_bound());
+  DCHECK(!bat_ads_service_.is_bound());
 
   bat_ads_service_ = bat_ads_service_factory_->Launch();
 
   bat_ads_service_.set_disconnect_handler(base::BindOnce(
       &AdsServiceImpl::RestartBatAdsServiceAfterDelay, AsWeakPtr()));
 
-  CHECK(bat_ads_service_.is_bound());
+  DCHECK(bat_ads_service_.is_bound());
 
   bat_ads_service_->Create(
       bat_ads_client_.BindNewEndpointAndPassRemote(),
@@ -472,7 +469,7 @@ void AdsServiceImpl::Initialize() {
 }
 
 void AdsServiceImpl::InitializeDatabase() {
-  CHECK(!database_);
+  DCHECK(!database_);
 
   database_ =
       std::make_unique<Database>(base_path_.AppendASCII("database.sqlite"));
@@ -564,7 +561,7 @@ void AdsServiceImpl::SetFlags() {
   }
 
   mojom::FlagsPtr flags = BuildFlags();
-  CHECK(flags);
+  DCHECK(flags);
 #if BUILDFLAG(IS_ANDROID)
   if (GetPrefService()->GetBoolean(
           brave_rewards::prefs::kUseRewardsStagingServer)) {
@@ -863,8 +860,8 @@ void AdsServiceImpl::CloseAllNotificationAds() {
 
 void AdsServiceImpl::OnPrefetchNewTabPageAd(
     absl::optional<base::Value::Dict> dict) {
-  CHECK(!prefetched_new_tab_page_ad_);
-  CHECK(is_prefetching_new_tab_page_ad_);
+  DCHECK(!prefetched_new_tab_page_ad_);
+  DCHECK(is_prefetching_new_tab_page_ad_);
 
   is_prefetching_new_tab_page_ad_ = false;
 
@@ -1055,8 +1052,8 @@ void AdsServiceImpl::MigratePrefs() {
 bool AdsServiceImpl::MigratePrefs(const int source_version,
                                   const int dest_version,
                                   const bool is_dry_run) {
-  CHECK(source_version >= 1) << "Invalid migration path";
-  CHECK(source_version <= dest_version) << "Invalid migration path";
+  DCHECK(source_version >= 1) << "Invalid migration path";
+  DCHECK(source_version <= dest_version) << "Invalid migration path";
 
   if (source_version == dest_version) {
     SetIntegerPref(prefs::kVersion, dest_version);
@@ -1255,7 +1252,7 @@ void AdsServiceImpl::Shutdown() {
   if (database_) {
     const bool success =
         file_task_runner_->DeleteSoon(FROM_HERE, database_.release());
-    CHECK(success) << "Failed to release database";
+    DCHECK(success) << "Failed to release database";
   }
 
   VLOG(2) << "Shutdown bat-ads service";
@@ -1389,7 +1386,7 @@ void AdsServiceImpl::TriggerInlineContentAdEvent(
     const std::string& placement_id,
     const std::string& creative_instance_id,
     const mojom::InlineContentAdEventType event_type) {
-  CHECK(mojom::IsKnownEnumValue(event_type));
+  DCHECK(mojom::IsKnownEnumValue(event_type));
 
   if (bat_ads_.is_bound()) {
     bat_ads_->TriggerInlineContentAdEvent(placement_id, creative_instance_id,
@@ -1437,7 +1434,7 @@ void AdsServiceImpl::TriggerNewTabPageAdEvent(
     const std::string& placement_id,
     const std::string& creative_instance_id,
     const mojom::NewTabPageAdEventType event_type) {
-  CHECK(mojom::IsKnownEnumValue(event_type));
+  DCHECK(mojom::IsKnownEnumValue(event_type));
 
   if (bat_ads_.is_bound()) {
     bat_ads_->TriggerNewTabPageAdEvent(placement_id, creative_instance_id,
@@ -1449,7 +1446,7 @@ void AdsServiceImpl::TriggerPromotedContentAdEvent(
     const std::string& placement_id,
     const std::string& creative_instance_id,
     const mojom::PromotedContentAdEventType event_type) {
-  CHECK(mojom::IsKnownEnumValue(event_type));
+  DCHECK(mojom::IsKnownEnumValue(event_type));
 
   if (bat_ads_.is_bound()) {
     bat_ads_->TriggerPromotedContentAdEvent(placement_id, creative_instance_id,
@@ -1460,7 +1457,7 @@ void AdsServiceImpl::TriggerPromotedContentAdEvent(
 void AdsServiceImpl::TriggerSearchResultAdEvent(
     mojom::SearchResultAdInfoPtr ad_mojom,
     const mojom::SearchResultAdEventType event_type) {
-  CHECK(mojom::IsKnownEnumValue(event_type));
+  DCHECK(mojom::IsKnownEnumValue(event_type));
 
   if (bat_ads_.is_bound()) {
     bat_ads_->TriggerSearchResultAdEvent(std::move(ad_mojom), event_type);
@@ -1470,7 +1467,7 @@ void AdsServiceImpl::TriggerSearchResultAdEvent(
 void AdsServiceImpl::PurgeOrphanedAdEventsForType(
     const mojom::AdType ad_type,
     PurgeOrphanedAdEventsForTypeCallback callback) {
-  CHECK(mojom::IsKnownEnumValue(ad_type));
+  DCHECK(mojom::IsKnownEnumValue(ad_type));
 
   if (bat_ads_.is_bound()) {
     bat_ads_->PurgeOrphanedAdEventsForType(ad_type, std::move(callback));
@@ -1776,8 +1773,8 @@ void AdsServiceImpl::GetBrowsingHistory(const int max_count,
 
 void AdsServiceImpl::UrlRequest(mojom::UrlRequestInfoPtr url_request,
                                 UrlRequestCallback callback) {
-  CHECK(url_request);
-  CHECK(url_request->url.is_valid());
+  DCHECK(url_request);
+  DCHECK(url_request->url.is_valid());
 
   auto resource_request = std::make_unique<network::ResourceRequest>();
   resource_request->url = url_request->url;
@@ -1829,9 +1826,8 @@ void AdsServiceImpl::Load(const std::string& name, LoadCallback callback) {
       FROM_HERE,
       base::BindOnce(&LoadOnFileTaskRunner, base_path_.AppendASCII(name)),
       base::BindOnce(
-          [](LoadCallback callback, const std::string& value) {
-            const bool success = !value.empty();
-            std::move(callback).Run(success, value);
+          [](LoadCallback callback, const absl::optional<std::string>& value) {
+            std::move(callback).Run(value);
           },
           std::move(callback)));
 }
@@ -1863,7 +1859,7 @@ void AdsServiceImpl::LoadFileResource(const std::string& id,
       base::BindOnce(
           [](LoadFileResourceCallback callback,
              std::unique_ptr<base::File, base::OnTaskRunnerDeleter> file) {
-            CHECK(file);
+            DCHECK(file);
             std::move(callback).Run(std::move(*file));
           },
           std::move(callback)));
@@ -1909,7 +1905,7 @@ void AdsServiceImpl::ShowScheduledCaptchaNotification(
   const int snooze_count = pref_service->GetInteger(
       brave_adaptive_captcha::prefs::kScheduledCaptchaSnoozeCount);
 
-  CHECK(ads_tooltips_delegate_);
+  DCHECK(ads_tooltips_delegate_);
 
   ads_tooltips_delegate_->ShowCaptchaTooltip(
       payment_id, captcha_id, snooze_count == 0,
@@ -1934,7 +1930,7 @@ void AdsServiceImpl::RunDBTransaction(mojom::DBTransactionInfoPtr transaction,
 void AdsServiceImpl::RecordP2AEvent(const std::string& /*name*/,
                                     base::Value::List list) {
   for (const auto& item : list) {
-    CHECK(item.is_string());
+    DCHECK(item.is_string());
     RecordInWeeklyStorageAndEmitP2AHistogramAnswer(profile_->GetPrefs(),
                                                    item.GetString());
   }
