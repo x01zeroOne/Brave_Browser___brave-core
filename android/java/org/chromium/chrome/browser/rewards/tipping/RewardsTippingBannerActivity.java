@@ -249,12 +249,34 @@ public class RewardsTippingBannerActivity
         String title = mBannerInfo.getName();
         if (!TextUtils.isEmpty(title)) {
             TextView titleTextView = findViewById(R.id.tipping_publisher_name);
-            String provider = mBannerInfo.getProvider();
+            String provider = getProvider(mBannerInfo.getProvider());
             if (!TextUtils.isEmpty(provider)) {
                 title = String.format(
                         getResources().getString(R.string.title_on_provider), title, provider);
             }
             titleTextView.setText(title);
+        }
+    }
+
+    private String getProvider(String provider) {
+        if (TextUtils.isEmpty(provider)) {
+            return "";
+        }
+        switch (provider) {
+            case "twitter":
+                return "Twitter";
+            case "youtube":
+                return "YouTube";
+            case "twitch":
+                return "Twitch";
+            case "reddit":
+                return "Reddit";
+            case "vimeo":
+                return "Vimeo";
+            case "github":
+                return "GitHub";
+            default:
+                return provider;
         }
     }
 

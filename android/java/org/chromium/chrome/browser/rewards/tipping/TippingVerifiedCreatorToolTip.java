@@ -10,19 +10,31 @@ package org.chromium.chrome.browser.rewards.tipping;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Resources;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.TextPaint;
+import android.text.method.LinkMovementMethod;
+import android.text.style.ClickableSpan;
+import android.text.style.ForegroundColorSpan;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.PopupWindow;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.content.res.AppCompatResources;
 
 import org.chromium.chrome.R;
+import org.chromium.chrome.browser.BraveRewardsHelper;
+import org.chromium.chrome.browser.customtabs.CustomTabActivity;
 
 public class TippingVerifiedCreatorToolTip {
+    private static final String NEW_SIGNUP_DISABLED_URL =
+            "https://support.brave.com/hc/en-us/articles/9312922941069";
+
     private PopupWindow mPopupWindow;
     public TippingVerifiedCreatorToolTip(@NonNull Context context) {
         init(context);
@@ -33,7 +45,7 @@ public class TippingVerifiedCreatorToolTip {
         LayoutInflater inflater =
                 (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View contentView = inflater.inflate(R.layout.tipping_verified_creator_tooltip, null, false);
-
+        setLearnMore(contentView);
         mPopupWindow = new PopupWindow(context);
         mPopupWindow.setContentView(contentView);
         mPopupWindow.setTouchable(true);
@@ -49,6 +61,47 @@ public class TippingVerifiedCreatorToolTip {
             }
             return false;
         });
+    }
+
+    private void setLearnMore(View view) {
+        TextView descriptionTextView = view.findViewById(R.id.verified_creator_description);
+        String descriptionText =
+                String.format(view.getResources().getString(R.string.tipping_tooltip_description),
+                        view.getResources().getString(R.string.learn_more));
+        SpannableString spannableLearnMore =
+                learnMoreSpannableString(view.getContext(), descriptionText);
+        descriptionTextView.setMovementMethod(LinkMovementMethod.getInstance());
+        descriptionTextView.setText(spannableLearnMore);
+    }
+
+    private SpannableString learnMoreSpannableString(Context context, String text) {
+        Spanned textToAgree = BraveRewardsHelper.spannedFromHtmlString(text);
+
+        SpannableString ss = new SpannableString(textToAgree.toString());
+
+        ClickableSpan clickableSpan = new ClickableSpan() {
+            @Override
+            public void onClick(@NonNull View textView) {
+                CustomTabActivity.showInfoPage(context, NEW_SIGNUP_DISABLED_URL);
+            }
+            @Override
+            public void updateDrawState(@NonNull TextPaint ds) {
+                super.updateDrawState(ds);
+                ds.setUnderlineText(false);
+            }
+        };
+        int learnMoreIndex = text.indexOf(context.getResources().getString(R.string.learn_more));
+
+        ss.setSpan(clickableSpan, learnMoreIndex,
+                learnMoreIndex + context.getResources().getString(R.string.learn_more).length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        ForegroundColorSpan foregroundSpan = new ForegroundColorSpan(
+                context.getResources().getColor(R.color.brave_rewards_modal_theme_color));
+        ss.setSpan(foregroundSpan, learnMoreIndex,
+                learnMoreIndex + context.getResources().getString(R.string.learn_more).length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        return ss;
     }
 
     private float convertDPtoPX(Context context, float dip) {

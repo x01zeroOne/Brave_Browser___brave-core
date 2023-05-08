@@ -201,7 +201,6 @@
                 android:layout_width="22dp"
                 android:layout_height="20dp"
                 android:layout_marginStart="24dp"
-                app:layout_constraintEnd_toEndOf="parent"
                 android:contentDescription="@null"
                 android:visibility="gone"
                 app:layout_constraintHorizontal_bias="0.5"
@@ -224,65 +223,56 @@
          />
 
 
-    <View
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/placeholder_background1"
         android:layout_width="match_parent"
-        android:layout_height="192dp"
-        android:layout_marginVertical="16dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="16dp"
+        android:layout_height="wrap_content"
         android:background="@drawable/tipping_banner_view_background"
+        android:layout_marginBottom="16dp"
+        android:layout_marginHorizontal="8dp"
+        android:padding="24dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent" />
+        >
 
-    <TextView
-        android:id="@+id/textView4"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="24dp"
-        android:fontFamily="sans-serif-medium"
-        android:text="@string/support_this_creator"
-        android:textColor="@color/rewards_panel_notification_text_color"
-        android:textSize="16sp"
-        app:layout_constraintStart_toStartOf="@+id/placeholder_background1"
-        app:layout_constraintTop_toTopOf="@+id/placeholder_background1" />
+        <TextView
+            android:id="@+id/textView4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:text="@string/support_this_creator"
+            android:textColor="@color/rewards_panel_notification_text_color"
+            android:textSize="16sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/send_tip_button"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="24dp"
-        android:background="@drawable/tipping_send_button_background"
-        android:text="@string/use_brave_rewards"
-        android:textAllCaps="false"
-        android:textColor="@android:color/white"
-        android:textSize="13sp"
-        app:layout_constraintEnd_toEndOf="@+id/placeholder_background1"
-        app:layout_constraintHorizontal_bias="0.166"
-        app:layout_constraintStart_toStartOf="@+id/placeholder_background1"
-        app:layout_constraintTop_toBottomOf="@+id/textView4" />
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/send_tip_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:background="@drawable/tipping_send_button_background"
+            android:text="@string/use_brave_rewards"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            android:textSize="13sp"
+            app:layout_constraintTop_toBottomOf="@+id/textView4"
+             />
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/use_web3_wallet_button"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="8dp"
-        android:background="@drawable/brave_rewards_use_web3_background"
-        android:text="@string/use_web3_wallet"
-        android:textAllCaps="false"
-        android:textColor="@color/use_web3_wallet_button_text_color"
-        android:textSize="13sp"
-        android:visibility="gone"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.666"
-        app:layout_constraintStart_toStartOf="@+id/placeholder_background1"
-        app:layout_constraintTop_toBottomOf="@+id/send_tip_button" />
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/use_web3_wallet_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/brave_rewards_use_web3_background"
+            android:text="@string/use_web3_wallet"
+            android:textAllCaps="false"
+            android:textColor="@color/use_web3_wallet_button_text_color"
+            android:textSize="13sp"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/send_tip_button"
+            app:layout_goneMarginTop="24dp"
+             />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <View
         android:layout_width="match_parent"

@@ -452,8 +452,9 @@ public class RewardsTippingPanelFragment
                             mBraveRewardsNativeWorker.GetPublisherId(mCurrentTabId),
                             mAmountSelected, isMonthly.isChecked());
                     mSendButton.setEnabled(false);
-                    mSendButton.setBackground(ResourcesCompat.getDrawable(
-                        getActivity().getResources(), R.drawable.tipping_send_button_background, /* theme= */ null));
+                    mSendButton.setBackground(
+                            ResourcesCompat.getDrawable(getActivity().getResources(),
+                                    R.drawable.tipping_send_button_background, /* theme= */ null));
                     mSendButton.setText("");
                     mTipProgressBar.setVisibility(View.VISIBLE);
                 }

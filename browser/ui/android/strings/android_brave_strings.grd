@@ -241,7 +241,7 @@ This file contains all "about" strings.  It is set to NOT be translated, in tran
         Please try again.
       </message>
       <message name="IDS_TIPPING_TOOLTIP_DESCRIPTION"  desc="Text for tipping tooltip description">
-        This Creator has registered with Brave and can receive contributions from Brave Rewards users. Learn more
+        This Creator has registered with Brave and can receive contributions from Brave Rewards users. <ph name="LEARN_MORE">%1$s</ph>
       </message>
       <message name="IDS_BRAVE_REWARDS_MAY_NOT_WORK_WHILE_NOTIFICATIONS_ARE_DISABLED"  desc="Text for Brave Rewards may not work while notifications are disabled.">
         Brave Rewards may not work while notifications are disabled.

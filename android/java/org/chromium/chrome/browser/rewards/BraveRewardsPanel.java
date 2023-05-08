@@ -336,6 +336,8 @@ public class BraveRewardsPanel
         mPopupView = (ViewGroup) inflater.inflate(R.layout.brave_rewards_panel_layout, null);
 
         int deviceWidth = ConfigurationUtils.getDisplayMetrics(mActivity).get("width");
+        int deviceHeight = ConfigurationUtils.getDisplayMetrics(mActivity).get("height");
+        Log.e("SujitSujit", "deviceWidth " + deviceWidth + " deviceHeight " + deviceHeight);
         boolean isTablet = DeviceFormFactor.isNonMultiDisplayContextOnTablet(mActivity);
 
         mPopupWindow.setWidth((int) (isTablet ? (deviceWidth * 0.6) : (deviceWidth * 0.95)));
