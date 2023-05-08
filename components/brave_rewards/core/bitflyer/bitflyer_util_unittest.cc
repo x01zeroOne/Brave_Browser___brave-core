@@ -26,94 +26,55 @@
 
 using ::testing::_;
 
-namespace brave_rewards::internal {
-namespace bitflyer {
+namespace brave_rewards::internal::bitflyer {
 
 class BitflyerUtilTest : public testing::Test {};
 
 TEST_F(BitflyerUtilTest, GetClientId) {
-  // production
   _environment = mojom::Environment::PRODUCTION;
-  std::string result = bitflyer::GetClientId();
-  ASSERT_EQ(result, BUILDFLAG(BITFLYER_CLIENT_ID));
+  ASSERT_EQ(GetClientId(), BUILDFLAG(BITFLYER_PRODUCTION_CLIENT_ID));
 
-  // staging
   _environment = mojom::Environment::STAGING;
-  result = bitflyer::GetClientId();
-  ASSERT_EQ(result, BUILDFLAG(BITFLYER_STAGING_CLIENT_ID));
+  ASSERT_EQ(GetClientId(), BUILDFLAG(BITFLYER_SANDBOX_CLIENT_ID));
+
+  _environment = mojom::Environment::DEVELOPMENT;
+  ASSERT_EQ(GetClientId(), BUILDFLAG(BITFLYER_SANDBOX_CLIENT_ID));
 }
 
 TEST_F(BitflyerUtilTest, GetClientSecret) {
-  // production
   _environment = mojom::Environment::PRODUCTION;
-  std::string result = bitflyer::GetClientSecret();
-  ASSERT_EQ(result, BUILDFLAG(BITFLYER_CLIENT_SECRET));
+  ASSERT_EQ(GetClientSecret(), BUILDFLAG(BITFLYER_PRODUCTION_CLIENT_SECRET));
 
-  // staging
   _environment = mojom::Environment::STAGING;
-  result = bitflyer::GetClientSecret();
-  ASSERT_EQ(result, BUILDFLAG(BITFLYER_STAGING_CLIENT_SECRET));
+  ASSERT_EQ(GetClientSecret(), BUILDFLAG(BITFLYER_SANDBOX_CLIENT_SECRET));
+
+  _environment = mojom::Environment::DEVELOPMENT;
+  ASSERT_EQ(GetClientSecret(), BUILDFLAG(BITFLYER_SANDBOX_CLIENT_SECRET));
 }
 
 TEST_F(BitflyerUtilTest, GetFeeAddress) {
-  // production
   _environment = mojom::Environment::PRODUCTION;
-  std::string result = bitflyer::GetFeeAddress();
-  ASSERT_EQ(result, kFeeAddressProduction);
+  ASSERT_EQ(GetFeeAddress(), BUILDFLAG(BITFLYER_PRODUCTION_FEE_ADDRESS));
 
-  // staging
   _environment = mojom::Environment::STAGING;
-  result = bitflyer::GetFeeAddress();
-  ASSERT_EQ(result, kFeeAddressStaging);
+  ASSERT_EQ(GetFeeAddress(), BUILDFLAG(BITFLYER_SANDBOX_FEE_ADDRESS));
+
+  _environment = mojom::Environment::DEVELOPMENT;
+  ASSERT_EQ(GetFeeAddress(), BUILDFLAG(BITFLYER_SANDBOX_FEE_ADDRESS));
 }
 
-TEST_F(BitflyerUtilTest, GetLoginUrl) {
-  // production
+TEST(BitflyerUtilTest, GetServerUrl) {
   _environment = mojom::Environment::PRODUCTION;
-  std::string result = bitflyer::GetLoginUrl("my-state", "my-code-verifier");
-  ASSERT_EQ(
-      result,
-      base::StrCat(
-          {kUrlProduction,
-           "/ex/OAuth/authorize"
-           "?client_id=",
-           BUILDFLAG(BITFLYER_CLIENT_ID),
-           "&scope=assets create_deposit_id withdraw_to_deposit_id"
-           "&redirect_uri=rewards://bitflyer/authorization"
-           "&state=my-state"
-           "&response_type=code"
-           "&code_challenge_method=S256"
-           "&code_challenge=5Cxs3JXozcwTeteCIu4BcTieAhEIqjn643F10PxPD_w"}));
+  ASSERT_EQ(endpoint::bitflyer::GetServerUrl("/test"),
+            base::StrCat({BUILDFLAG(BITFLYER_PRODUCTION_URL), "/test"}));
 
-  // staging
   _environment = mojom::Environment::STAGING;
-  result = bitflyer::GetLoginUrl("my-state", "my-code-verifier");
-  ASSERT_EQ(
-      result,
-      base::StrCat(
-          {BUILDFLAG(BITFLYER_STAGING_URL),
-           "/ex/OAuth/authorize"
-           "?client_id=",
-           BUILDFLAG(BITFLYER_STAGING_CLIENT_ID),
-           "&scope=assets create_deposit_id withdraw_to_deposit_id"
-           "&redirect_uri=rewards://bitflyer/authorization"
-           "&state=my-state"
-           "&response_type=code"
-           "&code_challenge_method=S256"
-           "&code_challenge=5Cxs3JXozcwTeteCIu4BcTieAhEIqjn643F10PxPD_w"}));
-}
+  ASSERT_EQ(endpoint::bitflyer::GetServerUrl("/test"),
+            base::StrCat({BUILDFLAG(BITFLYER_SANDBOX_URL), "/test"}));
 
-TEST_F(BitflyerUtilTest, GetActivityUrl) {
-  // production
-  _environment = mojom::Environment::PRODUCTION;
-  std::string result = bitflyer::GetActivityUrl();
-  ASSERT_EQ(result, std::string(kUrlProduction) + "/ja-jp/ex/tradehistory");
-
-  // staging
-  _environment = mojom::Environment::STAGING;
-  result = bitflyer::GetActivityUrl();
-  ASSERT_EQ(result, base::StrCat({BUILDFLAG(BITFLYER_STAGING_URL),
-                                  "/ja-jp/ex/tradehistory"}));
+  _environment = mojom::Environment::DEVELOPMENT;
+  ASSERT_EQ(endpoint::bitflyer::GetServerUrl("/test"),
+            base::StrCat({BUILDFLAG(BITFLYER_SANDBOX_URL), "/test"}));
 }
 
 TEST_F(BitflyerUtilTest, GetWallet) {
@@ -160,57 +121,69 @@ TEST_F(BitflyerUtilTest, GetWallet) {
 }
 
 TEST_F(BitflyerUtilTest, GenerateRandomHexString) {
-  // string for testing
   is_testing = true;
   auto result = util::GenerateRandomHexString();
   ASSERT_EQ(result, "123456789");
 
-  // random string
   is_testing = false;
-  _environment = mojom::Environment::STAGING;
   result = util::GenerateRandomHexString();
   ASSERT_EQ(result.length(), 64u);
 }
 
 TEST_F(BitflyerUtilTest, GenerateLinks) {
-  _environment = mojom::Environment::STAGING;
+  EXPECT_FALSE(bitflyer::GenerateLinks(nullptr));
 
   auto wallet = mojom::ExternalWallet::New();
   wallet->address = "123123123124234234234";
+  wallet->one_time_string = "one_time_string";
 
-  const char kLoginUrlTemplate[] =
+  const auto account_url =
+      base::StrCat({_environment == mojom::Environment::PRODUCTION
+                        ? BUILDFLAG(BITFLYER_PRODUCTION_URL)
+                        : BUILDFLAG(BITFLYER_SANDBOX_URL),
+                    "/ex/Home?login=1"});
+  const auto activity_url =
+      base::StrCat({_environment == mojom::Environment::PRODUCTION
+                        ? BUILDFLAG(BITFLYER_PRODUCTION_URL)
+                        : BUILDFLAG(BITFLYER_SANDBOX_URL),
+                    "/ja-jp/ex/tradehistory"});
+  const auto login_url = base::StringPrintf(
       "%s/ex/OAuth/authorize"
       "?client_id=%s"
-      "&scope=assets create_deposit_id withdraw_to_deposit_id"
+      "&scope="
+      "assets "
+      "create_deposit_id "
+      "withdraw_to_deposit_id"
       "&redirect_uri=rewards://bitflyer/authorization"
       "&state="
       "&response_type=code"
       "&code_challenge_method=S256"
-      "&code_challenge=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU";
-  const auto kLoginUrl =
-      base::StringPrintf(kLoginUrlTemplate, BUILDFLAG(BITFLYER_STAGING_URL),
-                         BUILDFLAG(BITFLYER_STAGING_CLIENT_ID));
-  const auto kStagingUrl =
-      base::StrCat({BUILDFLAG(BITFLYER_STAGING_URL), "/ex/Home?login=1"});
+      "&code_challenge=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU",
+      _environment == mojom::Environment::PRODUCTION
+          ? BUILDFLAG(BITFLYER_PRODUCTION_URL)
+          : BUILDFLAG(BITFLYER_SANDBOX_URL),
+      _environment == mojom::Environment::PRODUCTION
+          ? BUILDFLAG(BITFLYER_PRODUCTION_CLIENT_ID)
+          : BUILDFLAG(BITFLYER_SANDBOX_CLIENT_ID));
 
-  // Not connected
+  _environment = mojom::Environment::PRODUCTION;
   wallet->status = mojom::WalletStatus::kNotConnected;
-  auto result = bitflyer::GenerateLinks(wallet->Clone());
-  ASSERT_EQ(result->login_url, kLoginUrl);
-  ASSERT_EQ(result->account_url, kStagingUrl);
+  auto result = GenerateLinks(wallet->Clone());
+  ASSERT_EQ(result->account_url, account_url);
+  ASSERT_EQ(result->activity_url, activity_url);
+  ASSERT_EQ(result->login_url, login_url);
 
-  // Connected
   wallet->status = mojom::WalletStatus::kConnected;
-  result = bitflyer::GenerateLinks(wallet->Clone());
-  ASSERT_EQ(result->login_url, kLoginUrl);
-  ASSERT_EQ(result->account_url, kStagingUrl);
+  result = GenerateLinks(wallet->Clone());
+  ASSERT_EQ(result->account_url, account_url);
+  ASSERT_EQ(result->activity_url, activity_url);
+  ASSERT_EQ(result->login_url, login_url);
 
-  // Logged out
   wallet->status = mojom::WalletStatus::kLoggedOut;
-  result = bitflyer::GenerateLinks(wallet->Clone());
-  ASSERT_EQ(result->login_url, kLoginUrl);
-  ASSERT_EQ(result->account_url, kStagingUrl);
+  result = GenerateLinks(wallet->Clone());
+  ASSERT_EQ(result->account_url, account_url);
+  ASSERT_EQ(result->activity_url, activity_url);
+  ASSERT_EQ(result->login_url, login_url);
 }
 
-}  // namespace bitflyer
-}  // namespace brave_rewards::internal
+}  // namespace brave_rewards::internal::bitflyer

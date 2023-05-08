@@ -25,89 +25,55 @@
 
 using ::testing::_;
 
-namespace brave_rewards::internal {
-namespace uphold {
+namespace brave_rewards::internal::uphold {
 
 class UpholdUtilTest : public testing::Test {};
 
 TEST_F(UpholdUtilTest, GetClientId) {
-  // production
   _environment = mojom::Environment::PRODUCTION;
-  std::string result = uphold::GetClientId();
-  ASSERT_EQ(result, BUILDFLAG(UPHOLD_CLIENT_ID));
+  ASSERT_EQ(GetClientId(), BUILDFLAG(UPHOLD_PRODUCTION_CLIENT_ID));
 
-  // staging
   _environment = mojom::Environment::STAGING;
-  result = uphold::GetClientId();
-  ASSERT_EQ(result, BUILDFLAG(UPHOLD_STAGING_CLIENT_ID));
+  ASSERT_EQ(GetClientId(), BUILDFLAG(UPHOLD_SANDBOX_CLIENT_ID));
+
+  _environment = mojom::Environment::DEVELOPMENT;
+  ASSERT_EQ(GetClientId(), BUILDFLAG(UPHOLD_SANDBOX_CLIENT_ID));
 }
 
 TEST_F(UpholdUtilTest, GetClientSecret) {
-  // production
   _environment = mojom::Environment::PRODUCTION;
-  std::string result = uphold::GetClientSecret();
-  ASSERT_EQ(result, BUILDFLAG(UPHOLD_CLIENT_SECRET));
+  ASSERT_EQ(GetClientSecret(), BUILDFLAG(UPHOLD_PRODUCTION_CLIENT_SECRET));
 
-  // staging
   _environment = mojom::Environment::STAGING;
-  result = uphold::GetClientSecret();
-  ASSERT_EQ(result, BUILDFLAG(UPHOLD_STAGING_CLIENT_SECRET));
+  ASSERT_EQ(GetClientSecret(), BUILDFLAG(UPHOLD_SANDBOX_CLIENT_SECRET));
+
+  _environment = mojom::Environment::DEVELOPMENT;
+  ASSERT_EQ(GetClientSecret(), BUILDFLAG(UPHOLD_SANDBOX_CLIENT_SECRET));
 }
 
 TEST_F(UpholdUtilTest, GetFeeAddress) {
-  // production
   _environment = mojom::Environment::PRODUCTION;
-  std::string result = uphold::GetFeeAddress();
-  ASSERT_EQ(result, kFeeAddressProduction);
+  ASSERT_EQ(GetFeeAddress(), BUILDFLAG(UPHOLD_PRODUCTION_FEE_ADDRESS));
 
-  // staging
   _environment = mojom::Environment::STAGING;
-  result = uphold::GetFeeAddress();
-  ASSERT_EQ(result, kFeeAddressStaging);
+  ASSERT_EQ(GetFeeAddress(), BUILDFLAG(UPHOLD_SANDBOX_FEE_ADDRESS));
+
+  _environment = mojom::Environment::DEVELOPMENT;
+  ASSERT_EQ(GetFeeAddress(), BUILDFLAG(UPHOLD_SANDBOX_FEE_ADDRESS));
 }
 
-TEST_F(UpholdUtilTest, GetLoginUrl) {
-  // production
+TEST(UpholdUtilTest, GetServerUrl) {
   _environment = mojom::Environment::PRODUCTION;
-  std::string result = uphold::GetLoginUrl("rdfdsfsdfsdf");
-  ASSERT_EQ(
-      result,
-      base::StrCat(
-          {"https://uphold.com/authorize/", BUILDFLAG(UPHOLD_CLIENT_ID),
-           "?scope=cards:read cards:write user:read "
-           "transactions:read transactions:transfer:application "
-           "transactions:transfer:others&intention=login&state=rdfdsfsdfsdf"}));
+  ASSERT_EQ(endpoint::uphold::GetServerUrl("/test"),
+            base::StrCat({BUILDFLAG(UPHOLD_PRODUCTION_OAUTH_URL), "/test"}));
 
-  // staging
   _environment = mojom::Environment::STAGING;
-  result = uphold::GetLoginUrl("rdfdsfsdfsdf");
-  ASSERT_EQ(
-      result,
-      base::StrCat(
-          {"https://wallet-sandbox.uphold.com/authorize/",
-           BUILDFLAG(UPHOLD_STAGING_CLIENT_ID),
-           "?scope=cards:read cards:write user:read "
-           "transactions:read transactions:transfer:application "
-           "transactions:transfer:others&intention=login&state=rdfdsfsdfsdf"}));
-}
+  ASSERT_EQ(endpoint::uphold::GetServerUrl("/test"),
+            base::StrCat({BUILDFLAG(UPHOLD_SANDBOX_OAUTH_URL), "/test"}));
 
-TEST_F(UpholdUtilTest, GetActivityUrl) {
-  // empty string
-  std::string result = uphold::GetActivityUrl("");
-  ASSERT_EQ(result, "");
-
-  // production
-  _environment = mojom::Environment::PRODUCTION;
-  result = uphold::GetActivityUrl("9324i5i32459i");
-  ASSERT_EQ(result,
-            "https://uphold.com/dashboard/cards/9324i5i32459i/activity");
-
-  // staging
-  _environment = mojom::Environment::STAGING;
-  result = uphold::GetActivityUrl("9324i5i32459i");
-  ASSERT_EQ(result,
-            "https://wallet-sandbox.uphold.com/dashboard/cards/9324i5i32459i/"
-            "activity");
+  _environment = mojom::Environment::DEVELOPMENT;
+  ASSERT_EQ(endpoint::uphold::GetServerUrl("/test"),
+            base::StrCat({BUILDFLAG(UPHOLD_SANDBOX_OAUTH_URL), "/test"}));
 }
 
 TEST_F(UpholdUtilTest, GetWallet) {
@@ -151,65 +117,69 @@ TEST_F(UpholdUtilTest, GetWallet) {
 }
 
 TEST_F(UpholdUtilTest, GenerateRandomHexString) {
-  // string for testing
   is_testing = true;
   auto result = util::GenerateRandomHexString();
   ASSERT_EQ(result, "123456789");
 
-  // random string
   is_testing = false;
-  _environment = mojom::Environment::STAGING;
   result = util::GenerateRandomHexString();
   ASSERT_EQ(result.length(), 64u);
 }
 
 TEST_F(UpholdUtilTest, GenerateLinks) {
-  _environment = mojom::Environment::STAGING;
+  EXPECT_FALSE(uphold::GenerateLinks(nullptr));
 
   auto wallet = mojom::ExternalWallet::New();
+  wallet->address = "123123123124234234234";
+  wallet->one_time_string = "one_time_string";
 
-  // Not connected
+  const auto account_url =
+      base::StrCat({_environment == mojom::Environment::PRODUCTION
+                        ? BUILDFLAG(UPHOLD_PRODUCTION_OAUTH_URL)
+                        : BUILDFLAG(UPHOLD_SANDBOX_OAUTH_URL),
+                    "/ex/Home?login=1"});
+  const auto activity_url =
+      base::StrCat({_environment == mojom::Environment::PRODUCTION
+                        ? BUILDFLAG(UPHOLD_PRODUCTION_OAUTH_URL)
+                        : BUILDFLAG(UPHOLD_SANDBOX_OAUTH_URL),
+                    "/ja-jp/ex/tradehistory"});
+  const auto login_url = base::StringPrintf(
+      "%s/ex/OAuth/authorize"
+      "?client_id=%s"
+      "&scope="
+      "assets "
+      "create_deposit_id "
+      "withdraw_to_deposit_id"
+      "&redirect_uri=rewards://uphold/authorization"
+      "&state="
+      "&response_type=code"
+      "&code_challenge_method=S256"
+      "&code_challenge=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU",
+      _environment == mojom::Environment::PRODUCTION
+          ? BUILDFLAG(UPHOLD_PRODUCTION_OAUTH_URL)
+          : BUILDFLAG(UPHOLD_SANDBOX_OAUTH_URL),
+      _environment == mojom::Environment::PRODUCTION
+          ? BUILDFLAG(UPHOLD_PRODUCTION_CLIENT_ID)
+          : BUILDFLAG(UPHOLD_SANDBOX_CLIENT_ID));
+
+  _environment = mojom::Environment::PRODUCTION;
   wallet->status = mojom::WalletStatus::kNotConnected;
-  wallet->token = "";    // must be empty
-  wallet->address = "";  // must be empty
-  auto result = uphold::GenerateLinks(wallet->Clone());
-  ASSERT_EQ(
-      result->login_url,
-      base::StrCat({"https://wallet-sandbox.uphold.com/authorize/",
-                    BUILDFLAG(UPHOLD_STAGING_CLIENT_ID),
-                    "?scope=cards:read cards:write user:read "
-                    "transactions:read transactions:transfer:application "
-                    "transactions:transfer:others&intention=login&state="}));
-  ASSERT_EQ(result->account_url, "https://wallet-sandbox.uphold.com/dashboard");
+  auto result = GenerateLinks(wallet->Clone());
+  ASSERT_EQ(result->account_url, account_url);
+  ASSERT_EQ(result->activity_url, activity_url);
+  ASSERT_EQ(result->login_url, login_url);
 
-  // Connected
   wallet->status = mojom::WalletStatus::kConnected;
-  wallet->token = "must be non-empty";
-  wallet->address = "123123123124234234234";  // must be non-empty
-  result = uphold::GenerateLinks(wallet->Clone());
-  ASSERT_EQ(
-      result->login_url,
-      base::StrCat({"https://wallet-sandbox.uphold.com/authorize/",
-                    BUILDFLAG(UPHOLD_STAGING_CLIENT_ID),
-                    "?scope=cards:read cards:write user:read "
-                    "transactions:read transactions:transfer:application "
-                    "transactions:transfer:others&intention=login&state="}));
-  ASSERT_EQ(result->account_url, "https://wallet-sandbox.uphold.com/dashboard");
+  result = GenerateLinks(wallet->Clone());
+  ASSERT_EQ(result->account_url, account_url);
+  ASSERT_EQ(result->activity_url, activity_url);
+  ASSERT_EQ(result->login_url, login_url);
 
-  // Logged out
   wallet->status = mojom::WalletStatus::kLoggedOut;
-  wallet->token = "";    // must be empty
-  wallet->address = "";  // must be empty
-  result = uphold::GenerateLinks(wallet->Clone());
-  ASSERT_EQ(
-      result->login_url,
-      base::StrCat({"https://wallet-sandbox.uphold.com/authorize/",
-                    BUILDFLAG(UPHOLD_STAGING_CLIENT_ID),
-                    "?scope=cards:read cards:write user:read "
-                    "transactions:read transactions:transfer:application "
-                    "transactions:transfer:others&intention=login&state="}));
-  ASSERT_EQ(result->account_url, "https://wallet-sandbox.uphold.com/dashboard");
+  result = GenerateLinks(wallet->Clone());
+  ASSERT_EQ(result->account_url, account_url);
+  ASSERT_EQ(result->activity_url, activity_url);
+  ASSERT_EQ(result->login_url, login_url);
 }
 
-}  // namespace uphold
-}  // namespace brave_rewards::internal
+}  // namespace brave_rewards::internal::uphold
