@@ -168,7 +168,7 @@ void AIChatAPI::OnDataReceived(base::StringPiece string_piece,
       continue;
     }
 
-    std::string json = data.substr(kDataPrefix.length() - 1);
+    std::string json = data.substr(strlen(kDataPrefix) - 1);
 
     data_decoder_.get()->ParseJson(
         json, base::BindOnce(&AIChatAPI::OnParseJsonIsolated,
