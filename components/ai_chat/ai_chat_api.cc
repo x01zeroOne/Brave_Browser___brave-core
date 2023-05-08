@@ -8,6 +8,7 @@
 #include <base/containers/flat_map.h>
 
 #include <utility>
+#include <vector>
 
 #include "base/json/json_writer.h"
 #include "base/no_destructor.h"
@@ -170,9 +171,9 @@ void AIChatAPI::OnDataReceived(base::StringPiece string_piece,
 
     std::string json = data.substr(strlen(kDataPrefix) - 1);
 
-    data_decoder_.get()->ParseJson(
-        json, base::BindOnce(&AIChatAPI::OnParseJsonIsolated,
-                             weak_ptr_factory_.GetWeakPtr()));
+    data_decoder_->ParseJson(json,
+                             base::BindOnce(&AIChatAPI::OnParseJsonIsolated,
+                                            weak_ptr_factory_.GetWeakPtr()));
   }
 
   std::move(resume).Run();

@@ -6,6 +6,7 @@
 #ifndef BRAVE_COMPONENTS_AI_CHAT_AI_CHAT_API_H_
 #define BRAVE_COMPONENTS_AI_CHAT_AI_CHAT_API_H_
 
+#include <memory>
 #include <string>
 
 #include "base/memory/weak_ptr.h"
