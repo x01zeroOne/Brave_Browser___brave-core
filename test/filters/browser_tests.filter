@@ -596,6 +596,12 @@
 -HttpsUpgradesBrowserTest.UrlWithHttpScheme_BrokenSSL_ShouldInterstitial_SiteEngagement/HttpsUpgradesOnly
 -HttpsUpgradesBrowserTest.UrlWithHttpsScheme_ShouldLoad/*
 
+# These tests fail because we change the Learn More link in the HTTPS First interstitial.
+-HttpsOnlyModeBrowserTest.InterstitialLearnMoreLink
+-HttpsUpgradesBrowserTest.InterstitialLearnMoreLink
+-HttpsUpgradesBrowserTest.InterstitialLearnMoreLink/BothHttpsFirstModeAndHttpsUpgrades
+-HttpsUpgradesBrowserTest.InterstitialLearnMoreLink/HttpsFirstModeOnly
+
 # These tests crash because we disable 
 # enterprise_connectors::kLocalContentAnalysisEnabled feature
 -ConnectorsServiceAnalysisProfileBrowserTest.DeviceReporting/1
