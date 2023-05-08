@@ -471,8 +471,6 @@ public class BytecodeTest {
         Assert.assertTrue(methodExists("org/chromium/chrome/browser/omnibox/LocationBarMediator",
                 "updateButtonVisibility", false, null));
         Assert.assertTrue(methodExists("org/chromium/chrome/browser/omnibox/LocationBarMediator",
-                "onAssistantVoiceSearchServiceChanged", false, null));
-        Assert.assertTrue(methodExists("org/chromium/chrome/browser/omnibox/LocationBarMediator",
                 "shouldShowDeleteButton", false, null));
         Assert.assertTrue(methodExists("org/chromium/chrome/browser/tasks/ReturnToChromeUtil",
                 "shouldShowTabSwitcher", true, boolean.class, long.class, boolean.class));
@@ -977,8 +975,6 @@ public class BytecodeTest {
                 fieldExists("org/chromium/chrome/browser/omnibox/LocationBarMediator", "mContext"));
         Assert.assertTrue(fieldExists(
                 "org/chromium/chrome/browser/omnibox/LocationBarMediator", "mBrandedColorScheme"));
-        Assert.assertTrue(fieldExists("org/chromium/chrome/browser/omnibox/LocationBarMediator",
-                "mAssistantVoiceSearchServiceSupplier"));
         Assert.assertTrue(
                 fieldExists("org/chromium/chrome/browser/logo/LogoMediator", "mLogoModel"));
         Assert.assertTrue(
