@@ -175,6 +175,9 @@ TEST(EthSignedTypedDataHelperUnitTest, EncodedData) {
   auto encoded_person_v3 =
       helper->EncodeData("Person", *(data_dict.FindDict("to")));
   EXPECT_EQ(encoded_person_v4, encoded_person_v3);
+
+  // Invalid primary type name
+  EXPECT_FALSE(helper->EncodeData("Brave", data_dict));
 }
 
 TEST(EthSignedTypedDataHelperUnitTest, InvalidEncodedData) {
@@ -470,7 +473,7 @@ TEST(EthSignedTypedDataHelperUnitTest, EncodeField) {
   // not 20 bytes
   EXPECT_FALSE(helper->EncodeField(
       "address",
-      base::Value("0x0xaAaAAAAaaAAAaaaAaaAaaaaAAaAaaaaAaAaaAAaABBB")));
+      base::Value("0xaAaAAAAaaAAAaaaAaaAaaaaAAaAaaaaAaAaaAAaABBBb")));
   {
     auto encoded_field = helper->EncodeField(
         "address", base::Value("0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB"));
@@ -774,6 +777,12 @@ TEST(EthSignedTypedDataHelperUnitTest, EncodeField) {
     EXPECT_EQ(
         base::ToLowerASCII(base::HexEncode(*encoded_field)),
         "0000000000000000000000000000000000000000000000000000000000010000");
+  }
+  { // custom type but not dictionary
+    EXPECT_FALSE(helper->EncodeField("BraveyBaby", base::Value(1)));
+    EXPECT_FALSE(helper->EncodeField("BraveyBaby", base::Value("123")));
+    EXPECT_FALSE(helper->EncodeField("BraveyBaby", base::Value(true)));
+    EXPECT_FALSE(helper->EncodeField("BraveyBaby", list));
   }
 }
 

@@ -138,7 +138,9 @@ absl::optional<std::vector<uint8_t>> EthSignTypedDataHelper::EncodeData(
     const std::string& primary_type_name,
     const base::Value::Dict& data) const {
   const auto* primary_type = types_.FindList(primary_type_name);
-  DCHECK(primary_type);
+  if (!primary_type) {
+    return absl::nullopt;
+  }
   std::vector<uint8_t> result;
 
   const std::vector<uint8_t> type_hash = GetTypeHash(primary_type_name);
@@ -241,7 +243,9 @@ absl::optional<std::vector<uint8_t>> EthSignTypedDataHelper::EncodeField(
     }
     std::vector<uint8_t> address;
     CHECK(PrefixedHexStringToBytes(*value_str, &address));
-    DCHECK_EQ(address.size(), 20u);
+    if (address.size() != 20u) {
+      return absl::nullopt;
+    }
     for (size_t i = 0; i < 256 - 160; i += 8) {
       result.push_back(0);
     }
@@ -336,7 +340,9 @@ absl::optional<std::vector<uint8_t>> EthSignTypedDataHelper::EncodeField(
       result.push_back(static_cast<uint8_t>((encoded_value >> i) & 0xFF));
     }
   } else {
-    DCHECK(value.is_dict());
+    if (!value.is_dict()) {
+      return absl::nullopt;
+    }
     auto encoded_data = EncodeData(type, value.GetDict());
     if (!encoded_data) {
       return absl::nullopt;
