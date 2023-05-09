@@ -7,7 +7,12 @@ import { configureStore } from '@reduxjs/toolkit'
 
 // types
 import { WalletActions } from '../common/actions'
-import { PageState, PanelState, WalletState } from '../constants/types'
+import {
+  PageState,
+  PanelState,
+  UIState,
+  WalletState
+} from '../constants/types'
 
 // reducers
 import { createWalletApi } from '../common/slices/api.slice'
@@ -23,12 +28,15 @@ import { mockPageState } from '../stories/mock-data/mock-page-state'
 import { mockWalletState } from '../stories/mock-data/mock-wallet-state'
 import { AccountsTabState, createAccountsTabReducer } from '../page/reducers/accounts-tab-reducer'
 import { mockAccountsTabState } from '../stories/mock-data/mock-accounts-tab-state'
+import { createUIReducer } from '../common/slices/ui.slice'
+import { mockUiState } from '../stories/mock-data/mock-ui-state'
 
 export interface RootStateOverrides {
   accountTabStateOverride?: Partial<AccountsTabState>
   pageStateOverride?: Partial<PageState>
   panelStateOverride?: Partial<PanelState>
   walletStateOverride?: Partial<WalletState>
+  uiStateOverride?: Partial<UIState>
 }
 
 export const createMockStore = (
@@ -36,6 +44,7 @@ export const createMockStore = (
     accountTabStateOverride,
     pageStateOverride,
     panelStateOverride,
+    uiStateOverride,
     walletStateOverride
   }: RootStateOverrides,
   apiOverrides?: WalletApiDataOverrides
@@ -57,6 +66,10 @@ export const createMockStore = (
       accountsTab: createAccountsTabReducer({
         ...mockAccountsTabState,
         ...(accountTabStateOverride || {})
+      }),
+      ui: createUIReducer({
+        ...mockUiState,
+        ...(uiStateOverride || {})
       }),
       [api.reducerPath]: api.reducer
     },

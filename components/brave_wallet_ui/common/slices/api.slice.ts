@@ -2058,16 +2058,22 @@ export function createWalletApi (
         }
       ),
       transactionStatusChanged: mutation<
-        true, // success
+        {
+          success: boolean
+          txId: string
+          status: BraveWallet.TransactionStatus
+        },
         Pick<SerializableTransactionInfo, 'txStatus' | 'id' | 'chainId'> & {
           fromAddress: string
           coinType: BraveWallet.CoinType
         }
       >({
-        queryFn: async () => {
+        queryFn: async (arg) => {
           // no-op
           // uses 'invalidateTags' to handle data refresh
-          return { data: true }
+          return {
+            data: { success: true, txId: arg.id, status: arg.txStatus }
+          }
         },
         invalidatesTags: (res, err, arg) =>
           err
@@ -2687,11 +2693,17 @@ export function createWalletApi (
           err ? [] : [TX_CACHE_TAGS.ID(arg.transactionId)]
       }),
       newUnapprovedTxAdded: mutation<
-        { success: boolean },
+        {
+          success: boolean
+          txId: string
+        },
         SerializableTransactionInfo
       >({
-        queryFn: async (payload, { dispatch }, extraOptions, baseQuery) => {
-          return { data: { success: true } } // no-op (invalidate pending txs)
+        queryFn: async (arg, { dispatch }, extraOptions, baseQuery) => {
+          // no-op (invalidate pending txs)
+          return {
+            data: { success: true, txId: arg.id }
+          }
         },
         invalidatesTags: (res, err, arg) =>
           res
